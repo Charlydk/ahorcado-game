@@ -30,6 +30,22 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "JuegoController",
+    "Method": "VerificarLetra",
+    "RelativePath": "api/juego/verificar-letra",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "entrada",
+        "Type": "JuegoController\u002BLetraEntrada",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "AhorcadoBackend.Controllers.WeatherForecastController",
     "Method": "Get",
     "RelativePath": "WeatherForecast",
