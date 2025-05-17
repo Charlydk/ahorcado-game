@@ -1,0 +1,6 @@
+@AhorcadoBackend_HostAddress = http://localhost:5195
+
+GET {{AhorcadoBackend_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

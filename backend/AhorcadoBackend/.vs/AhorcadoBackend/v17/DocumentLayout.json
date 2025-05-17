@@ -1,0 +1,75 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\BackendAhorcadito\\AhorcadoBackend\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|c:\\users\\charl\\documents\\a1 proyectos\\backendahorcadito\\ahorcadobackend\\ahorcadobackend\\controllers\\juegocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|solutionrelative:ahorcadobackend\\controllers\\juegocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|c:\\users\\charl\\documents\\a1 proyectos\\backendahorcadito\\ahorcadobackend\\ahorcadobackend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|solutionrelative:ahorcadobackend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|c:\\users\\charl\\documents\\a1 proyectos\\backendahorcadito\\ahorcadobackend\\ahorcadobackend\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|solutionrelative:ahorcadobackend\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "JuegoController.cs",
+              "DocumentMoniker": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\BackendAhorcadito\\AhorcadoBackend\\AhorcadoBackend\\Controllers\\JuegoController.cs",
+              "RelativeDocumentMoniker": "AhorcadoBackend\\Controllers\\JuegoController.cs",
+              "ToolTip": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\BackendAhorcadito\\AhorcadoBackend\\AhorcadoBackend\\Controllers\\JuegoController.cs",
+              "RelativeToolTip": "AhorcadoBackend\\Controllers\\JuegoController.cs",
+              "ViewState": "AgIAAAYAAAAAAAAAAAAAABQAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-17T15:26:20.143Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\BackendAhorcadito\\AhorcadoBackend\\AhorcadoBackend\\appsettings.json",
+              "RelativeDocumentMoniker": "AhorcadoBackend\\appsettings.json",
+              "ToolTip": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\BackendAhorcadito\\AhorcadoBackend\\AhorcadoBackend\\appsettings.json",
+              "RelativeToolTip": "AhorcadoBackend\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-05-17T15:11:48.563Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\BackendAhorcadito\\AhorcadoBackend\\AhorcadoBackend\\Program.cs",
+              "RelativeDocumentMoniker": "AhorcadoBackend\\Program.cs",
+              "ToolTip": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\BackendAhorcadito\\AhorcadoBackend\\AhorcadoBackend\\Program.cs",
+              "RelativeToolTip": "AhorcadoBackend\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-05-17T15:10:24.585Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
