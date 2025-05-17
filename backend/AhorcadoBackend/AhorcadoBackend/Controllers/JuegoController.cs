@@ -29,4 +29,24 @@ public class JuegoController : ControllerBase
         palabraActual = null; // Reseteamos la palabra
         return Ok("Juego reiniciado, nueva palabra en la próxima solicitud.");
     }
+
+    [HttpPost("verificar-letra")]
+    public ActionResult VerificarLetra([FromBody] LetraEntrada entrada)
+    {
+        if (string.IsNullOrEmpty(entrada.Letra))
+            return BadRequest("Debes ingresar una letra válida.");
+
+        if (string.IsNullOrEmpty(palabraActual))
+            return BadRequest("No hay palabra activa. Inicia el juego primero.");
+
+        char letra = char.ToUpper(entrada.Letra[0]); // Convertimos la letra a mayúscula
+        bool contieneLetra = palabraActual.Contains(letra);
+
+        return Ok(new { existe = contieneLetra });
+    }
+
+    public class LetraEntrada
+    {
+        public string Letra { get; set; }
+    }
 }

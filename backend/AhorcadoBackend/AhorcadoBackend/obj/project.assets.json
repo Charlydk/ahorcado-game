@@ -453,11 +453,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\BackendAhorcadito\\AhorcadoBackend\\AhorcadoBackend\\AhorcadoBackend.csproj",
+      "projectUniqueName": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\Ahorcado_game\\backend\\AhorcadoBackend\\AhorcadoBackend\\AhorcadoBackend.csproj",
       "projectName": "AhorcadoBackend",
-      "projectPath": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\BackendAhorcadito\\AhorcadoBackend\\AhorcadoBackend\\AhorcadoBackend.csproj",
+      "projectPath": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\Ahorcado_game\\backend\\AhorcadoBackend\\AhorcadoBackend\\AhorcadoBackend.csproj",
       "packagesPath": "C:\\Users\\charl\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\BackendAhorcadito\\AhorcadoBackend\\AhorcadoBackend\\obj\\",
+      "outputPath": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\Ahorcado_game\\backend\\AhorcadoBackend\\AhorcadoBackend\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
