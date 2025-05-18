@@ -5,40 +5,30 @@
     "version": "1.0"
   },
   "paths": {
-    "/api/juego/palabra": {
-      "get": {
-        "tags": [
-          "Juego"
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "text/plain": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "application/json": {
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "text/json": {
-                "schema": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/juego/reiniciar": {
+    "/api/juego/iniciar": {
       "post": {
         "tags": [
           "Juego"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PalabraEntrada"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PalabraEntrada"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/PalabraEntrada"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -70,6 +60,18 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/juego/reiniciar": {
+      "post": {
+        "tags": [
+          "Juego"
+        ],
         "responses": {
           "200": {
             "description": "OK"
@@ -123,6 +125,20 @@
         "type": "object",
         "properties": {
           "letra": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PalabraEntrada": {
+        "type": "object",
+        "properties": {
+          "palabra": {
+            "type": "string",
+            "nullable": true
+          },
+          "modo": {
             "type": "string",
             "nullable": true
           }

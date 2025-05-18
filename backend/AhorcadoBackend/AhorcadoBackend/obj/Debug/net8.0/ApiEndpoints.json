@@ -1,23 +1,19 @@
 [
   {
     "ContainingType": "JuegoController",
-    "Method": "ObtenerPalabra",
-    "RelativePath": "api/juego/palabra",
-    "HttpMethod": "GET",
+    "Method": "IniciarJuego",
+    "RelativePath": "api/juego/iniciar",
+    "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
-    "ReturnTypes": [
+    "Parameters": [
       {
-        "Type": "System.String",
-        "MediaTypes": [
-          "text/plain",
-          "application/json",
-          "text/json"
-        ],
-        "StatusCode": 200
+        "Name": "entrada",
+        "Type": "JuegoController\u002BPalabraEntrada",
+        "IsRequired": true
       }
-    ]
+    ],
+    "ReturnTypes": []
   },
   {
     "ContainingType": "JuegoController",

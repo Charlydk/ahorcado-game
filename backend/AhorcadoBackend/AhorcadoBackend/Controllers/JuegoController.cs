@@ -6,47 +6,121 @@ using System.Collections.Generic;
 [Route("api/juego")]
 public class JuegoController : ControllerBase
 {
-    private static string palabraActual; // Variable para guardar la palabra
+    #region Variables + lista de palabras + Metodo GenerarPalabraAleatoria
+    
+    private static string palabraActual = "";
+    private static string guiones = "";
+    private static HashSet<char> letrasIngresadas = new HashSet<char>(); // 🔹 Evitar letras duplicadas
+    private static int intentosRestantes = 6; // 🔹 Control de intentos
 
     private static List<string> palabras = new List<string>
     { "CASA", "PAYASO", "CAMARA", "HOMERO", "PLATO", "TECLADO", "TRISTEZA", "MONITOR" };
-
-    [HttpGet("palabra")]
-    public ActionResult<string> ObtenerPalabra()
+    
+    private static string GenerarPalabraAleatoria()
     {
-        if (string.IsNullOrEmpty(palabraActual)) // Si no hay palabra, genera una nueva
-        {
-            Random rnd = new Random();
-            int index = rnd.Next(palabras.Count);
-            palabraActual = palabras[index];
-        }
-        return Ok(palabraActual); // Devuelve la misma palabra durante toda la partida
+        Random random = new Random();
+        return palabras[random.Next(palabras.Count)];
     }
+    #endregion
 
-    [HttpPost("reiniciar")]
-    public ActionResult ReiniciarJuego()
+    #region iniciar juego
+    // 🔹 Método para iniciar el juego
+     
+    [HttpPost("iniciar")]
+    public ActionResult IniciarJuego([FromBody] PalabraEntrada entrada)
     {
-        palabraActual = null; // Reseteamos la palabra
-        return Ok("Juego reiniciado, nueva palabra en la próxima solicitud.");
-    }
+        if (entrada.Modo == "versus" && (entrada.Palabra.Length < 4 || entrada.Palabra.Length > 8))
+            return BadRequest("La palabra debe tener entre 4 y 8 caracteres.");
 
+        palabraActual = entrada.Modo == "solitario" ? GenerarPalabraAleatoria() : entrada.Palabra.ToUpper();
+        guiones = new string('_', palabraActual.Length);
+        letrasIngresadas.Clear(); // 🔹 Reiniciamos letras ingresadas
+        intentosRestantes = 6; // 🔹 Reiniciamos intentos
+
+        return Ok(new { palabra = guiones, modo = entrada.Modo });
+    }
+    #endregion
+
+    #region verificar letra
     [HttpPost("verificar-letra")]
     public ActionResult VerificarLetra([FromBody] LetraEntrada entrada)
     {
-        if (string.IsNullOrEmpty(entrada.Letra))
-            return BadRequest("Debes ingresar una letra válida.");
+        try
+        {
+            if (string.IsNullOrEmpty(entrada.Letra))
+                return BadRequest("Debes ingresar una letra válida.");
 
-        if (string.IsNullOrEmpty(palabraActual))
-            return BadRequest("No hay palabra activa. Inicia el juego primero.");
+            if (string.IsNullOrEmpty(palabraActual))
+                return BadRequest("No hay palabra activa. Inicia el juego primero.");
 
-        char letra = char.ToUpper(entrada.Letra[0]); // Convertimos la letra a mayúscula
-        bool contieneLetra = palabraActual.Contains(letra);
+            char letra = char.ToUpper(entrada.Letra[0]);
 
-        return Ok(new { existe = contieneLetra });
+            if (letrasIngresadas.Contains(letra)) // 🔹 Evitar procesar letras repetidas
+            {
+                return Ok(new { mensaje = "Letra ya ingresada", esCorrecta = false, palabraActualizada = guiones, estadoJuego = "jugando" });
+            }
+
+            letrasIngresadas.Add(letra); // 🔹 Guardamos la letra ingresada
+            bool esCorrecta = palabraActual.Contains(letra);
+
+            if (esCorrecta)
+            {
+                char[] guionesArray = guiones.ToCharArray();
+                for (int i = 0; i < palabraActual.Length; i++)
+                {
+                    if (palabraActual[i] == letra)
+                    {
+                        guionesArray[i] = letra;
+                    }
+                }
+                guiones = new string(guionesArray);
+            }
+            else
+            {
+                intentosRestantes--; // 🔹 Reducimos intentos si la letra es incorrecta
+            }
+
+            // 🔹 Evaluamos el estado del juego
+            string estadoJuego = "jugando";
+            if (!guiones.Contains('_'))
+                estadoJuego = "ganaste";
+            else if (intentosRestantes <= 0)
+                estadoJuego = "perdiste";
+
+            Console.WriteLine($"Letra: {letra}, esCorrecta: {esCorrecta}, palabraActualizada: {guiones}, estadoJuego: {estadoJuego}");
+
+            return Ok(new { esCorrecta, palabraActualizada = guiones, estadoJuego, palabraSecreta = palabraActual });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error en VerificarLetra: {ex.Message}");
+            return StatusCode(500, $"Error interno: {ex.Message}");
+        }
+    }
+    #endregion
+
+    #region reiniciar palabra
+    [HttpPost("reiniciar")]
+    public ActionResult ReiniciarJuego()
+    {
+        palabraActual = "";
+        guiones = "";
+        letrasIngresadas.Clear();
+        intentosRestantes = 6;
+        return Ok("Juego reiniciado, nueva palabra en la próxima solicitud.");
+    }
+    #endregion
+
+    #region Métodos de ayuda
+    public class PalabraEntrada
+    {
+        public string Palabra { get; set; }
+        public string Modo { get; set; }
     }
 
     public class LetraEntrada
     {
         public string Letra { get; set; }
     }
+    #endregion
 }
