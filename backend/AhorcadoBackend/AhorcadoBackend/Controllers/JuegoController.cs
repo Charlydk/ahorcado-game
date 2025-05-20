@@ -79,17 +79,23 @@ public class JuegoController : ControllerBase
             {
                 intentosRestantes--; // 🔹 Reducimos intentos si la letra es incorrecta
             }
-
             // 🔹 Evaluamos el estado del juego
             string estadoJuego = "jugando";
+            string palabraFinal = ""; // Inicializamos una variable para la palabra final
             if (!guiones.Contains('_'))
+            {
                 estadoJuego = "ganaste";
+                palabraFinal = palabraActual; // La palabra final es la palabra actual si se gana
+            }
             else if (intentosRestantes <= 0)
+            {
                 estadoJuego = "perdiste";
+                palabraFinal = palabraActual; // La palabra final es la palabra actual si se pierde
+            }
 
-            Console.WriteLine($"Letra: {letra}, esCorrecta: {esCorrecta}, palabraActualizada: {guiones}, estadoJuego: {estadoJuego}");
+            Console.WriteLine($"Letra: {letra}, esCorrecta: {esCorrecta}, palabraActualizada: {guiones}, estadoJuego: {estadoJuego}, palabraFinal: {palabraFinal}");
 
-            return Ok(new { esCorrecta, palabraActualizada = guiones, estadoJuego, palabraSecreta = palabraActual });
+            return Ok(new { esCorrecta, palabraActualizada = guiones, estadoJuego, palabraSecreta = palabraFinal }); // Usamos palabraFinal
         }
         catch (Exception ex)
         {
