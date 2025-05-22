@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AhorcadoBackend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+782e6bf16aee8b74f9b773c81e0e87cf98880728")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+06a750154e124177b4b4da4b3da6f12817f7ff5a")]
 [assembly: System.Reflection.AssemblyProductAttribute("AhorcadoBackend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AhorcadoBackend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
