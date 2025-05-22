@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet"> 
+
+	<link href="https://fonts.googleapis.com/css2?family=Creepster&display=swap" rel="stylesheet">
+	
+	<link rel="stylesheet" href="MsolitarioStyle.css">
+	<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+	<title>Modo Solitario</title>
+
+</head>
+<body>
+	<div class="contenedor">
+		<header class="header">
+			
+
+			<table class="tableHeader">
+				<tr>
+					<td style="justify-content:initial;"><h2>Modo SOLITARI@</h2>
+						<button class="volver" id="boton" onclick="location.href='index.html'">Volver</button>
+						<button class="comenzar" id="boton">Comenzar!</button>
+						<button class="reiniciar" id="boton" style="display: none ;">Reiniciar</button></td>
+					<td style="text-align:center ;"><h1>El Ahorcadito</h1></td>
+					<td style="text-align:right ; vertical-align: top;"><h5>#Oracle <br> #AluraLatam </h5></td>
+				</tr>
+			</table>
+
+		</header>
+		<main class="contenido">
+			
+            <img src="img/ahorcadito_1.png" id="imagen" alt="juego"">
+
+           <p>
+           </p>
+            <textarea class="guion" readonly = "readonly"></textarea>
+			<p>
+			</p>
+
+            <h3 class="txtTitH3" style="display: none" >Ingresa una letra</h3>
+            <form >
+                <input type="text" class="ingresaLetra" onkeypress="return check(event)" maxlength="1" required style="display: none" >
+				
+                <input type="submit" id="boton" class="subirLetra" style="display: none" >
+            </form>
+
+		</main>
+		<aside class="sidebar">
+			
+			<textarea class = "LetrasOut" readonly = "readonly"></textarea>
+
+		</aside>
+				
+		<footer class="footer">
+            <h4>#AluraChallenge</h4>
+            <h4>©Todos los derechos reservados - 2022</h4>
+            <h4>Creado por Bernardino Fabian Augusto</h4>
+            <a title="GitHub" href="https://github.com/Charlydk">  <img src="img/github_logo_icon_143772.ico" alt="icolinkedin"></a>
+            <a title="Linkdin" href="https://www.linkedin.com/in/fabian-bernardino/">  <img src="img/linkedin_socialnetwork_17441.ico" alt="icolinkedin"></a>
+        </footer>
+	</div>
+</body>
+
+
+<script src="palabras.js"></script>
+
+<script>
+function check(e) {
+    tecla = (document.all) ? e.keyCode : e.which;
+
+    //Tecla de retroceso para borrar, siempre la permite
+	if (tecla == 8 || tecla == 13) {
+
+return true;
+}else if(tecla == 32){
+return false;
+}
+
+    // Patrón de entrada, en este caso solo letras
+    patron = /[A-Za-z]/;
+    tecla_final = String.fromCharCode(tecla);
+    return patron.test(tecla_final);
+}
+
+
+</script>
+
+
+
+
+</html>
