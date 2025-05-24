@@ -11,16 +11,16 @@
       "RelativeMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|solutionrelative:ahorcadobackend\\models\\juegoestado.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|c:\\users\\charl\\documents\\a1 proyectos\\ahorcado_game\\backend\\ahorcadobackend\\ahorcadobackend\\extensions\\sessionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|solutionrelative:ahorcadobackend\\extensions\\sessionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|c:\\users\\charl\\documents\\a1 proyectos\\ahorcado_game\\backend\\ahorcadobackend\\ahorcadobackend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|solutionrelative:ahorcadobackend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|c:\\users\\charl\\documents\\a1 proyectos\\ahorcado_game\\backend\\ahorcadobackend\\ahorcadobackend\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
       "RelativeMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|solutionrelative:ahorcadobackend\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|c:\\users\\charl\\documents\\a1 proyectos\\ahorcado_game\\backend\\ahorcadobackend\\ahorcadobackend\\extensions\\sessionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{1305CAAF-8053-4AB8-8846-EA0202A957AE}|AhorcadoBackend\\AhorcadoBackend.csproj|solutionrelative:ahorcadobackend\\extensions\\sessionextensions.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,7 +38,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "SessionExtensions.cs",
               "DocumentMoniker": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\Ahorcado_game\\backend\\AhorcadoBackend\\AhorcadoBackend\\Extensions\\SessionExtensions.cs",
               "RelativeDocumentMoniker": "AhorcadoBackend\\Extensions\\SessionExtensions.cs",
@@ -58,7 +58,8 @@
               "RelativeToolTip": "AhorcadoBackend\\Models\\JuegoEstado.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAFAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-22T03:19:18.707Z"
+              "WhenOpened": "2025-05-22T03:19:18.707Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -68,14 +69,14 @@
               "RelativeDocumentMoniker": "AhorcadoBackend\\Controllers\\JuegoController.cs",
               "ToolTip": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\Ahorcado_game\\backend\\AhorcadoBackend\\AhorcadoBackend\\Controllers\\JuegoController.cs",
               "RelativeToolTip": "AhorcadoBackend\\Controllers\\JuegoController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAD0AAAA+AAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFEAAABCAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-05-17T15:26:20.143Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 3,
               "Title": "appsettings.json",
               "DocumentMoniker": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\Ahorcado_game\\backend\\AhorcadoBackend\\AhorcadoBackend\\appsettings.json",
               "RelativeDocumentMoniker": "AhorcadoBackend\\appsettings.json",
@@ -83,19 +84,21 @@
               "RelativeToolTip": "AhorcadoBackend\\appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-05-17T15:11:48.563Z"
+              "WhenOpened": "2025-05-17T15:11:48.563Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\Ahorcado_game\\backend\\AhorcadoBackend\\AhorcadoBackend\\Program.cs",
               "RelativeDocumentMoniker": "AhorcadoBackend\\Program.cs",
               "ToolTip": "C:\\Users\\charl\\Documents\\A1 PROYECTOS\\Ahorcado_game\\backend\\AhorcadoBackend\\AhorcadoBackend\\Program.cs",
               "RelativeToolTip": "AhorcadoBackend\\Program.cs",
-              "ViewState": "AgIAABIAAAAAAAAAAAAAADgAAAAgAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADwAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-17T15:10:24.585Z"
+              "WhenOpened": "2025-05-17T15:10:24.585Z",
+              "EditorCaption": ""
             }
           ]
         }

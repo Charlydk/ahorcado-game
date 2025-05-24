@@ -1,3 +1,5 @@
+
+debugger; // <--- ¡AÑADE ESTO EN LA PRIMERA LÍNEA!
 // --- Elementos HTML de la interfaz (Selección de Modo, Ingreso de Palabra VS, Área de Juego) ---
 const seccionModosJuego = document.querySelector(".seccion-modos-juego");
 const seccionIngresarPalabra = document.querySelector(".seccion-ingresar-palabra");
@@ -60,10 +62,12 @@ async function iniciarJuego(modo = "solitario", palabraVersus = "") {
         console.log(`Intentando iniciar juego en modo: ${modo}`); // Deja este log
         debugger; // <-- ¡Deja este debugger aquí! (Justo antes del fetch)
 
-        const response = await fetch("https://localhost:7055/api/juego/iniciar", {
+        const response = await fetch("http://localhost:5195/api/juego/iniciar", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ Modo: modo, Palabra: palabraVersus })
+            body: JSON.stringify({ Modo: modo, Palabra: palabraVersus }),
+            credentials: 'include'
+            
         });
 
         if (!response.ok) {
@@ -109,10 +113,11 @@ async function VerificarLetra(letra) {
 
         letrasIntentadas.push(letra); // Agrega la letra a la lista local de intentadas
 
-        const response = await fetch("https://localhost:7055/api/juego/verificar-letra", {
+        const response = await fetch("http://localhost:5195/api/juego/verificar-letra", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ Letra: letra })
+            body: JSON.stringify({ Letra: letra }),
+            credentials: 'include'
         });
 
         if (!response.ok) {
@@ -158,6 +163,10 @@ async function VerificarLetra(letra) {
 // Botón "Iniciar Juego" (Muestra los botones de selección de modo)
 botonInicio.addEventListener("click", function(event) {
     event.preventDefault();
+    debugger; 
+    console.log("Clic en Iniciar Juego detectado. Ocultando botón de inicio y mostrando modos."); // <--- Y este console.log
+
+
     ocultarSeccion(botonInicio);
     mostrarSeccion(botonSolitario);
     mostrarSeccion(botonVersus);
@@ -248,7 +257,10 @@ botonSubirLetra.addEventListener("click", async function(event) {
 // Botón "Reiniciar" (para ambos modos)
 botonReiniciar.addEventListener("click", async function(event) {
     event.preventDefault();
-    await fetch("https://localhost:7055/api/juego/reiniciar", { method: "POST" });
+    await fetch("http://localhost:5195/api/juego/reiniciar", { 
+        method: "POST",
+        credentials: 'include'
+ }),
     // Después de reiniciar el backend, volvemos a la pantalla de selección de modo
     ocultarSeccion(seccionJuego);
     mostrarSeccion(seccionModosJuego);
