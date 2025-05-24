@@ -1,3 +1,5 @@
+using AhorcadoBackend.Hubs;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // =========================================================
@@ -5,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // =========================================================
 
 builder.Services.AddControllers();
+builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -55,6 +58,11 @@ app.UseAuthorization();
 
 // Usar la política CORS definida. Asegúrate de usar el mismo nombre aquí.
 app.UseCors("AllowSpecificOrigin"); // <-- Asegúrate de que este nombre coincida con el que definiste
+
+// --- Configuración de SignalR ---
+app.MapHub<GameHub>("/gamehub");
+// --- Fin Configuración de SignalR ---
+
 
 app.MapControllers();
 
