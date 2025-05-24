@@ -158,7 +158,7 @@ input[type="text"] {
 .guion, .LetrasOut {
   border: none;
   resize: none;
-  font-size: 35pt;
+  font-size: 25pt;
   color: white;
   background: transparent;
   text-align: center;
@@ -167,8 +167,13 @@ input[type="text"] {
   text-shadow: 0 0 12px red;
   -webkit-text-stroke: 2px rgb(0, 0, 0);
   margin: 10px 0;
+  /* --- ¡AÑADE ESTO! --- */
+  letter-spacing: 12px; /* Espaciado entre letras (ajusta el valor si lo necesitas) */
+  width: 90%; /* Asegura que tenga suficiente ancho para expandirse */
+  box-sizing: border-box; /* Fundamental para que padding no desborde el width */
+  padding: 0 10px; /* Un pequeño padding horizontal para que los guiones no peguen al borde */
 }
-.guion { width: 80%; }
+.guion { width: 100%; }
 .LetrasOut { width: 60%; }
 
 .mensaje-juego {

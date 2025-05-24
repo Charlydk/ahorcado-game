@@ -30,8 +30,7 @@ let letrasIntentadas = []; // Para llevar el registro de letras ya usadas en el 
 
 // --- Funciones de Utilidad para Mostrar/Ocultar Secciones ---
 function mostrarSeccion(seccion) {
-     // Si la sección es una de las principales que usa flexbox en CSS, la mostramos como flex.
-    // De lo contrario, usamos 'block' como un valor seguro para elementos individuales o si no sabes el display exacto.
+     
     if (seccion === seccionModosJuego || seccion === seccionIngresarPalabra || seccion === seccionJuego) {
         seccion.style.display = "flex";
     } else {
@@ -160,7 +159,7 @@ botonInicio.addEventListener("click", function(event) {
     ocultarSeccion(botonInicio);
     mostrarSeccion(botonSolitario);
     mostrarSeccion(botonVersus);
-    mostrarSeccion(botonOnline); // Si lo tienes, muéstralo también
+    mostrarSeccion(botonOnline);
 });
 
 // Botón "Solitari@"
