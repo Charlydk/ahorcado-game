@@ -48,6 +48,15 @@ function mostrarSeccion(seccion) {
     }
 }
 
+function ocultarTodasLasSecciones(){
+    const secciones = [seccionModosJuego, seccionIngresarPalabra, seccionJuego, seccionOnline];
+    secciones.forEach(seccion => {
+        seccion.style.display = "none";
+    });
+    
+}
+
+
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
     .withUrl("http://127.0.0.1:5195/gamehub") // <--- Asegúrate que esta URL sea correcta (tu backend y el path del Hub)
@@ -73,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
     startSignalRConnection(); // <--- ¡Añade esto aquí!
 });
 
-
+//#region Funciones para funcionalidad de la UI
 
 function ocultarSeccion(seccion) {
     seccion.style.display = "none";
@@ -191,7 +200,77 @@ async function VerificarLetra(letra) {
     }
 }
 
-// --- Event Listeners de Botones ---
+// --- Lógica para Crear y Unirse a Partidas Online ---
+async function crearNuevaPartidaOnline() {
+    try {
+        const response = await fetch("http://127.0.0.1:5195/api/juego/crear-online", {
+            method: "POST",
+            credentials: 'include'
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error al crear partida online: ${response.status} - ${errorText}`);
+        }
+        const data = await response.json();
+        const gameId = data.gameId; // El backend nos devolverá un ID de partida
+        mensajeIdPartida.textContent = `Partida creada. ID: ${gameId}. ¡Comparte con un amigo!`;
+        mensajeIdPartida.style.color = "green";
+        inputIdPartida.value = gameId; // Precargar el ID para facilitar copiar/unirse
+
+        // Una vez creada, el creador se une automáticamente a su partida
+        await unirseAPartidaOnline(gameId);
+
+    } catch (error) {
+        console.error("Error CATCHED al crear partida online:", error);
+        mensajeIdPartida.textContent = `Error: ${error.message}`;
+        mensajeIdPartida.style.color = "red";
+    }
+}
+
+// ---Logica para unirse a una partida online---
+async function unirseAPartidaOnline(gameId) {
+    // Aquí el cliente SignalR se unirá al grupo de la partida
+    // Y luego el frontend cambiará a la interfaz de juego
+    try {
+        await connection.invoke("JoinGame", gameId); // Llamamos al método JoinGame en el Hub
+        console.log(`Unido al grupo de SignalR para la partida: ${gameId}`);
+
+        // Ahora necesitamos informar al backend que nos estamos uniendo a la partida
+        // para que pueda manejar el estado de la partida en el servidor
+        const response = await fetch("http://127.0.0.1:5195/api/juego/unirse-online", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ GameId: gameId }),
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error al unirse a partida online: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        // Mostrar la interfaz de juego
+        ocultarTodasLasSecciones();
+        mostrarSeccion(seccionJuego);
+        inputGuiones.value = data.palabra; // Muestra los guiones iniciales
+
+        mensajeJuego.textContent = "Esperando a otro jugador..."; // Mensaje inicial para partidas online
+        inputIngresaLetra.focus();
+
+        // Guardamos el ID de la partida actual en una variable global
+        window.currentGameId = gameId; // Podemos usar esto para futuras llamadas a la API o SignalR
+
+    } catch (error) {
+        console.error("Error CATCHED al unirse a partida online:", error);
+        mensajeIdPartida.textContent = `Error: ${error.message}`;
+        mensajeIdPartida.style.color = "red";
+    }
+}
+
+//#endregion
+
+//#region  --- Event Listeners de Botones ---
 
 // Botón "Iniciar Juego" (Muestra los botones de selección de modo)
 botonInicio.addEventListener("click", function(event) {
@@ -224,6 +303,31 @@ if (botonOnline) {
         mostrarSeccion(seccionOnline);
     });
 }
+
+
+// sección Online 
+botonCrearPartida.addEventListener("click", async () => {
+    // Aquí llamaremos a una función para crear la partida en el backend
+    console.log("Creando nueva partida online...");
+    await crearNuevaPartidaOnline();
+});
+
+botonUnirsePartida.addEventListener("click", async () => {
+    const gameId = inputIdPartida.value.trim();
+    if (gameId) {
+        console.log(`Intentando unirse a la partida: ${gameId}`);
+        await unirseAPartidaOnline(gameId);
+    } else {
+        mensajeIdPartida.textContent = "Por favor, ingresa un ID de partida.";
+        mensajeIdPartida.style.color = "red";
+    }
+});
+
+botonVolverModosOnline.addEventListener("click", () => {
+    ocultarTodasLasSecciones();
+    mostrarSeccion(seccionModosJuego);
+});
+
 
 // Botón "Enviar Palabra" (para Modo Versus)
 botonEnviarPalabra.addEventListener("click", async function(event) {
@@ -305,6 +409,8 @@ botonReiniciar.addEventListener("click", async function(event) {
     ocultarSeccion(botonOnline);
     resetearUIJuego(); // Limpia la UI del juego
 });
+
+//#endregion
 
 // Inicializar la interfaz al cargar la página (ocultar todo excepto el botón "Iniciar Juego")
 function inicializarUI() {
