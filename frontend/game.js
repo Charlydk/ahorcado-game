@@ -1,5 +1,3 @@
-
-
 // --- Elementos HTML de la interfaz (Selección de Modo, Ingreso de Palabra VS, Área de Juego) ---
 const seccionModosJuego = document.querySelector(".seccion-modos-juego");
 const seccionIngresarPalabra = document.querySelector(".seccion-ingresar-palabra");
@@ -25,6 +23,16 @@ const inputLetrasOut = document.querySelector(".LetrasOut");
 const inputIngresaLetra = document.getElementById("inputAdivinarLetra");
 const botonSubirLetra = document.querySelector(".subirLetra");
 const botonReiniciar = document.querySelector(".reiniciar");
+
+// --- Elementos para la seccion Online ---
+const seccionOnline = document.querySelector(".seccion-online");
+const botonCrearPartida = document.querySelector(".boton-crear-partida");
+const inputIdPartida = document.querySelector(".input-id-partida");
+const botonUnirsePartida = document.querySelector(".boton-unirse-partida");
+const mensajeIdPartida = document.querySelector(".mensaje-id-partida");
+const botonVolverModosOnline = seccionOnline.querySelector(".volver-modos"); // Usar querySelector en seccionOnline para evitar conflicto
+
+
 
 // --- Variables de Estado del Frontend (estas se sincronizan con el backend) ---
 let cantidadErradas = 0; // Se actualiza con la respuesta del backend
@@ -208,6 +216,14 @@ botonVersus.addEventListener("click", function(event) {
     mostrarSeccion(seccionIngresarPalabra); // Muestra la sección para ingresar la palabra
     inputPalabraVersus.focus();
 });
+
+// Botón "Online"
+if (botonOnline) {
+    botonOnline.addEventListener("click", () => {
+        ocultarTodasLasSecciones();
+        mostrarSeccion(seccionOnline);
+    });
+}
 
 // Botón "Enviar Palabra" (para Modo Versus)
 botonEnviarPalabra.addEventListener("click", async function(event) {
