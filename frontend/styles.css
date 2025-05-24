@@ -79,7 +79,8 @@ body {
 /* SECCIONES DE JUEGO (Visibilidad controlada por JS) */
 .seccion-modos-juego,
 .seccion-ingresar-palabra,
-.seccion-juego {
+.seccion-juego,
+.seccion-online {
   width: 100%;
   display: flex; /* Usamos flexbox para los elementos internos de cada sección */
   flex-direction: column; /* Apilar verticalmente los elementos (botones, inputs) */
