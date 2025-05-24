@@ -1,5 +1,5 @@
 
-debugger; // <--- ¡AÑADE ESTO EN LA PRIMERA LÍNEA!
+
 // --- Elementos HTML de la interfaz (Selección de Modo, Ingreso de Palabra VS, Área de Juego) ---
 const seccionModosJuego = document.querySelector(".seccion-modos-juego");
 const seccionIngresarPalabra = document.querySelector(".seccion-ingresar-palabra");
@@ -59,10 +59,8 @@ function resetearUIJuego() {
 // --- Lógica de Inicio de Juego (Comunicación con Backend) ---
 async function iniciarJuego(modo = "solitario", palabraVersus = "") {
     try {
-        console.log(`Intentando iniciar juego en modo: ${modo}`); // Deja este log
-        debugger; // <-- ¡Deja este debugger aquí! (Justo antes del fetch)
-
-        const response = await fetch("http://localhost:5195/api/juego/iniciar", {
+      
+        const response = await fetch("http://127.0.0.1:5195/api/juego/iniciar", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ Modo: modo, Palabra: palabraVersus }),
@@ -113,7 +111,7 @@ async function VerificarLetra(letra) {
 
         letrasIntentadas.push(letra); // Agrega la letra a la lista local de intentadas
 
-        const response = await fetch("http://localhost:5195/api/juego/verificar-letra", {
+        const response = await fetch("http://127.0.0.1:5195/api/juego/verificar-letra", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ Letra: letra }),
@@ -163,10 +161,7 @@ async function VerificarLetra(letra) {
 // Botón "Iniciar Juego" (Muestra los botones de selección de modo)
 botonInicio.addEventListener("click", function(event) {
     event.preventDefault();
-    debugger; 
-    console.log("Clic en Iniciar Juego detectado. Ocultando botón de inicio y mostrando modos."); // <--- Y este console.log
-
-
+    
     ocultarSeccion(botonInicio);
     mostrarSeccion(botonSolitario);
     mostrarSeccion(botonVersus);
@@ -220,10 +215,7 @@ botonCancelarVersus.addEventListener("click", function(event) {
 
 // Botón "Enviar Letra" (para ambos modos)
 botonSubirLetra.addEventListener("click", async function(event) {
-    console.log("¡Clic en el botón 'Enviar Letra' detectado!"); // Añade este console.log
-    //debugger; // <--- ¡AÑADE ESTA PALABRA CLAVE!
-
-
+   
     event.preventDefault();
     let contenido = inputIngresaLetra.value.toUpperCase(); // Usamos .trim() para quitar espacios
 
@@ -257,7 +249,7 @@ botonSubirLetra.addEventListener("click", async function(event) {
 // Botón "Reiniciar" (para ambos modos)
 botonReiniciar.addEventListener("click", async function(event) {
     event.preventDefault();
-    await fetch("http://localhost:5195/api/juego/reiniciar", { 
+    await fetch("http://127.0.0.1:5195/api/juego/reiniciar", { 
         method: "POST",
         credentials: 'include'
  }),
