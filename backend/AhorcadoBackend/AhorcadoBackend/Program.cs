@@ -46,7 +46,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection(); --> Descomentar si se quiere forzar HTTPS 
 
 // Habilitar el middleware de sesiones (debe ir antes de UseRouting/MapControllers)
 app.UseSession();
