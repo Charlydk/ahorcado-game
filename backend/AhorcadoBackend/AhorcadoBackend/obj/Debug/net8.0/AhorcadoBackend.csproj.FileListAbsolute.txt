@@ -71,3 +71,11 @@ C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\Ahor
 C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\AhorcadoBackend\obj\Debug\net8.0\AhorcadoBackend.pdb
 C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\AhorcadoBackend\obj\Debug\net8.0\AhorcadoBackend.genruntimeconfig.cache
 C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\AhorcadoBackend\obj\Debug\net8.0\ref\AhorcadoBackend.dll
+C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\AhorcadoBackend\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\AhorcadoBackend\bin\Debug\net8.0\Microsoft.Extensions.Diagnostics.Abstractions.dll
+C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\AhorcadoBackend\bin\Debug\net8.0\Microsoft.Extensions.Hosting.Abstractions.dll
+C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\AhorcadoBackend\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
+C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\AhorcadoBackend\bin\Debug\net8.0\Microsoft.Extensions.ObjectPool.dll
+C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\AhorcadoBackend\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
+C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\AhorcadoBackend\bin\Debug\net8.0\Newtonsoft.Json.dll
+C:\Users\charl\Documents\A1 PROYECTOS\Ahorcado_game\backend\AhorcadoBackend\AhorcadoBackend\bin\Debug\net8.0\System.Net.WebSockets.WebSocketProtocol.dll

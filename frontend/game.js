@@ -40,6 +40,33 @@ function mostrarSeccion(seccion) {
     }
 }
 
+// --- Configuración de SignalR ---
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("http://127.0.0.1:5195/gamehub") // <--- Asegúrate que esta URL sea correcta (tu backend y el path del Hub)
+    .withAutomaticReconnect() // Opcional: intentará reconectar si la conexión se pierde
+    .build();
+
+// Inicia la conexión
+async function startSignalRConnection() {
+    try {
+        await connection.start();
+        console.log("Conexión SignalR establecida con éxito.");
+        // Aquí puedes añadir lógica para, por ejemplo, unirte a un juego existente
+        // connection.invoke("JoinGame", "someGameId"); // Ejemplo: el servidor tiene un método JoinGame
+    } catch (err) {
+        console.error("Error al iniciar la conexión SignalR:", err);
+        setTimeout(startSignalRConnection, 5000); // Intenta reconectar cada 5 segundos
+    }
+}
+
+// Llama a esta función para iniciar la conexión cuando el DOM esté cargado
+document.addEventListener("DOMContentLoaded", () => {
+    // ... (tu código existente para inicializar UI y event listeners) ...
+    startSignalRConnection(); // <--- ¡Añade esto aquí!
+});
+
+
+
 function ocultarSeccion(seccion) {
     seccion.style.display = "none";
 }
