@@ -20,7 +20,7 @@ const imagenAhorcado = document.getElementById("imagen");
 const mensajeJuego = document.querySelector(".mensaje-juego"); // El h3 para el mensaje de juego
 const inputGuiones = document.querySelector(".guion");
 const inputLetrasOut = document.querySelector(".LetrasOut");
-const inputIngresaLetra = document.querySelector(".ingresaLetra");
+const inputIngresaLetra = document.getElementById("inputAdivinarLetra");
 const botonSubirLetra = document.querySelector(".subirLetra");
 const botonReiniciar = document.querySelector(".reiniciar");
 
@@ -57,6 +57,9 @@ function resetearUIJuego() {
 // --- Lógica de Inicio de Juego (Comunicación con Backend) ---
 async function iniciarJuego(modo = "solitario", palabraVersus = "") {
     try {
+        console.log(`Intentando iniciar juego en modo: ${modo}`); // Deja este log
+        debugger; // <-- ¡Deja este debugger aquí! (Justo antes del fetch)
+
         const response = await fetch("https://localhost:7055/api/juego/iniciar", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -64,18 +67,18 @@ async function iniciarJuego(modo = "solitario", palabraVersus = "") {
         });
 
         if (!response.ok) {
-            const errorText = await response.text(); // Intenta leer el mensaje de error del backend
+            const errorText = await response.text();
             throw new Error(`Error al iniciar el juego: ${response.status} - ${errorText}`);
         }
 
         const data = await response.json();
-        console.log("Respuesta al iniciar juego:", data);
+        console.log("Respuesta del backend (objeto data):", data); // Deja este log (el que tiene el objeto data)
 
         // Reiniciar y mostrar la interfaz de juego
         resetearUIJuego();
-        ocultarSeccion(seccionModosJuego); // Oculta los botones de selección de modo
-        ocultarSeccion(seccionIngresarPalabra); // Oculta la sección de ingreso de palabra VS (si estaba visible)
-        mostrarSeccion(seccionJuego); // Muestra la sección principal del juego
+        ocultarSeccion(seccionModosJuego);
+        ocultarSeccion(seccionIngresarPalabra);
+        mostrarSeccion(seccionJuego);
 
         inputGuiones.value = data.palabra; // Muestra los guiones iniciales
 
@@ -88,9 +91,8 @@ async function iniciarJuego(modo = "solitario", palabraVersus = "") {
 
         inputIngresaLetra.focus(); // Enfoca el input para adivinar
     } catch (error) {
-        console.error("Error al iniciar el juego:", error);
+        console.error("Error CATCHED al iniciar el juego:", error);
         mensajeJuego.textContent = `Error: ${error.message}. Por favor, reinicia o inténtalo de nuevo.`;
-        // Opcional: mostrar un mensaje de error más amigable en un div específico.
     }
 }
 
@@ -209,8 +211,16 @@ botonCancelarVersus.addEventListener("click", function(event) {
 
 // Botón "Enviar Letra" (para ambos modos)
 botonSubirLetra.addEventListener("click", async function(event) {
+    console.log("¡Clic en el botón 'Enviar Letra' detectado!"); // Añade este console.log
+    //debugger; // <--- ¡AÑADE ESTA PALABRA CLAVE!
+
+
     event.preventDefault();
-    let contenido = inputIngresaLetra.value.toUpperCase().trim(); // Usamos .trim() para quitar espacios
+    let contenido = inputIngresaLetra.value.toUpperCase(); // Usamos .trim() para quitar espacios
+
+    console.log("Valor de inputIngresaLetra.value:", inputIngresaLetra.value);
+    console.log("Valor de 'contenido' (después de toUpperCase y trim):", contenido);
+    console.log("Longitud de 'contenido':", contenido.length);
 
     if (contenido === "") {
         mensajeJuego.textContent = "Debe ingresar una letra";
@@ -223,6 +233,7 @@ botonSubirLetra.addEventListener("click", async function(event) {
         inputIngresaLetra.focus();
         return;
     }
+
     // Validar que sea una letra
     if (!/^[A-Z]$/.test(contenido)) {
         mensajeJuego.textContent = "Ingresa solo letras.";
