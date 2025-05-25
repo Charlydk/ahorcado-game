@@ -2,6 +2,7 @@
 using AhorcadoBackend.Models; // Asegúrate que tus modelos (JuegoEstado, JuegoEstadoResponse, etc.) estén en este namespace o el que uses.
 using AhorcadoBackend.Services; // Asegúrate que tu GameManager esté en este namespace.
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
 using System.Linq; // Necesario para .ToHashSet() y .OrderBy()
@@ -166,40 +167,81 @@ public class JuegoController : ControllerBase
     }
 
     [HttpPost("unirse-online")]
-    public ActionResult UnirsePartidaOnline([FromBody] UnirsePartidaEntrada entrada)
+    public async Task<IActionResult> UnirseOnline([FromBody] JoinGameRequest request)
     {
-        if (string.IsNullOrEmpty(entrada.GameId))
-        {
-            return BadRequest("El ID de partida es requerido.");
-        }
+        var game = _gameManager.GetGame(request.GameId);
 
-        var game = _gameManager.GetGame(entrada.GameId);
         if (game == null)
         {
-            return NotFound("Partida no encontrada.");
+            return NotFound(new { message = "Partida no encontrada." });
         }
 
-        // Si ya hay 2 jugadores, podríamos rechazar la unión
-        // game.Players.Add(Context.ConnectionId); // Si rastreas jugadores en JuegoEstado
-
-        // Enviar el estado actual de la partida al unirse
-        return Ok(new JuegoEstadoResponse
+        if (game.PlayerConnectionIds.Count >= 2)
         {
-            Palabra = game.GuionesActuales,
-            IntentosRestantes = game.IntentosRestantes,
-            LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas.OrderBy(c => c)),
-            JuegoTerminado = game.JuegoTerminado,
-            PalabraSecreta = game.PalabraSecreta
-        });
+            return BadRequest(new { message = "La partida ya está llena." });
+        }
+
+        // Obtener el ConnectionId de SignalR del cliente que hace la solicitud
+        string connectionId = HttpContext.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
+
+        if (string.IsNullOrEmpty(connectionId))
+        {
+            return BadRequest(new { message = "No se pudo obtener el ConnectionId de SignalR." });
+        }
+
+        // Añadir el ConnectionId al juego en el GameManager
+        if (_gameManager.AddPlayerToGame(request.GameId, connectionId))
+        {
+            // Si ya hay 2 jugadores, ¡la partida puede empezar!
+            if (game.PlayerConnectionIds.Count == 2)
+            {
+                // Notificar a ambos jugadores que la partida ha comenzado (vía SignalR)
+                // Esto se manejará mejor directamente en el GameHub.
+                // Por ahora, solo actualiza el mensaje en el frontend.
+                await _hubContext.Clients.Group(request.GameId).SendAsync("ReceiveGameUpdate", new
+                {
+                    gameId = game.GameId,
+                    palabra = game.GuionesActuales,
+                    letrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+                    intentosRestantes = game.IntentosRestantes,
+                    juegoTerminado = game.JuegoTerminado,
+                    palabraSecreta = game.PalabraSecreta,
+                    message = "¡La partida ha comenzado! Adivina la palabra." // Mensaje de inicio
+                });
+            }
+            return Ok(new JuegoEstadoResponse
+            {
+                Palabra = game.GuionesActuales,
+                IntentosRestantes = game.IntentosRestantes,
+                LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+                JuegoTerminado = game.JuegoTerminado,
+                PalabraSecreta = "" // No revelar la palabra secreta al unirse
+            });
+        }
+        else
+        {
+            // Esto puede ocurrir si el jugador ya estaba en la lista
+            return Ok(new JuegoEstadoResponse
+            {
+                Palabra = game.GuionesActuales,
+                IntentosRestantes = game.IntentosRestantes,
+                LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+                JuegoTerminado = game.JuegoTerminado,
+                PalabraSecreta = ""
+            });
+        }
     }
 
-    #endregion
 
 
-    #region Clases de Ayuda (Modelos de Entrada/Salida)
 
-    // Clase para la entrada de iniciar juego (modo y palabra)
-    public class PalabraEntrada
+#endregion
+
+
+#region Clases de Ayuda (Modelos de Entrada/Salida)
+
+// Clase para la entrada de iniciar juego (modo y palabra)
+public class PalabraEntrada
     {
         public string? Palabra { get; set; }
         public string? Modo { get; set; }
@@ -223,6 +265,13 @@ public class JuegoController : ControllerBase
     {
         public string GameId { get; set; } = string.Empty;
     }
+
+    // clase que sirve a unirse on line
+    public class JoinGameRequest
+    {
+        public string GameId { get; set; } = string.Empty;
+    }
+
 
     // Clase para la respuesta del estado del juego al frontend (unificada)
     // Asegúrate de que esta clase sea pública y esté accesible (ej. en Models/JuegoEstadoResponse.cs)
