@@ -143,7 +143,36 @@ async function iniciarJuego(modo = "solitario", palabraVersus = "") {
 }
 
 // --- Lógica para Verificar Letra (Comunicación con Backend) ---
-async function VerificarLetra(letra) {
+function actualizarUIJuego(data) {
+    inputGuiones.value = data.palabra; // Siempre actualiza los guiones
+    inputLetrasOut.value = data.letrasIncorrectas; // Actualiza las letras erradas (viene como string en online)
+    cantidadErradas = data.intentosRestantes === undefined ? cantidadErradas : (6 - data.intentosRestantes); // Calcula erradas de intentosRestantes
+
+    // Actualizar imagen del ahorcado
+    imagenAhorcado.src = `img/ahorcadito_${cantidadErradas + 1}.png`; // Ajustar para que 0 errores sea ahorcadito_1.png
+
+    // --- Manejo del Estado del Juego ---
+    if (data.juegoTerminado) { // Si el backend nos dice que el juego terminó
+        ocultarSeccion(botonSubirLetra);
+        ocultarSeccion(inputIngresaLetra);
+
+        if (data.palabra === data.palabraSecreta) { // Asumiendo que el backend envía palabraSecreta al ganar
+            mensajeJuego.textContent = `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`;
+            imagenAhorcado.src = `img/ahorcadito_0.png`; // Imagen de victoria
+        } else {
+            mensajeJuego.textContent = `GAME OVER!! - La palabra era: ${data.palabraSecreta}`;
+            imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de derrota (el ahorcado completo)
+        }
+    } else {
+        mensajeJuego.textContent = `Ingresa una Letra`;
+    }
+
+    inputIngresaLetra.value = ""; // Limpiar el input después de cada intento
+    inputIngresaLetra.focus();
+}
+
+// --- Lógica para Verificar Letra (Comunicación con Backend - Modo Solitario/Versus) ---
+async function VerificarLetraLocal(letra) { // Renombrado a VerificarLetraLocal para distinguirlo
     try {
         // Validaciones en el frontend antes de enviar al backend
         if (letrasIntentadas.includes(letra)) {
@@ -168,34 +197,19 @@ async function VerificarLetra(letra) {
         }
 
         const resultado = await response.json();
-        console.log("Respuesta del backend:", resultado);
+        console.log("Respuesta del backend (local):", resultado);
 
-        inputGuiones.value = resultado.palabraActualizada; // Siempre actualiza los guiones
-        inputLetrasOut.value = resultado.letrasErradas.join(" "); // Actualiza las letras erradas
-        cantidadErradas = resultado.letrasErradas.length; // Sincroniza intentos errados con el backend
+        // Ahora llamamos a actualizarUIJuego para manejar la visualización
+        actualizarUIJuego({
+            palabra: resultado.palabraActualizada,
+            letrasIncorrectas: resultado.letrasErradas.join(", "),
+            intentosRestantes: 6 - resultado.letrasErradas.length, // Convertir erradas a intentos restantes
+            juegoTerminado: resultado.estadoJuego === "ganaste" || resultado.estadoJuego === "perdiste",
+            palabraSecreta: resultado.palabraSecreta // Asegúrate de que el backend envíe esto
+        });
 
-        // Actualizar imagen del ahorcado (ahora basado en cantidadErradas del backend)
-        imagenAhorcado.src = `img/ahorcadito_${cantidadErradas + 1}.png`; // Ajustar para que 0 errores sea ahorcadito_1.png
-
-        // --- Manejo del Estado del Juego ---
-        if (resultado.estadoJuego === "ganaste") {
-            mensajeJuego.textContent = `¡Felicidades! Has adivinado la palabra: ${resultado.palabraSecreta}`;
-            ocultarSeccion(botonSubirLetra);
-            ocultarSeccion(inputIngresaLetra);
-            imagenAhorcado.src = `img/ahorcadito_0.png`; // Imagen de victoria
-        } else if (resultado.estadoJuego === "perdiste") {
-            ocultarSeccion(botonSubirLetra);
-            ocultarSeccion(inputIngresaLetra);
-            mensajeJuego.textContent = `GAME OVER!! - La palabra era: ${resultado.palabraSecreta}`;
-            imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de derrota (el ahorcado completo)
-        } else {
-            mensajeJuego.textContent = `Ingresa una Letra`;
-        }
-
-        inputIngresaLetra.value = ""; // Limpiar el input después de cada intento
-        inputIngresaLetra.focus();
     } catch (error) {
-        console.error("Error al verificar letra:", error);
+        console.error("Error al verificar letra (local):", error);
         mensajeJuego.textContent = `Error: ${error.message}.`;
     }
 }
@@ -267,6 +281,49 @@ async function unirseAPartidaOnline(gameId) {
         mensajeIdPartida.style.color = "red";
     }
 }
+
+// --- Lógica para manejar el envío de letras en ambos modos ---
+async function manejarEnvioLetra() {
+    const letra = inputIngresaLetra.value.trim().toUpperCase();
+
+    if (letra.length !== 1 || !/^[A-Z]$/.test(letra)) {
+        mensajeJuego.textContent = "Por favor, ingresa una sola letra válida (A-Z).";
+        inputIngresaLetra.value = ""; // Limpiar el input
+        inputIngresaLetra.focus();
+        return;
+    }
+
+    // Lógica para el modo ONLINE (usando window.currentGameId)
+    if (window.currentGameId) { // Si hay un gameId global, estamos en modo online
+        try {
+            const response = await fetch("http://127.0.0.1:5195/api/juego/verificar-letra-online", { // <-- NUEVA RUTA
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ Letra: letra, GameId: window.currentGameId }), // <-- ENVIAR GAMEID
+                credentials: 'include'
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Error en la API al verificar letra online: ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            actualizarUIJuego(data); // Reutilizar la función de actualización de UI
+            // Aquí en un juego real, SignalR notificaría al otro jugador
+
+        } catch (error) {
+            console.error("Error CATCHED al verificar letra online:", error);
+            mensajeJuego.textContent = `Error: ${error.message}`;
+        }
+    } else {
+        // Lógica existente para Solitario/Versus (usa la sesión)
+        await VerificarLetraLocal(letra); // Llama a la función renombrada
+    }
+}
+
+
+
 
 //#endregion
 
@@ -362,35 +419,12 @@ botonCancelarVersus.addEventListener("click", function(event) {
 
 // Botón "Enviar Letra" (para ambos modos)
 botonSubirLetra.addEventListener("click", async function(event) {
-   
     event.preventDefault();
+
     let contenido = inputIngresaLetra.value.toUpperCase(); // Usamos .trim() para quitar espacios
 
-    console.log("Valor de inputIngresaLetra.value:", inputIngresaLetra.value);
-    console.log("Valor de 'contenido' (después de toUpperCase y trim):", contenido);
-    console.log("Longitud de 'contenido':", contenido.length);
+   await manejarEnvioLetra(); // Llama a la función que maneja el envío de letras
 
-    if (contenido === "") {
-        mensajeJuego.textContent = "Debe ingresar una letra";
-        inputIngresaLetra.focus();
-        return;
-    }
-    if (contenido.length > 1) {
-        mensajeJuego.textContent = "Por favor, ingresa solo una letra";
-        inputIngresaLetra.value = "";
-        inputIngresaLetra.focus();
-        return;
-    }
-
-    // Validar que sea una letra
-    if (!/^[A-Z]$/.test(contenido)) {
-        mensajeJuego.textContent = "Ingresa solo letras.";
-        inputIngresaLetra.value = "";
-        inputIngresaLetra.focus();
-        return;
-    }
-
-    await VerificarLetra(contenido);
 });
 
 // Botón "Reiniciar" (para ambos modos)
@@ -408,6 +442,14 @@ botonReiniciar.addEventListener("click", async function(event) {
     ocultarSeccion(botonVersus);
     ocultarSeccion(botonOnline);
     resetearUIJuego(); // Limpia la UI del juego
+});
+
+// Para que ENTER funcione en el input
+inputIngresaLetra.addEventListener("keypress", async function(event) {
+    if (event.key === "Enter") {
+        event.preventDefault(); // Evita el envío del formulario si existe
+        await manejarEnvioLetra();
+    }
 });
 
 //#endregion
