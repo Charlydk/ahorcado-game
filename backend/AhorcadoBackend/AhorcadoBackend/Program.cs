@@ -11,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSignalR();
 builder.Services.AddSingleton<GameManager>();
 
 // Añadir el servicio de caché en memoria (para que las sesiones funcionen)
@@ -51,21 +52,24 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-//app.UseHttpsRedirection(); --> Descomentar si se quiere forzar HTTPS 
+//app.UseHttpsRedirection(); --> Descomentar si se quiere forzar HTTPS
 
 // Habilitar el middleware de sesiones (debe ir antes de UseRouting/MapControllers)
 app.UseSession();
 
-app.UseAuthorization();
+// --- ¡IMPORTANTE! app.UseRouting() DEBE IR AQUÍ ---
+app.UseRouting(); // Habilita el enrutamiento para controladores y SignalR
 
 // Usar la política CORS definida. Asegúrate de usar el mismo nombre aquí.
-app.UseCors("AllowSpecificOrigin"); // <-- Asegúrate de que este nombre coincida con el que definiste
+app.UseCors("AllowSpecificOrigin");
+
+app.UseAuthorization(); // Se aplica a las rutas después de este punto
 
 // --- Configuración de SignalR ---
 app.MapHub<GameHub>("/gamehub");
 // --- Fin Configuración de SignalR ---
 
+app.MapControllers(); // Mapea tus controladores API
 
-app.MapControllers();
 
 app.Run();
