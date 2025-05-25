@@ -1,6 +1,16 @@
 [
   {
     "ContainingType": "JuegoController",
+    "Method": "CrearPartidaOnline",
+    "RelativePath": "api/juego/crear-online",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "JuegoController",
     "Method": "IniciarJuego",
     "RelativePath": "api/juego/iniciar",
     "HttpMethod": "POST",
@@ -22,7 +32,29 @@
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "entrada",
+        "Type": "JuegoController\u002BReiniciarJuegoEntrada",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "JuegoController",
+    "Method": "UnirsePartidaOnline",
+    "RelativePath": "api/juego/unirse-online",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "entrada",
+        "Type": "JuegoController\u002BUnirsePartidaEntrada",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -35,7 +67,7 @@
     "Parameters": [
       {
         "Name": "entrada",
-        "Type": "JuegoController\u002BLetraEntrada",
+        "Type": "JuegoController\u002BLetraOnlineEntrada",
         "IsRequired": true
       }
     ],

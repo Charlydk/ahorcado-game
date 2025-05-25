@@ -45,17 +45,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/LetraEntrada"
+                "$ref": "#/components/schemas/LetraOnlineEntrada"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/LetraEntrada"
+                "$ref": "#/components/schemas/LetraOnlineEntrada"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/LetraEntrada"
+                "$ref": "#/components/schemas/LetraOnlineEntrada"
               }
             }
           }
@@ -72,6 +72,68 @@
         "tags": [
           "Juego"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReiniciarJuegoEntrada"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReiniciarJuegoEntrada"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReiniciarJuegoEntrada"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/juego/crear-online": {
+      "post": {
+        "tags": [
+          "Juego"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/juego/unirse-online": {
+      "post": {
+        "tags": [
+          "Juego"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnirsePartidaEntrada"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnirsePartidaEntrada"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnirsePartidaEntrada"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -82,10 +144,14 @@
   },
   "components": {
     "schemas": {
-      "LetraEntrada": {
+      "LetraOnlineEntrada": {
         "type": "object",
         "properties": {
           "letra": {
+            "type": "string",
+            "nullable": true
+          },
+          "gameId": {
             "type": "string",
             "nullable": true
           }
@@ -100,6 +166,26 @@
             "nullable": true
           },
           "modo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReiniciarJuegoEntrada": {
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnirsePartidaEntrada": {
+        "type": "object",
+        "properties": {
+          "gameId": {
             "type": "string",
             "nullable": true
           }

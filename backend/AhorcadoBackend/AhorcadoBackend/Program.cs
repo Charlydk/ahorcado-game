@@ -1,4 +1,5 @@
 using AhorcadoBackend.Hubs;
+using AhorcadoBackend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,7 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSingleton<GameManager>();
 
 // Añadir el servicio de caché en memoria (para que las sesiones funcionen)
 builder.Services.AddDistributedMemoryCache();
