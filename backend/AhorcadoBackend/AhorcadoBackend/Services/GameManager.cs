@@ -60,7 +60,34 @@ namespace AhorcadoBackend.Services // Asegúrate de que el namespace coincida co
             _activeGames.TryRemove(gameId, out _); // Intenta remover del diccionario
         }
 
-        // Puedes añadir métodos para obtener palabras aleatorias aquí si quieres centralizar esa lógica
-        // public string GetRandomWord() { ... }
+        // Añade un ConnectionId a una partida existente
+        public bool AddPlayerToGame(string gameId, string connectionId)
+        {
+            if (_activeGames.TryGetValue(gameId, out var game))
+            {
+                if (!game.PlayerConnectionIds.Contains(connectionId))
+                {
+                    game.PlayerConnectionIds.Add(connectionId);
+                    // Opcional: Si es el primer jugador, puedes asignarlo como creador
+                    if (game.PlayerConnectionIds.Count == 1)
+                    {
+                        game.CreadorConnectionId = connectionId;
+                        game.TurnoActualConnectionId = connectionId; // Asigna el turno al creador
+                    }
+                    return true;
+                }
+            }
+            return false; // Partida no encontrada o jugador ya está en la lista
+        }
+
+        // Remueve un ConnectionId de una partida (útil al desconectarse)
+        public bool RemovePlayerFromGame(string gameId, string connectionId)
+        {
+            if (_activeGames.TryGetValue(gameId, out var game))
+            {
+                return game.PlayerConnectionIds.Remove(connectionId);
+            }
+            return false; // Partida no encontrada o jugador no estaba en la lista
+        }
     }
 }
