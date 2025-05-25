@@ -103,6 +103,25 @@
         "tags": [
           "Juego"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearGameOnlineRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearGameOnlineRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearGameOnlineRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK"
@@ -119,17 +138,17 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UnirsePartidaEntrada"
+                "$ref": "#/components/schemas/UnirseGameOnlineRequest"
               }
             },
             "text/json": {
               "schema": {
-                "$ref": "#/components/schemas/UnirsePartidaEntrada"
+                "$ref": "#/components/schemas/UnirseGameOnlineRequest"
               }
             },
             "application/*+json": {
               "schema": {
-                "$ref": "#/components/schemas/UnirsePartidaEntrada"
+                "$ref": "#/components/schemas/UnirseGameOnlineRequest"
               }
             }
           }
@@ -144,6 +163,16 @@
   },
   "components": {
     "schemas": {
+      "CrearGameOnlineRequest": {
+        "type": "object",
+        "properties": {
+          "creatorConnectionId": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "LetraOnlineEntrada": {
         "type": "object",
         "properties": {
@@ -182,10 +211,14 @@
         },
         "additionalProperties": false
       },
-      "UnirsePartidaEntrada": {
+      "UnirseGameOnlineRequest": {
         "type": "object",
         "properties": {
           "gameId": {
+            "type": "string",
+            "nullable": true
+          },
+          "playerConnectionId": {
             "type": "string",
             "nullable": true
           }

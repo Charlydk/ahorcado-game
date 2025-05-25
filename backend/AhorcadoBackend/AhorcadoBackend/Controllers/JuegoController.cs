@@ -1,4 +1,5 @@
 ﻿using AhorcadoBackend.Extensions; // Necesario si usas SetObjectAsJson/GetObjectFromJson para otras cosas, pero lo eliminaremos para JuegoEstado.
+using AhorcadoBackend.Hubs;
 using AhorcadoBackend.Models; // Asegúrate que tus modelos (JuegoEstado, JuegoEstadoResponse, etc.) estén en este namespace o el que uses.
 using AhorcadoBackend.Services; // Asegúrate que tu GameManager esté en este namespace.
 using Microsoft.AspNetCore.Mvc;
@@ -6,15 +7,14 @@ using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
 using System.Linq; // Necesario para .ToHashSet() y .OrderBy()
+using System.Threading.Tasks; // Necesario para Await
 
 [ApiController]
 [Route("api/juego")]
 public class JuegoController : ControllerBase
 {
     private readonly GameManager _gameManager;
-
-    // Ya no necesitamos la clave de sesión si todo el estado lo maneja GameManager
-    // private const string JuegoEstadoKey = "JuegoAhorcadoEstado";
+    private readonly IHubContext<GameHub> _hubContext;
 
     private static List<string> palabras = new List<string>
     { "CASA", "PAYASO", "CAMARA", "HOMERO", "PLATO", "TECLADO", "TRISTEZA", "MONITOR" };
@@ -25,14 +25,29 @@ public class JuegoController : ControllerBase
         return palabras[random.Next(palabras.Count)];
     }
 
-    // El constructor inyecta GameManager
-    public JuegoController(GameManager gameManager)
+       public JuegoController(GameManager gameManager, IHubContext<GameHub> hubContext) // <-- Añade 'IHubContext<GameHub> hubContext' aquí
     {
         _gameManager = gameManager;
+        _hubContext = hubContext; // <-- Ahora 'hubContext' sí existe como parámetro
     }
 
-    
-    
+
+    public class CrearGameOnlineRequest
+    {
+        public string CreatorConnectionId { get; set; } = string.Empty;
+    }
+
+    public class UnirseGameOnlineRequest
+    {
+        public string GameId { get; set; } = string.Empty;
+        public string PlayerConnectionId { get; set; } = string.Empty; // <-- Nueva propiedad
+    }
+
+    public class VerificarLetraRequest
+    {
+        public string Letra { get; set; } = string.Empty;
+        public string GameId { get; set; } = string.Empty; // Siempre se enviará el GameId
+    }
 
     [HttpPost("iniciar")]
     public ActionResult IniciarJuego([FromBody] PalabraEntrada entrada)
@@ -158,16 +173,32 @@ public class JuegoController : ControllerBase
     #region Endpoints Específicos de Partidas Online (Crear/Unirse)
 
     [HttpPost("crear-online")]
-    public ActionResult CrearPartidaOnline()
+    public IActionResult CrearPartidaOnline([FromBody] CrearGameOnlineRequest request) // <-- ACEPTA EL NUEVO REQUEST
     {
-        string palabraSecreta = GenerarPalabraAleatoria(); // Usa tu función aleatoria
-        var newGameEstado = _gameManager.CreateNewGame(palabraSecreta); // GameManager generará el GameId
+        string palabraSecreta = GenerarPalabraAleatoria(); // Usa la función para generar una palabra aleatoria
+        string gameId = Guid.NewGuid().ToString();
+        var game = _gameManager.CreateNewGame(palabraSecreta, gameId);
 
-        return Ok(new { GameId = newGameEstado.GameId, Palabra = newGameEstado.GuionesActuales });
+        // Usa el ConnectionId del request
+        if (!string.IsNullOrEmpty(request.CreatorConnectionId))
+        {
+            _gameManager.AddPlayerToGame(gameId, request.CreatorConnectionId); // Usa el nuevo método AddPlayerToGame
+            game.CreadorConnectionId = request.CreatorConnectionId;
+            game.TurnoActualConnectionId = request.CreatorConnectionId;
+            _gameManager.UpdateGame(gameId, game); // Actualiza el juego en el GameManager
+        }
+        else
+        {
+            // Si por alguna razón no viene el ConnectionId, considera esto un error o un caso borde
+            // Por ahora, simplemente lo logeamos o manejamos como se necesite.
+            Console.WriteLine("Advertencia: CreatorConnectionId vacío en CrearPartidaOnline.");
+        }
+
+        return Ok(new { gameId = game.GameId, palabra = game.GuionesActuales });
     }
 
     [HttpPost("unirse-online")]
-    public async Task<IActionResult> UnirseOnline([FromBody] JoinGameRequest request)
+    public async Task<IActionResult> UnirseOnline([FromBody] UnirseGameOnlineRequest request) // <-- ACEPTA EL NUEVO REQUEST
     {
         var game = _gameManager.GetGame(request.GameId);
 
@@ -176,28 +207,21 @@ public class JuegoController : ControllerBase
             return NotFound(new { message = "Partida no encontrada." });
         }
 
-        if (game.PlayerConnectionIds.Count >= 2)
+        // Validar que el ConnectionId venga en el request
+        if (string.IsNullOrEmpty(request.PlayerConnectionId))
         {
-            return BadRequest(new { message = "La partida ya está llena." });
-        }
-
-        // Obtener el ConnectionId de SignalR del cliente que hace la solicitud
-        string connectionId = HttpContext.Request.Headers["X-SignalR-Connection-Id"].FirstOrDefault();
-
-        if (string.IsNullOrEmpty(connectionId))
-        {
-            return BadRequest(new { message = "No se pudo obtener el ConnectionId de SignalR." });
+            return BadRequest(new { message = "PlayerConnectionId es requerido para unirse a la partida." });
         }
 
         // Añadir el ConnectionId al juego en el GameManager
-        if (_gameManager.AddPlayerToGame(request.GameId, connectionId))
+        // Esto también maneja la verificación de si el jugador ya está en la lista
+        if (_gameManager.AddPlayerToGame(request.GameId, request.PlayerConnectionId))
         {
             // Si ya hay 2 jugadores, ¡la partida puede empezar!
             if (game.PlayerConnectionIds.Count == 2)
             {
                 // Notificar a ambos jugadores que la partida ha comenzado (vía SignalR)
-                // Esto se manejará mejor directamente en el GameHub.
-                // Por ahora, solo actualiza el mensaje en el frontend.
+                // Puedes enviar el estado actual del juego para sincronizar
                 await _hubContext.Clients.Group(request.GameId).SendAsync("ReceiveGameUpdate", new
                 {
                     gameId = game.GameId,
@@ -205,8 +229,8 @@ public class JuegoController : ControllerBase
                     letrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
                     intentosRestantes = game.IntentosRestantes,
                     juegoTerminado = game.JuegoTerminado,
-                    palabraSecreta = game.PalabraSecreta,
-                    message = "¡La partida ha comenzado! Adivina la palabra." // Mensaje de inicio
+                    palabraSecreta = game.PalabraSecreta, // En un juego real, no enviarías esto directamente
+                    message = "¡La partida ha comenzado! Adivina la palabra."
                 });
             }
             return Ok(new JuegoEstadoResponse
@@ -215,12 +239,13 @@ public class JuegoController : ControllerBase
                 IntentosRestantes = game.IntentosRestantes,
                 LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
                 JuegoTerminado = game.JuegoTerminado,
-                PalabraSecreta = "" // No revelar la palabra secreta al unirse
+                PalabraSecreta = ""
             });
         }
         else
         {
-            // Esto puede ocurrir si el jugador ya estaba en la lista
+            // Si el jugador ya estaba en la lista, simplemente devuelve el estado actual.
+            // Esto podría ocurrir si se recarga la página o se intenta unir de nuevo.
             return Ok(new JuegoEstadoResponse
             {
                 Palabra = game.GuionesActuales,
@@ -233,15 +258,13 @@ public class JuegoController : ControllerBase
     }
 
 
+    #endregion
 
 
-#endregion
+    #region Clases de Ayuda (Modelos de Entrada/Salida)
 
-
-#region Clases de Ayuda (Modelos de Entrada/Salida)
-
-// Clase para la entrada de iniciar juego (modo y palabra)
-public class PalabraEntrada
+    // Clase para la entrada de iniciar juego (modo y palabra)
+    public class PalabraEntrada
     {
         public string? Palabra { get; set; }
         public string? Modo { get; set; }

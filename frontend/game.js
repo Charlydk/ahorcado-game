@@ -36,6 +36,7 @@ const botonVolverModosOnline = seccionOnline.querySelector(".volver-modos");
 let currentGameId = null; // Almacenará el ID de la partida activa
 let currentMode = null;   // Almacenará el modo actual (solitario, versus, online)
 
+
 // --- Funciones de Utilidad para Mostrar/Ocultar Secciones ---
 // ¡Estas funciones deben estar SIEMPRE al principio del script!
 function mostrarSeccion(seccion) {
@@ -162,10 +163,21 @@ function actualizarUIJuego(data) {
     inputIngresaLetra.focus();
 }
 
+// --- Lógica para Crear Partida Online ---
 async function crearNuevaPartidaOnline() {
     try {
+        // OBTENEMOS EL CONNECTION ID DEL CLIENTE SIGNALR AQUÍ
+        const connectionId = connection.connectionId;
+        if (!connectionId) {
+            mensajeIdPartida.textContent = "Error: Conexión SignalR no establecida. Inténtalo de nuevo.";
+            mensajeIdPartida.style.color = "red";
+            return;
+        }
+
         const response = await fetch("http://127.0.0.1:5195/api/juego/crear-online", {
             method: "POST",
+            headers: { "Content-Type": "application/json" }, // Asegúrate de enviar JSON
+            body: JSON.stringify({ creatorConnectionId: connectionId }), // <-- ENVIAR EL CONNECTION ID
             credentials: 'include'
         });
         if (!response.ok) {
@@ -178,6 +190,7 @@ async function crearNuevaPartidaOnline() {
         mensajeIdPartida.style.color = "green";
         inputIdPartida.value = gameId;
 
+        // Una vez creada, el creador se une automáticamente a su partida
         await unirseAPartidaOnline(gameId);
 
     } catch (error) {
@@ -187,15 +200,24 @@ async function crearNuevaPartidaOnline() {
     }
 }
 
+// --- Lógica para Unirse a Partida Online ---
 async function unirseAPartidaOnline(gameId) {
     try {
+        // OBTENEMOS EL CONNECTION ID DEL CLIENTE SIGNALR AQUÍ
+        const connectionId = connection.connectionId;
+        if (!connectionId) {
+            mensajeIdPartida.textContent = "Error: Conexión SignalR no establecida. Inténtalo de nuevo.";
+            mensajeIdPartida.style.color = "red";
+            return;
+        }
+
         await connection.invoke("JoinGame", gameId);
         console.log(`Unido al grupo de SignalR para la partida: ${gameId}`);
 
         const response = await fetch("http://127.0.0.1:5195/api/juego/unirse-online", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ GameId: gameId }),
+            body: JSON.stringify({ GameId: gameId, playerConnectionId: connectionId }), // <-- ENVIAR EL CONNECTION ID
             credentials: 'include'
         });
 
@@ -215,7 +237,7 @@ async function unirseAPartidaOnline(gameId) {
         mostrarSeccion(seccionJuego);
         inputGuiones.value = data.palabra;
 
-        mensajeJuego.textContent = "Esperando a otro jugador..."; // Por ahora, sigue mostrando este mensaje
+        mensajeJuego.textContent = "Esperando a otro jugador...";
         inputIngresaLetra.focus();
 
     } catch (error) {
@@ -224,6 +246,7 @@ async function unirseAPartidaOnline(gameId) {
         mensajeIdPartida.style.color = "red";
     }
 }
+
 
 async function manejarEnvioLetra() {
     const letra = inputIngresaLetra.value.trim().toUpperCase();

@@ -6,7 +6,13 @@
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
-    "Parameters": [],
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "JuegoController\u002BCrearGameOnlineRequest",
+        "IsRequired": true
+      }
+    ],
     "ReturnTypes": []
   },
   {
@@ -43,15 +49,15 @@
   },
   {
     "ContainingType": "JuegoController",
-    "Method": "UnirsePartidaOnline",
+    "Method": "UnirseOnline",
     "RelativePath": "api/juego/unirse-online",
     "HttpMethod": "POST",
     "IsController": true,
     "Order": 0,
     "Parameters": [
       {
-        "Name": "entrada",
-        "Type": "JuegoController\u002BUnirsePartidaEntrada",
+        "Name": "request",
+        "Type": "JuegoController\u002BUnirseGameOnlineRequest",
         "IsRequired": true
       }
     ],
