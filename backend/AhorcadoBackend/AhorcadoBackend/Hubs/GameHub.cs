@@ -1,20 +1,48 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿
+using AhorcadoBackend.Models;
+using AhorcadoBackend.Services;
+using Microsoft.AspNetCore.SignalR;
 using System.Threading.Tasks;
 
 namespace AhorcadoBackend.Hubs
 {
+    
     public class GameHub : Hub
     {
-        // Este método será llamado por los clientes para unirse a una partida
-        public async Task JoinGame(string gameId)
+        private readonly GameManager _gameManager;
+
+        public GameHub(GameManager gameManager)
         {
-            // Añade al cliente que llamó a este método a un grupo de SignalR
-            // Los grupos son útiles para enviar mensajes solo a los clientes de una partida específica
-            await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
-            Console.WriteLine($"Cliente {Context.ConnectionId} se unió a la partida {gameId}"); // Solo para depuración
+            _gameManager = gameManager;
         }
 
-        // Aquí iremos añadiendo métodos para enviar el estado del juego, manejar turnos, etc.
-        // Por ahora, solo tenemos JoinGame.
+        // Método para que un cliente se una a un grupo (partida)
+        public async Task JoinGame(string gameId)
+        {
+            await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
+            Console.WriteLine($"Cliente {Context.ConnectionId} unido al grupo {gameId}");
+
+            // Aquí podemos añadir el ConnectionId al GameManager cuando se une vía SignalR
+            // _gameManager.AddPlayerToGame(gameId, Context.ConnectionId);
+            // NOTA: Para evitar duplicidad con la llamada HTTP POST de unirse-online,
+            // vamos a confiar en que la llamada HTTP POST a 'unirse-online' maneja
+            // la adición del jugador al GameManager. La llamada SignalR solo une al grupo.
+        }
+
+        // Método para enviar una actualización de juego a un grupo (opcional por ahora, usaremos REST)
+        // public async Task SendGameUpdate(string gameId, JuegoEstadoResponse data)
+        // {
+        //     await Clients.Group(gameId).SendAsync("ReceiveGameUpdate", data);
+        // }
+
+        // Maneja la desconexión de un cliente
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            // Aquí, idealmente, deberíamos buscar en qué partida estaba este ConnectionId
+            // y removerlo. Por simplicidad ahora, lo omitimos, pero es importante para juegos reales.
+            // Podrías iterar sobre _activeGames o tener un mapa ConnectionId -> GameId.
+            Console.WriteLine($"Cliente {Context.ConnectionId} desconectado.");
+            await base.OnDisconnectedAsync(exception);
+        }
     }
 }
