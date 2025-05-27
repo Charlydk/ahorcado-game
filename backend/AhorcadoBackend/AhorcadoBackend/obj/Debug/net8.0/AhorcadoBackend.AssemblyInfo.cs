@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AhorcadoBackend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+fca7077addd53d3bc3c9e82832e722647478b255")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+eff5d259cb0c98bf1d83e8db848791a4ac9ce774")]
 [assembly: System.Reflection.AssemblyProductAttribute("AhorcadoBackend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AhorcadoBackend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

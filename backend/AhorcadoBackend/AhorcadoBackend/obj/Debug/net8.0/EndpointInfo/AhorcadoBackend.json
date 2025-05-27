@@ -183,6 +183,10 @@
           "gameId": {
             "type": "string",
             "nullable": true
+          },
+          "playerConnectionId": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

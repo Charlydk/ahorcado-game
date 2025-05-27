@@ -1,15 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<meta http-equiv="X-UA-Compatible" content="ie=edge">
-	<link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet"> 
-	<link rel="stylesheet" href="styles.css">
-	<title>Juego del Ahorcado</title>
-
-    
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <title>Juego del Ahorcado</title>
 </head>
 
 <body>
@@ -20,7 +17,7 @@
                 <tr>
                     <td style="justify-content:initial;"> <img src="img/logo.png" alt="logo"> </td>
                     <td style="text-align:center ;"><h2></h2></td>
-                    <td style="text-align:right ;"><h5> <br>  </h5></td>
+                    <td style="text-align:right ;"><h5> <br> </h5></td>
                 </tr>
             </table>
         </header>
@@ -30,7 +27,7 @@
                 <symbol id="s-text">
                     <text text-anchor="middle" x="50%" y="35%" dy=".10em">JUEGO DEL</text>
                     <text text-anchor="middle" x="50%" y="75%" dy=".25em">AHORCADO</text>
-                </symbol> 
+                </symbol>
                 <use xlink:href="#s-text" class="text"></use>
                 <use xlink:href="#s-text" class="text"></use>
                 <use xlink:href="#s-text" class="text"></use>
@@ -38,14 +35,26 @@
                 <use xlink:href="#s-text" class="text"></use>
             </svg>
         </main>
-        
-        <div class="seccion-modos-juego">
-            <button class="botonInicio" id="boton">Iniciar Juego</button>
-            <button class="botonSolitario" style="display: none">Solitari@</button>
-            <button class="botonVersus" style="display: none">VS Amig@</button>
-            <button class="botonOnline" style="display: none">Online</button> 
+
+        <div id="seccionModosJuego" class="seccion-modos-juego">
+            <h2>Selecciona el Modo de Juego</h2>
+            <button class="botonInicio">Iniciar Juego</button>
+            <button class="botonSolitario" style="display: none;">Solitario</button>
+            <button class="botonVersus" style="display: none;">Versus</button>
+            <button class="botonOnline" style="display: none;">Online</button>
         </div>
-        
+
+        <section class="seccion-online" style="display: none;">
+            <h2>Juego Online</h2>
+            <div class="opciones-online">
+                <p class="mensaje-id-partida" style="margin-top: 15px;"></p>
+                <input type="text" class="input-id-partida" placeholder="ID de Partida" style="width: 250px; margin-top: 10px;">
+                <button class="boton-crear-partida" style="margin-top: 10px;">Crear Partida</button>
+                <button class="boton-unirse-partida" style="margin-top: 10px;">Unirse a Partida</button>
+            </div>
+            <button class="volver-modos" style="margin-top: 15px;">Volver a Modos</button>
+            </section>
+
         <div class="seccion-ingresar-palabra" style="display: none;">
             <h3 class="txtTitH3 txtIngP" style="text-align: center;">Ingresa una palabra de 4 a 8 letras para tu amigo</h3>
             <input type="text" class="inputPalabraVersus ingresaLetra">
@@ -53,29 +62,20 @@
             <button class="botonCancelarVersus">Cancelar</button>
         </div>
 
-        <section class="seccion-online" style="display: none;">
-            <h2>Juego Online</h2>
-            <div class="opciones-online">
-                <button class="boton-crear-partida">Crear Nueva Partida</button>
-                <div class="unirse-partida">
-                    <input type="text" class="input-id-partida" placeholder="ID de Partida">
-                    <button class="boton-unirse-partida">Unirse a Partida</button>
-                </div>
-                <p class="mensaje-id-partida"></p>
-            </div>
-            <button class="volver-modos">Volver a Modos</button>
-        </section>
-
-        <div class="seccion-juego" style="display: none;">
+        <div id="seccionJuego" class="seccion-juego" style="display: none;">
             <img id="imagen" src="img/ahorcadito_1.png" alt="Ahorcado">
-            <h3 class="txtTitH3 mensaje-juego" style="text-align: center;">Ingresa una Letra</h3>
+            <p class="mensaje-juego">Mensaje del Juego</p>
             <input type="text" class="guion" value="" disabled>
-            <input type="text" class="LetrasOut" value="" disabled>
-            <input type="text" class="ingresaLetra" maxlength="1" id="inputAdivinarLetra">
+            <span id="letrasIncorrectasSpan" class="LetrasOut">Letras incorrectas: </span>
+            <input type="text" class="ingresaLetra" maxlength="1" id="inputAdivinarLetra" placeholder="Ingresa una letra">
+            <p class="mensaje-turno" style="font-weight: bold; color: blue;"></p>
             <button class="subirLetra">Enviar Letra</button>
             <button class="reiniciar">Reiniciar</button>
         </div>
-        
+
+        <div id="seccionMenu" class="seccion-menu" style="display: none;">
+            </div>
+
         <footer class="footer">
             <h4>#Portfolio Personal</h4>
             <h5>©Todos los derechos reservados - 2025</h5>
@@ -85,11 +85,7 @@
         </footer>
     </div>
 
-    <script src="signalr.js"></script>
-    <script src="game.js"></script> 
-
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script src="game.js"></script>
 </body>
-
-
 </html>

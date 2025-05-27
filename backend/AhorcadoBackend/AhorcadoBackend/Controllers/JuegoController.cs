@@ -1,13 +1,12 @@
-﻿using AhorcadoBackend.Extensions; // Necesario si usas SetObjectAsJson/GetObjectFromJson para otras cosas, pero lo eliminaremos para JuegoEstado.
-using AhorcadoBackend.Hubs;
-using AhorcadoBackend.Models; // Asegúrate que tus modelos (JuegoEstado, JuegoEstadoResponse, etc.) estén en este namespace o el que uses.
-using AhorcadoBackend.Services; // Asegúrate que tu GameManager esté en este namespace.
+﻿using AhorcadoBackend.Hubs;
+using AhorcadoBackend.Models;
+using AhorcadoBackend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Collections.Generic;
-using System.Linq; // Necesario para .ToHashSet() y .OrderBy()
-using System.Threading.Tasks; // Necesario para Await
+using System.Linq;
+using System.Threading.Tasks;
 
 [ApiController]
 [Route("api/juego")]
@@ -25,12 +24,16 @@ public class JuegoController : ControllerBase
         return palabras[random.Next(palabras.Count)];
     }
 
-       public JuegoController(GameManager gameManager, IHubContext<GameHub> hubContext) // <-- Añade 'IHubContext<GameHub> hubContext' aquí
+    public JuegoController(GameManager gameManager, IHubContext<GameHub> hubContext)
     {
         _gameManager = gameManager;
-        _hubContext = hubContext; // <-- Ahora 'hubContext' sí existe como parámetro
+        _hubContext = hubContext;
     }
 
+    // ========================================================================
+    // MODELOS DE ENTRADA/SALIDA (Clases de Ayuda)
+    // Se unifican para mayor claridad y consistencia
+    // ========================================================================
 
     public class CrearGameOnlineRequest
     {
@@ -40,14 +43,44 @@ public class JuegoController : ControllerBase
     public class UnirseGameOnlineRequest
     {
         public string GameId { get; set; } = string.Empty;
-        public string PlayerConnectionId { get; set; } = string.Empty; // <-- Nueva propiedad
+        public string PlayerConnectionId { get; set; } = string.Empty;
     }
 
-    public class VerificarLetraRequest
+    // Clase unificada para la entrada de verificar letra en todos los modos
+    public class LetraOnlineEntrada
     {
         public string Letra { get; set; } = string.Empty;
-        public string GameId { get; set; } = string.Empty; // Siempre se enviará el GameId
+        public string GameId { get; set; } = string.Empty;
+        public string PlayerConnectionId { get; set; } = string.Empty; // Crucial para online y turnos
     }
+
+    public class PalabraEntrada
+    {
+        public string? Palabra { get; set; }
+        public string? Modo { get; set; }
+    }
+
+    public class ReiniciarJuegoEntrada
+    {
+        public string GameId { get; set; } = string.Empty;
+    }
+
+    // Clase para la respuesta del estado del juego al frontend (unificada)
+    public class JuegoEstadoResponse
+    {
+        public string GameId { get; set; } = string.Empty;
+        public string Palabra { get; set; } = string.Empty;
+        public int IntentosRestantes { get; set; }
+        public string LetrasIncorrectas { get; set; } = string.Empty;
+        public bool JuegoTerminado { get; set; }
+        public string PalabraSecreta { get; set; } = string.Empty;
+        // Agrega esta propiedad para el frontend para mostrar el turno (opcional, pero útil)
+        public string? TurnoActualConnectionId { get; set; }
+    }
+
+    // ========================================================================
+    // ENDPOINTS DEL CONTROLADOR
+    // ========================================================================
 
     [HttpPost("iniciar")]
     public ActionResult IniciarJuego([FromBody] PalabraEntrada entrada)
@@ -70,52 +103,79 @@ public class JuegoController : ControllerBase
             return BadRequest("Modo de juego no válido. Use 'solitario' o 'versus'.");
         }
 
-        // Creamos un nuevo estado de juego en el GameManager
-        // Para modo solitario/versus, podemos usar un ID fijo de "sesion" o el ConnectionId de SignalR
-        // Por simplicidad, aquí usaremos un GUID para una "sesión" de juego local.
-        // Si no usas SignalR para solitario/versus, puedes generar un GUID aquí
-        // o si tienes un GameHub, usar Context.ConnectionId como GameId para esta sesión.
-        // Por ahora, para que funcione con el Game Manager, generaremos un ID único.
-        string gameIdParaSesion = Guid.NewGuid().ToString(); // Generamos un ID para esta partida de sesión
-        var nuevoEstado = _gameManager.CreateNewGame(palabraElegida, gameIdParaSesion); // Pasa el gameId
+        string gameIdParaSesion = Guid.NewGuid().ToString();
+        // Asumo que nuevoEstado.IntentosRestantes ya se inicializa a 6 dentro de CreateNewGame
+        var nuevoEstado = _gameManager.CreateNewGame(palabraElegida, gameIdParaSesion);
 
-        // Si usabas la sesión HTTP para el estado, ahora el GameManager lo maneja.
-        // Retornamos el ID de la partida (que ahora es el ID de la "sesión" de juego)
-        // Y el frontend deberá recordar este ID para futuras llamadas.
-        return Ok(new { gameId = nuevoEstado.GameId, palabra = nuevoEstado.GuionesActuales, modo = entrada.Modo });
+        // *** CAMBIO AQUÍ: Usar JuegoEstadoResponse para la respuesta ***
+        return Ok(new JuegoEstadoResponse
+        {
+            GameId = nuevoEstado.GameId,
+            Palabra = nuevoEstado.GuionesActuales,
+            IntentosRestantes = nuevoEstado.IntentosRestantes, // ¡Ahora se envía!
+            LetrasIncorrectas = string.Join(", ", nuevoEstado.LetrasIncorrectas), // Esto puede ser un string vacío al inicio
+            JuegoTerminado = nuevoEstado.JuegoTerminado,
+            PalabraSecreta = nuevoEstado.JuegoTerminado ? nuevoEstado.PalabraSecreta : "", // No se revela al inicio
+                                                                                           // TurnoActualConnectionId no es relevante para solitario/versus inicialmente, pero puedes incluirlo si quieres consistencia
+            TurnoActualConnectionId = null
+        });
     }
 
-    [HttpPost("verificar-letra")] // Este endpoint ahora sirve para TODOS los modos (solitario, versus, online)
-    public ActionResult VerificarLetra([FromBody] LetraOnlineEntrada entrada) // Usa LetraOnlineEntrada para recibir GameId
+    [HttpPost("verificar-letra")]
+    public async Task<ActionResult> VerificarLetra([FromBody] LetraOnlineEntrada entrada)
     {
         if (string.IsNullOrEmpty(entrada.Letra) || !char.IsLetter(entrada.Letra[0]))
         {
-            return BadRequest("Ingresa una letra válida.");
+            return BadRequest(new { message = "Ingresa una letra válida." });
         }
-        if (string.IsNullOrEmpty(entrada.GameId)) // Ahora GameId es requerido para todas las verificaciones
+        if (string.IsNullOrEmpty(entrada.GameId))
         {
-            return BadRequest("El ID de partida es requerido.");
+            return BadRequest(new { message = "El ID de partida es requerido." });
+        }
+        if (string.IsNullOrEmpty(entrada.PlayerConnectionId))
+        {
+            return BadRequest(new { message = "PlayerConnectionId es requerido para verificar la letra." });
         }
 
         var letra = char.ToUpper(entrada.Letra[0]);
-        var estadoActual = _gameManager.GetGame(entrada.GameId); // Obtener el estado del juego desde GameManager
+        var estadoActual = _gameManager.GetGame(entrada.GameId);
 
         if (estadoActual == null)
         {
-            return NotFound("Partida no encontrada o ya finalizada."); // Cambiado de BadRequest a NotFound
+            return NotFound(new { message = "Partida no encontrada o ya finalizada." });
+        }
+
+        // Lógica de VERIFICACIÓN para JUEGO ONLINE (Esperar a otro jugador)
+        // Si es una partida online (tiene PlayerConnectionIds) y tiene menos de 2 jugadores,
+        // no permitimos adivinar.
+        if (estadoActual.PlayerConnectionIds.Any() && estadoActual.PlayerConnectionIds.Count < 2)
+        {
+            return BadRequest(new { message = "Esperando a otro jugador para empezar la partida." });
+        }
+
+        // LÓGICA DE TURNOS: ACTIVADA
+        // Solo se aplica si hay 2 jugadores y el juego NO ha terminado.
+        if (estadoActual.PlayerConnectionIds.Count == 2 && !estadoActual.JuegoTerminado)
+        {
+            // Verificar si es el turno del jugador que envió la letra
+            if (estadoActual.TurnoActualConnectionId != entrada.PlayerConnectionId)
+            {
+                return BadRequest(new { message = "No es tu turno. Espera al otro jugador." });
+            }
         }
 
         // Si la letra ya fue intentada (correcta o incorrecta)
-        if (estadoActual.LetrasIngresadas.Contains(letra)) // Usar LetrasIngresadas, que contiene TODAS las letras intentadas
+        if (estadoActual.LetrasIngresadas.Contains(letra))
         {
-            // Devuelve el estado actual sin cambios, el frontend ya maneja este mensaje
+            // Devolvemos el estado actual, el frontend debería manejar el mensaje de "Ya ingresaste esa letra."
             return Ok(new JuegoEstadoResponse
             {
-                Palabra = estadoActual.GuionesActuales, // Usa GuionesActuales
+                Palabra = estadoActual.GuionesActuales,
                 IntentosRestantes = estadoActual.IntentosRestantes,
                 LetrasIncorrectas = string.Join(", ", estadoActual.LetrasIncorrectas.OrderBy(c => c)),
-                JuegoTerminado = estadoActual.JuegoTerminado, // Usa la propiedad JuegoTerminado
-                PalabraSecreta = estadoActual.PalabraSecreta // Incluir para el mensaje final si ya terminó
+                JuegoTerminado = estadoActual.JuegoTerminado,
+                PalabraSecreta = estadoActual.JuegoTerminado ? estadoActual.PalabraSecreta : "",
+                TurnoActualConnectionId = estadoActual.TurnoActualConnectionId // Envía el turno
             });
         }
 
@@ -131,66 +191,84 @@ public class JuegoController : ControllerBase
                 letraEncontrada = true;
             }
         }
-        estadoActual.GuionesActuales = new string(guionesChars); // Actualiza la palabra adivinada
+        estadoActual.GuionesActuales = new string(guionesChars);
 
         if (!letraEncontrada)
         {
             estadoActual.IntentosRestantes--;
             estadoActual.LetrasIncorrectas.Add(letra);
         }
-        estadoActual.LetrasIngresadas.Add(letra); // Agrega a todas las letras intentadas
+        estadoActual.LetrasIngresadas.Add(letra);
 
         // Verificar si el juego ha terminado
         estadoActual.JuegoTerminado = estadoActual.IntentosRestantes == 0 || estadoActual.GuionesActuales == estadoActual.PalabraSecreta;
 
+        // CAMBIO DE TURNO: ACTIVADO
+        // Cambiar de turno si la partida es online, no ha terminado y hay dos jugadores.
+        if (estadoActual.PlayerConnectionIds.Count == 2 && !estadoActual.JuegoTerminado)
+        {
+            estadoActual.TurnoActualConnectionId = estadoActual.PlayerConnectionIds
+                .FirstOrDefault(id => id != estadoActual.TurnoActualConnectionId); // Cambia al otro ID
+        }
+
         // Actualizar el estado en el GameManager
         _gameManager.UpdateGame(entrada.GameId, estadoActual);
 
-        // Retornar el estado actualizado al frontend
+        // Enviar actualización a todos los clientes en el grupo de SignalR
+        await _hubContext.Clients.Group(entrada.GameId).SendAsync("ReceiveGameUpdate", new
+        {
+            gameId = estadoActual.GameId,
+            palabra = estadoActual.GuionesActuales,
+            letrasIncorrectas = string.Join(", ", estadoActual.LetrasIncorrectas.OrderBy(c => c)),
+            intentosRestantes = estadoActual.IntentosRestantes,
+            juegoTerminado = estadoActual.JuegoTerminado,
+            palabraSecreta = estadoActual.JuegoTerminado ? estadoActual.PalabraSecreta : "",
+            turnoActualConnectionId = estadoActual.TurnoActualConnectionId // Envía el ID del jugador con el turno
+        });
+
+        // Retornar el estado actualizado al frontend del jugador que hizo la solicitud
         return Ok(new JuegoEstadoResponse
         {
             Palabra = estadoActual.GuionesActuales,
             IntentosRestantes = estadoActual.IntentosRestantes,
             LetrasIncorrectas = string.Join(", ", estadoActual.LetrasIncorrectas.OrderBy(c => c)),
             JuegoTerminado = estadoActual.JuegoTerminado,
-            PalabraSecreta = estadoActual.PalabraSecreta // Incluir la palabra secreta cuando el juego termina
+            PalabraSecreta = estadoActual.JuegoTerminado ? estadoActual.PalabraSecreta : "",
+            TurnoActualConnectionId = estadoActual.TurnoActualConnectionId // Envía el turno
         });
     }
 
     [HttpPost("reiniciar")]
-    public ActionResult ReiniciarJuego([FromBody] ReiniciarJuegoEntrada entrada) // Ahora necesita GameId
+    public ActionResult ReiniciarJuego([FromBody] ReiniciarJuegoEntrada entrada)
     {
         if (string.IsNullOrEmpty(entrada.GameId))
         {
-            return BadRequest("El ID de partida es requerido para reiniciar.");
+            return BadRequest(new { message = "El ID de partida es requerido para reiniciar." });
         }
 
-        _gameManager.RemoveGame(entrada.GameId); // Elimina el juego del GameManager
-        return Ok("Juego reiniciado. Puedes iniciar uno nuevo.");
+        _gameManager.RemoveGame(entrada.GameId);
+        return Ok(new { message = "Juego reiniciado. Puedes iniciar uno nuevo." });
     }
-
 
     #region Endpoints Específicos de Partidas Online (Crear/Unirse)
 
     [HttpPost("crear-online")]
-    public IActionResult CrearPartidaOnline([FromBody] CrearGameOnlineRequest request) // <-- ACEPTA EL NUEVO REQUEST
+    public IActionResult CrearPartidaOnline([FromBody] CrearGameOnlineRequest request)
     {
-        string palabraSecreta = GenerarPalabraAleatoria(); // Usa la función para generar una palabra aleatoria
+        string palabraSecreta = GenerarPalabraAleatoria();
         string gameId = Guid.NewGuid().ToString();
         var game = _gameManager.CreateNewGame(palabraSecreta, gameId);
 
-        // Usa el ConnectionId del request
         if (!string.IsNullOrEmpty(request.CreatorConnectionId))
         {
-            _gameManager.AddPlayerToGame(gameId, request.CreatorConnectionId); // Usa el nuevo método AddPlayerToGame
+            _gameManager.AddPlayerToGame(gameId, request.CreatorConnectionId);
             game.CreadorConnectionId = request.CreatorConnectionId;
+            // Al crear, el turno inicial es del creador
             game.TurnoActualConnectionId = request.CreatorConnectionId;
-            _gameManager.UpdateGame(gameId, game); // Actualiza el juego en el GameManager
+            _gameManager.UpdateGame(gameId, game);
         }
         else
         {
-            // Si por alguna razón no viene el ConnectionId, considera esto un error o un caso borde
-            // Por ahora, simplemente lo logeamos o manejamos como se necesite.
             Console.WriteLine("Advertencia: CreatorConnectionId vacío en CrearPartidaOnline.");
         }
 
@@ -198,7 +276,7 @@ public class JuegoController : ControllerBase
     }
 
     [HttpPost("unirse-online")]
-    public async Task<IActionResult> UnirseOnline([FromBody] UnirseGameOnlineRequest request) // <-- ACEPTA EL NUEVO REQUEST
+    public async Task<IActionResult> UnirseOnline([FromBody] UnirseGameOnlineRequest request)
     {
         var game = _gameManager.GetGame(request.GameId);
 
@@ -207,21 +285,27 @@ public class JuegoController : ControllerBase
             return NotFound(new { message = "Partida no encontrada." });
         }
 
-        // Validar que el ConnectionId venga en el request
         if (string.IsNullOrEmpty(request.PlayerConnectionId))
         {
             return BadRequest(new { message = "PlayerConnectionId es requerido para unirse a la partida." });
         }
 
-        // Añadir el ConnectionId al juego en el GameManager
-        // Esto también maneja la verificación de si el jugador ya está en la lista
+        // Añadir el ConnectionId al juego y verificar si la partida está llena
+        // GameManager.AddPlayerToGame ya debería manejar si el jugador ya está presente
         if (_gameManager.AddPlayerToGame(request.GameId, request.PlayerConnectionId))
         {
             // Si ya hay 2 jugadores, ¡la partida puede empezar!
             if (game.PlayerConnectionIds.Count == 2)
             {
-                // Notificar a ambos jugadores que la partida ha comenzado (vía SignalR)
-                // Puedes enviar el estado actual del juego para sincronizar
+                // El turno ya debería haber sido asignado al creador en CrearPartidaOnline.
+                // Si no se asignó o quieres resetearlo, puedes hacerlo aquí:
+                if (string.IsNullOrEmpty(game.TurnoActualConnectionId))
+                {
+                    game.TurnoActualConnectionId = game.CreadorConnectionId;
+                }
+                _gameManager.UpdateGame(request.GameId, game); // Asegurarse de que el GameManager guarde el turno
+
+                // Notificar a AMBOS jugadores que la partida ha comenzado (vía SignalR)
                 await _hubContext.Clients.Group(request.GameId).SendAsync("ReceiveGameUpdate", new
                 {
                     gameId = game.GameId,
@@ -229,85 +313,36 @@ public class JuegoController : ControllerBase
                     letrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
                     intentosRestantes = game.IntentosRestantes,
                     juegoTerminado = game.JuegoTerminado,
-                    palabraSecreta = game.PalabraSecreta, // En un juego real, no enviarías esto directamente
-                    message = "¡La partida ha comenzado! Adivina la palabra."
+                    palabraSecreta = "", // No revelar la palabra al inicio
+                    message = "¡La partida ha comenzado! Adivina la palabra.",
+                    turnoActualConnectionId = game.TurnoActualConnectionId // Indica de quién es el turno
                 });
             }
+            // Devolver el estado actual para que el frontend del que se une se actualice
             return Ok(new JuegoEstadoResponse
             {
                 Palabra = game.GuionesActuales,
                 IntentosRestantes = game.IntentosRestantes,
                 LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
                 JuegoTerminado = game.JuegoTerminado,
-                PalabraSecreta = ""
+                PalabraSecreta = "", // No revelar la palabra al unirse
+                TurnoActualConnectionId = game.TurnoActualConnectionId // Para que el que se une sepa el turno
             });
         }
         else
         {
             // Si el jugador ya estaba en la lista, simplemente devuelve el estado actual.
-            // Esto podría ocurrir si se recarga la página o se intenta unir de nuevo.
             return Ok(new JuegoEstadoResponse
             {
                 Palabra = game.GuionesActuales,
                 IntentosRestantes = game.IntentosRestantes,
                 LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
                 JuegoTerminado = game.JuegoTerminado,
-                PalabraSecreta = ""
+                PalabraSecreta = "",
+                TurnoActualConnectionId = game.TurnoActualConnectionId
             });
         }
     }
-
-
-    #endregion
-
-
-    #region Clases de Ayuda (Modelos de Entrada/Salida)
-
-    // Clase para la entrada de iniciar juego (modo y palabra)
-    public class PalabraEntrada
-    {
-        public string? Palabra { get; set; }
-        public string? Modo { get; set; }
-    }
-
-    // Clase para la entrada de verificar letra (ahora con GameId)
-    public class LetraOnlineEntrada
-    {
-        public string Letra { get; set; } = string.Empty; // Inicializamos
-        public string GameId { get; set; } = string.Empty; // Asegúrate de que GameId sea string.Empty por defecto
-    }
-
-    // Clase para la entrada de unirse a partida
-    public class UnirsePartidaEntrada
-    {
-        public string GameId { get; set; } = string.Empty;
-    }
-
-    // Clase para la entrada de reiniciar juego (ahora con GameId)
-    public class ReiniciarJuegoEntrada
-    {
-        public string GameId { get; set; } = string.Empty;
-    }
-
-    // clase que sirve a unirse on line
-    public class JoinGameRequest
-    {
-        public string GameId { get; set; } = string.Empty;
-    }
-
-
-    // Clase para la respuesta del estado del juego al frontend (unificada)
-    // Asegúrate de que esta clase sea pública y esté accesible (ej. en Models/JuegoEstadoResponse.cs)
-    /*
-    public class JuegoEstadoResponse
-    {
-        public string Palabra { get; set; } = string.Empty;
-        public int IntentosRestantes { get; set; }
-        public string LetrasIncorrectas { get; set; } = string.Empty; // Como un string "A, B, C"
-        public bool JuegoTerminado { get; set; }
-        public string PalabraSecreta { get; set; } = string.Empty; // Se envía al final del juego
-    }
-    */
 
     #endregion
 }
