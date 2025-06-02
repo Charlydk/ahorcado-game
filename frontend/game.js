@@ -87,8 +87,18 @@ const connection = new signalR.HubConnectionBuilder()
 // Escucha eventos del Hub de SignalR
 connection.on("ReceiveGameUpdate", (data) => {
     console.log("Actualización de juego recibida via SignalR:", data);
+
+    console.log("--- ReceiveGameUpdate recibido ---"); // Nuevo log para marcar el inicio
+    console.log(`  Source: ${connection.connectionId === data.turnoActualConnectionId ? 'Propio Turno' : 'Otro Jugador'}`); // Interesante para depurar
+    console.log(`  Actualización de juego recibida via SignalR (para ${connection.connectionId}):`, data);
+    console.log(`  currentGameId local: ${currentGameId}, gameId en data: ${data.gameId}`); // Nuevo log
+
+
     if (data.gameId === currentGameId) { // Solo actualizar si es la partida actual
+        console.log("  Coincide gameId. Actualizando UI..."); // Nuevo log
         actualizarUIJuego(data);
+    } else {
+        console.log("  No coincide gameId. Ignorando actualización."); // Nuevo log
     }
 });
 
@@ -180,69 +190,86 @@ async function iniciarJuego(modo, palabraVersus = "") {
 }
 
 function actualizarUIJuego(data) {
+    console.log("   Dentro de actualizarUIJuego. currentMode:", currentMode);
+    console.log("   Datos recibidos para actualizar UI:", data);
+
     inputGuiones.value = data.palabra;
     inputLetrasOut.value = data.letrasIncorrectas;
     letrasIncorrectasSpan.textContent = `Letras incorrectas: ${data.letrasIncorrectas}`;
 
-
-    
-
     const cantidadErradasCalculada = 6 - data.intentosRestantes;
+    console.log("   cantidad de erradas:", cantidadErradasCalculada);
 
-    console.log("cantidad de erradas:", cantidadErradasCalculada);
-    //console.log("intentos restantes", data.intentosRestantes);
-    // Asegurarse de que la imagen no exceda los límites de tus archivos (ahorcadito_1 a ahorcadito_7)
     imagenAhorcado.src = `img/ahorcadito_${Math.min(cantidadErradasCalculada + 1, 7)}.png`;
 
     if (data.juegoTerminado) {
         ocultarSeccion(botonSubirLetra);
         ocultarSeccion(inputIngresaLetra);
-        ocultarSeccion(mensajeTurno); // Ocultar el mensaje de turno al finalizar
+        ocultarSeccion(mensajeTurno);
 
         if (data.palabra === data.palabraSecreta) {
             mensajeJuego.textContent = `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`;
-            imagenAhorcado.src = `img/ahorcadito_0.png`; // Imagen de victoria
+            imagenAhorcado.src = `img/ahorcadito_0.png`;
         } else {
             mensajeJuego.textContent = `¡GAME OVER! La palabra era: ${data.palabraSecreta}`;
-            imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de derrota
+            imagenAhorcado.src = `img/ahorcadito_7.png`;
         }
-        // El botón Reiniciar siempre debe estar visible cuando el juego termina
-        mostrarSeccion(botonReiniciar); // Asegurarse de que el botón reiniciar sea visible
+        mostrarSeccion(botonReiniciar);
+        console.log("   Juego Terminado detectado.");
 
     } else {
         // Si el juego NO ha terminado:
         mostrarSeccion(inputIngresaLetra);
         mostrarSeccion(botonSubirLetra);
-        ocultarSeccion(botonReiniciar); // Ocultar reiniciar mientras el juego está activo (opcional, si quieres que solo aparezca al final)
+        ocultarSeccion(botonReiniciar);
 
-
-        // Lógica de mensaje de turno y habilitar/deshabilitar input para modo ONLINE
         if (currentMode === "online") {
+            console.log("   Modo online detectado. Evaluando turno.");
             mostrarSeccion(mensajeTurno); // Asegurar que el mensaje de turno sea visible en online
+
+            // *** ESTO ES CLAVE PARA EL JUGADOR 1 (CREADOR) ***
+            // Si la partida está lista para empezar (turno asignado)
+            // Y la sección de juego NO está visible (porque J1 sigue en la pantalla de ID)
+            // Entonces, fuerza la transición a la sección de juego.
+            if (data.turnoActualConnectionId && data.turnoActualConnectionId !== "" && seccionJuego.style.display === "none") {
+                 console.log("   J1: Partida lista y sección de juego no visible. Transicionando a la sección de juego.");
+                 ocultarTodasLasSecciones();
+                 mostrarSeccion(seccionJuego);
+                 // Importante: Después de la transición, la lógica del turno de abajo se ejecutará para actualizar la UI
+            }
+
+            // *** Lógica de mensaje de turno y habilitar/deshabilitar input para modo ONLINE ***
+            // ESTE BLOQUE DEBE IR DESPUÉS DE LA TRANSICIÓN DE SECCIÓN (si aplica).
             const myConnectionId = connection.connectionId;
+            console.log(`   My connectionId: ${myConnectionId}, Turno actual: ${data.turnoActualConnectionId}`);
+
             if (data.turnoActualConnectionId && myConnectionId) {
                 if (data.turnoActualConnectionId === myConnectionId) {
                     mensajeTurno.textContent = "¡Es tu turno!";
                     mensajeJuego.textContent = "Ingresa una Letra";
                     inputIngresaLetra.disabled = false;
                     botonSubirLetra.disabled = false;
+                    console.log("   Es mi turno.");
                 } else {
                     mensajeTurno.textContent = "Espera tu turno.";
                     mensajeJuego.textContent = "El otro jugador está adivinando.";
                     inputIngresaLetra.disabled = true;
                     botonSubirLetra.disabled = true;
+                    console.log("   Es el turno del otro jugador.");
                 }
             } else {
                 // Caso inicial en online antes de que ambos jugadores se unan o turno se asigne
                 mensajeJuego.textContent = "Esperando a otro jugador...";
                 inputIngresaLetra.disabled = true;
                 botonSubirLetra.disabled = true;
+                console.log("   Modo online: Esperando a otro jugador (turno no asignado).");
             }
         } else {
             // Para modos solitario y versus:
-            ocultarSeccion(mensajeTurno); // Ocultar el mensaje de turno
-            mensajeJuego.textContent = "Ingresa una Letra"; // Mensaje por defecto durante el juego
-            inputIngresaLetra.disabled = false; // Asegurar que estén habilitados
+            console.log("   Modo solitario/versus detectado.");
+            ocultarSeccion(mensajeTurno);
+            mensajeJuego.textContent = "Ingresa una Letra";
+            inputIngresaLetra.disabled = false;
             botonSubirLetra.disabled = false;
         }
     }
@@ -282,6 +309,19 @@ async function crearNuevaPartidaOnline() {
         const data = await response.json();
         const gameId = data.gameId;
 
+        currentGameId = gameId;
+        currentMode = "online";
+
+        console.log("J1: Partida creada. currentGameId:", currentGameId, "currentMode:", currentMode); // Nuevo log
+
+
+        // *** CAMBIO CLAVE AQUI ***
+        // Inmediatamente después de crear la partida y obtener el gameId,
+        // el creador se une al grupo de SignalR de esa partida.
+        await connection.invoke("JoinGame", gameId);
+        console.log(`Creador (${connection.connectionId}) unido al grupo de SignalR para la partida: ${gameId}`);
+        // *** FIN DEL CAMBIO CLAVE ***
+
         // Mostrar los elementos específicos de la sección online para mostrar el ID
         mostrarSeccion(seccionOnline); // Asegurarse de que seccionOnline esté visible
 
@@ -304,28 +344,34 @@ async function crearNuevaPartidaOnline() {
         }
         mostrarSeccion(botonContinuar);
 
-        // Cuando se haga clic en el botón "Continuar", el jugador se une a la partida
+        // Cuando se haga clic en el botón "Continuar", el jugador va a la UI del juego,
+        // pero YA ESTÁ UNIDO al grupo de SignalR.
         botonContinuar.onclick = async () => {
-            await connection.invoke("JoinGame", gameId);
-            console.log(`Creador unido al grupo de SignalR para la partida: ${gameId}`);
+            console.log("J1: Clic en 'Ir al Juego (esperar)'. Navegando a la sección de juego."); // Nuevo log
 
-            // Cambiar a la sección de juego y actualizar el estado inicial de la UI
-            currentGameId = gameId;
-            currentMode = "online";
-            resetearUIJuego(); // Resetea la UI del juego (guiones, img, etc.)
+            // Cambiar a la sección de juego
             ocultarTodasLasSecciones(); // Oculta todo
             mostrarSeccion(seccionJuego); // Muestra solo la sección de juego
+            
+            // *** QUITA O COMENTA ESTAS LÍNEAS ***
+            // mensajeJuego.textContent = "Esperando a otro jugador..."; // <-- QUITA ESTO
+            // mostrarSeccion(mensajeTurno); // <-- QUITA ESTO
+            // inputIngresaLetra.disabled = true; // <-- QUITA ESTO
+            // botonSubirLetra.disabled = true; // <-- QUITA ESTO
+            // ocultarSeccion(inputIngresaLetra); // <-- QUITA ESTO
+            // ocultarSeccion(botonSubirLetra); // <-- QUITA ESTO
+            // *** FIN DE LAS LÍNEAS A QUITAR ***
 
-            // Mensaje inicial de "Esperando"
-            mensajeJuego.textContent = "Esperando a otro jugador...";
-            mostrarSeccion(mensajeTurno); // Asegurar que el mensaje de turno es visible
-
-            // Deshabilitar/ocultar el input y botón de adivinar hasta que el juego comience con el otro jugador
-            inputIngresaLetra.disabled = true;
-            botonSubirLetra.disabled = true;
-            ocultarSeccion(inputIngresaLetra);
-            ocultarSeccion(botonSubirLetra);
             ocultarSeccion(botonContinuar); // Ocultar el botón de continuar una vez que se va al juego
+            
+            // La UI será actualizada por el ReceiveGameUpdate que ya se recibió o que llegará.
+            // Si el Jugador 2 ya se unió y el ReceiveGameUpdate llegó, la UI ya debería estar correcta.
+            // Si el Jugador 2 AÚN NO se unió, entonces el estado inicial que viene del backend
+            // (a través de algún ReceiveGameUpdate si lo envías al crear, o simplemente
+            // por la inicialización de la UI) deberá ser el de "Esperando".
+            // Sin embargo, en el backend, cuando creas la partida, el creador tiene el primer turno
+            // (lo vimos en tu GameManager.cs `TurnoActualConnectionId = connectionId;`).
+            // Por lo tanto, si el backend te da el turno, la UI debería reflejarlo.
         };
 
     } catch (error) {
@@ -348,22 +394,37 @@ async function unirseAPartidaOnline(gameId) {
     try {
         const connectionId = connection.connectionId;
         if (!connectionId) {
+
+            console.error("Error: Conexión SignalR no establecida para unirse.");
+
             mensajeIdPartida.textContent = "Error: Conexión SignalR no establecida. Intenta de nuevo.";
             mensajeIdPartida.style.color = "red";
             return;
         }
 
+        console.log(`J2: Intentando unirse a partida ${gameId} con connectionId ${connectionId}`); // Nuevo log
+
+
         mensajeIdPartida.textContent = "Uniéndose a la partida...";
         mensajeIdPartida.style.color = "blue";
         inputIdPartida.readOnly = true; // Deshabilitar mientras se une
 
-        await connection.invoke("JoinGame", gameId);
-        console.log(`Jugador unido al grupo de SignalR para la partida: ${gameId}`);
 
+
+        // *** CAMBIO AQUI PARA JUGADOR 2 ***
+        currentGameId = gameId; // Setear currentGameId antes de unirse al grupo SignalR
+        currentMode = "online"; // Setear currentMode
+        console.log(`J2: currentGameId: ${currentGameId}, currentMode: ${currentMode} antes de JoinGame`);
+
+        await connection.invoke("JoinGame", gameId); // El Jugador 2 también se une al grupo SignalR
+        console.log(`J2: Jugador 2 (${connection.connectionId}) unido al grupo SignalR: ${gameId}`);
+        // *** FIN DEL CAMBIO ***
+
+        // Luego de unirse al grupo de SignalR, hacemos la llamada HTTP para registrarse en el GameManager
         const response = await fetch("http://127.0.0.1:5195/api/juego/unirse-online", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ GameId: gameId, playerConnectionId: connectionId }),
+            body: JSON.stringify({ gameId: gameId, playerConnectionId: connectionId }),
             credentials: 'include'
         });
 
@@ -371,29 +432,29 @@ async function unirseAPartidaOnline(gameId) {
             const errorText = await response.text();
             throw new Error(`Error al unirse a partida online: ${response.status} - ${errorText}`);
         }
+        const data = await response.json(); // Esto es JuegoEstadoResponse del Jugador 2
+        console.log("J2: Respuesta de unirse-online (HTTP):", data);
 
-        const data = await response.json();
-        console.log("Respuesta del backend (unirse):", data);
-
-        currentGameId = gameId;
-        currentMode = "online";
-
-        resetearUIJuego();
+        // Ahora sí, actualizar la UI del Jugador 2 directamente con la respuesta HTTP
+        // (El ReceiveGameUpdate de SignalR podría llegar antes o después, pero la UI debe ser consistente)
         ocultarTodasLasSecciones();
-        mostrarSeccion(seccionJuego); // Mostrar la sección de juego
+        mostrarSeccion(seccionJuego);
+        actualizarUIJuego(data); // Actualiza la UI del Jugador 2 con el estado inicial del juego.
 
-        actualizarUIJuego(data); // Actualiza la UI con el estado inicial del juego.
-
-        // En el modo online, el input y botón de adivinar podrían estar deshabilitados
-        // hasta que sea el turno del jugador. Esto lo maneja actualizarUIJuego().
-        inputIngresaLetra.focus();
+        // Limpiar el input de ID de partida
+        inputIdPartida.value = "";
+        mensajeIdPartida.textContent = "";
 
     } catch (error) {
-        console.error("Error CATCHED al unirse a partida online:", error);
-        mensajeIdPartida.textContent = `Error: ${error.message}`;
+        console.error("Error al unirse a partida online:", error);
+        mensajeIdPartida.textContent = `Error al unirse: ${error.message}`;
         mensajeIdPartida.style.color = "red";
-        // Restaurar para permitir reintentar
-        inputIdPartida.readOnly = false;
+        // En caso de error, mostrar los botones originales
+        ocultarTodasLasSecciones();
+        mostrarSeccion(seccionOnline);
+        mostrarSeccion(botonCrearPartida);
+        mostrarSeccion(botonUnirsePartida);
+        mostrarSeccion(inputIdPartida);
     }
 }
 
