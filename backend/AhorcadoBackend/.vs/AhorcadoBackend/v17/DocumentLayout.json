@@ -58,8 +58,7 @@
               "RelativeToolTip": "AhorcadoBackend\\Models\\JuegoEstadoResponse.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-25T17:21:29.945Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-25T17:21:29.945Z"
             },
             {
               "$type": "Document",
@@ -71,8 +70,7 @@
               "RelativeToolTip": "AhorcadoBackend\\Services\\GameManager.cs",
               "ViewState": "AgIAABgAAAAAAAAAAAAowFUAAAAjAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-25T17:14:30.51Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-25T17:14:30.51Z"
             },
             {
               "$type": "Document",
@@ -84,8 +82,7 @@
               "RelativeToolTip": "AhorcadoBackend\\Hubs\\GameHub.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-24T19:13:15.319Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-24T19:13:15.319Z"
             },
             {
               "$type": "Document",
@@ -97,8 +94,7 @@
               "RelativeToolTip": "AhorcadoBackend\\Extensions\\SessionExtensions.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-22T03:26:14.68Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-22T03:26:14.68Z"
             },
             {
               "$type": "Document",
@@ -123,8 +119,7 @@
               "RelativeToolTip": "AhorcadoBackend\\Controllers\\JuegoController.cs",
               "ViewState": "AgIAAF8AAAAAAAAAAAAYwHgAAAALAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-17T15:26:20.143Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-17T15:26:20.143Z"
             },
             {
               "$type": "Document",
@@ -136,8 +131,7 @@
               "RelativeToolTip": "AhorcadoBackend\\appsettings.json",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-05-17T15:11:48.563Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-17T15:11:48.563Z"
             },
             {
               "$type": "Document",
@@ -149,8 +143,7 @@
               "RelativeToolTip": "AhorcadoBackend\\Program.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAEoAAAAKAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-17T15:10:24.585Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-17T15:10:24.585Z"
             }
           ]
         }
