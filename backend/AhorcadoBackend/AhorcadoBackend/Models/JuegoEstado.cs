@@ -16,6 +16,7 @@ namespace AhorcadoBackend.Models
         public List<string> PlayerConnectionIds { get; set; } = new List<string>();
         public string? CreadorConnectionId { get; set; } // Opcional: Para saber quién creó la partida
         public string? TurnoActualConnectionId { get; set; } // Opcional: Para el turno, si lo implementas
+        public DateTime LastActivityTime { get; set; } = DateTime.UtcNow; // Para la limpieza de partidas
 
 
     }

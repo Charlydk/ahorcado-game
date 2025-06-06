@@ -11,8 +11,11 @@ builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSignalR();
 builder.Services.AddSingleton<GameManager>();
+builder.Services.AddHostedService<GameCleanupService>();
+builder.Services.AddDistributedMemoryCache();
+
+
 
 // Añadir el servicio de caché en memoria (para que las sesiones funcionen)
 builder.Services.AddDistributedMemoryCache();
