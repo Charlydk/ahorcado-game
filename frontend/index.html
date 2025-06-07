@@ -1,29 +1,23 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
+<<!DOCTYPE html>
+<html lang="es" class="h-100"> <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+
+    <!-- <link rel="stylesheet" href="styles.css"> -->
     <title>Juego del Ahorcado</title>
 </head>
 
-<body>
-    <div class="contenedor">
+<body class="d-flex flex-column h-100 bg-light"> <header class="navbar navbar-light bg-info py-2 shadow-sm"> <div class="container-fluid"> <a class="navbar-brand d-flex align-items-center" href="#">
+                <img src="img/logo.png" alt="logo" height="40" class="me-2"> <h2 class="h4 mb-0 text-white">Juego del Ahorcado</h2> </a>
+            <h5 class="text-white"></h5> </div>
+    </header>
 
-        <header class="header">
-            <table class="tableHeader">
-                <tr>
-                    <td style="justify-content:initial;"> <img src="img/logo.png" alt="logo"> </td>
-                    <td style="text-align:center ;"><h2></h2></td>
-                    <td style="text-align:right ;"><h5> <br> </h5></td>
-                </tr>
-            </table>
-        </header>
-
-        <main class="contenido">
-            <svg viewBox="0 0 1320 300">
+    <main class="container-fluid d-flex flex-column flex-grow-1 p-3"> <section id="seccionBienvenida" class="d-flex flex-column justify-content-center align-items-center flex-grow-1 text-center">
+            <svg viewBox="0 0 1320 300" class="mb-4" style="max-width: 100%; height: auto;">
                 <symbol id="s-text">
                     <text text-anchor="middle" x="50%" y="35%" dy=".10em">JUEGO DEL</text>
                     <text text-anchor="middle" x="50%" y="75%" dy=".25em">AHORCADO</text>
@@ -34,58 +28,70 @@
                 <use xlink:href="#s-text" class="text"></use>
                 <use xlink:href="#s-text" class="text"></use>
             </svg>
+            <button id="botonInicio" class="btn btn-primary btn-lg mt-4">Iniciar Juego</button>
+        </section>
+
+
+        <section id="seccionModosJuego" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
+            <h2 class="mb-4">Selecciona el Modo de Juego</h2>
+            <div class="d-grid gap-3 col-6 mx-auto"> <button id="botonSolitario" class="btn btn-secondary btn-lg">Solitario</button>
+                <button id="botonVersus" class="btn btn-secondary btn-lg">Versus</button>
+                <button id="botonOnline" class="btn btn-secondary btn-lg">Online</button>
+            </div>
+        </section>
+
+        <section id="seccionOnline" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
+            <h2 class="mb-4">Juego Online</h2>
+            <p id="mensajeIdPartida" class="lead text-muted"></p>
+            <div class="input-group mb-3 w-75 mx-auto"> <input type="text" id="inputIdPartida" class="form-control" placeholder="ID de Partida">
+                <button id="botonCrearPartida" class="btn btn-success">Crear</button>
+                <button id="botonUnirsePartida" class="btn btn-info">Unirse</button>
+            </div>
+            <button id="volverModos" class="btn btn-outline-secondary mt-3">Volver a Modos</button>
+        </section>
+
+        <section id="seccionIngresarPalabra" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
+            <h3 class="mb-4 text-center">Ingresa una palabra de 4 a 8 letras para tu amigo</h3>
+            <div class="input-group mb-3 w-75 mx-auto">
+                <input type="text" id="inputPalabraVersus" class="form-control" placeholder="Palabra Secreta" maxlength="8">
+                <button id="botonEnviarPalabra" class="btn btn-primary">Enviar</button>
+            </div>
+            <button id="botonCancelarVersus" class="btn btn-danger mt-3">Cancelar</button>
+        </section>
+
+        <section id="seccionJuego" class="d-none flex-column justify-content-center align-items-center flex-grow-1">
+            <div class="row w-100 flex-grow-1 align-items-center justify-content-center"> <div class="col-12 col-md-6 d-flex justify-content-center align-items-center p-0"> <img id="imagen" src="img/ahorcado_0.png" class="img-fluid" alt="Ahorcado" style="max-height: 80vh;"> </div>
+
+                <div class="col-12 col-md-6 d-flex flex-column justify-content-around align-items-center p-3">
+                    <p id="palabra-guiones" class="fs-1 fw-bold text-center text-primary"></p>
+                    <p id="letrasIncorrectasSpan" class="text-danger fs-4">Letras incorrectas: <span id="letrasIncorrectasValor"></span></p>
+                    <p id="intentos-restantes" class="text-info fs-5"></p>
+                    <p id="mensajeTurno" class="text-primary fw-bold"></p> <div class="input-group mb-3 w-75">
+                        <input type="text" id="inputAdivinarLetra" class="form-control text-uppercase" placeholder="Ingresa una letra" maxlength="1">
+                        <button id="botonSubirLetra" class="btn btn-primary">Adivinar</button>
+                    </div>
+                    <p id="mensajeJuego" class="text-center text-muted"></p>
+
+                    <div class="d-grid gap-2 col-6 mx-auto mt-3">
+                        <button id="reiniciar" class="btn btn-warning">Reiniciar Partida</button>
+                        <button id="volverAlMenu" class="btn btn-outline-secondary">Volver al Menú</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         </main>
 
-        <div id="seccionModosJuego" class="seccion-modos-juego">
-            <h2>Selecciona el Modo de Juego</h2>
-            <button class="botonInicio">Iniciar Juego</button>
-            <button class="botonSolitario" style="display: none;">Solitario</button>
-            <button class="botonVersus" style="display: none;">Versus</button>
-            <button class="botonOnline" style="display: none;">Online</button>
+    <footer class="bg-dark text-white text-center py-3 mt-auto"> <h4 class="mb-1">#Portfolio Personal</h4>
+        <h5 class="mb-1">©Todos los derechos reservados - 2025</h5>
+        <h5 class="mb-2">Creado por Bernardino Fabian Augusto</h5>
+        <div class="d-flex justify-content-center gap-3"> <a title="GitHub" href="https://github.com/Charlydk"><img src="img/github_logo_icon_143772.ico" alt="GitHub" height="24"></a>
+            <a title="LinkedIn" href="https://www.linkedin.com/in/fabian-bernardino/"><img src="img/linkedin_socialnetwork_17441.ico" alt="LinkedIn" height="24"></a>
         </div>
-
-        <section class="seccion-online" style="display: none;">
-            <h2>Juego Online</h2>
-            <div class="opciones-online">
-                <p class="mensaje-id-partida" style="margin-top: 15px;"></p>
-                <input type="text" class="input-id-partida" placeholder="ID de Partida" style="width: 250px; margin-top: 10px;">
-                <button class="boton-crear-partida" style="margin-top: 10px;">Crear Partida</button>
-                <button class="boton-unirse-partida" style="margin-top: 10px;">Unirse a Partida</button>
-            </div>
-            <button class="volver-modos" style="margin-top: 15px;">Volver a Modos</button>
-            </section>
-
-        <div class="seccion-ingresar-palabra" style="display: none;">
-            <h3 class="txtTitH3 txtIngP" style="text-align: center;">Ingresa una palabra de 4 a 8 letras para tu amigo</h3>
-            <input type="text" class="inputPalabraVersus ingresaLetra">
-            <button class="botonEnviarPalabra">Enviar Palabra</button>
-            <button class="botonCancelarVersus">Cancelar</button>
-        </div>
-
-        <div id="seccionJuego" class="seccion-juego" style="display: none;">
-            <img id="imagen" src="img/ahorcadito_1.png" alt="Ahorcado">
-            <p class="mensaje-juego">Mensaje del Juego</p>
-            <input type="text" class="guion" value="" disabled>
-            <span id="letrasIncorrectasSpan" class="LetrasOut">Letras incorrectas: </span>
-            <input type="text" class="ingresaLetra" maxlength="1" id="inputAdivinarLetra" placeholder="Ingresa una letra">
-            <p class="mensaje-turno" style="font-weight: bold; color: blue;"></p>
-            <button class="subirLetra">Enviar Letra</button>
-            <button class="reiniciar">Reiniciar</button>
-        </div>
-
-        <div id="seccionMenu" class="seccion-menu" style="display: none;">
-            </div>
-
-        <footer class="footer">
-            <h4>#Portfolio Personal</h4>
-            <h5>©Todos los derechos reservados - 2025</h5>
-            <h5>Creado por Bernardino Fabian Augusto</h5>
-            <a title="GitHub" href="https://github.com/Charlydk"><img src="img/github_logo_icon_143772.ico" alt="icolinkedin"></a>
-            <a title="Linkdin" href="https://www.linkedin.com/in/fabian-bernardino/"><img src="img/linkedin_socialnetwork_17441.ico" alt="icolinkedin"></a>
-        </footer>
-    </div>
+    </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-    <script src="game.js"></script>
+    <script src="game.js"></script> <script src="script.js"></script> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
 </body>
 </html>

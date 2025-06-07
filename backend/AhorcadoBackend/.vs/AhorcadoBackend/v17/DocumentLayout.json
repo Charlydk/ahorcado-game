@@ -74,8 +74,7 @@
               "RelativeToolTip": "AhorcadoBackend\\Models\\JuegoEstadoResponse.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAcwAsAAAAuAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-25T17:21:29.945Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-25T17:21:29.945Z"
             },
             {
               "$type": "Document",
@@ -87,8 +86,7 @@
               "RelativeToolTip": "AhorcadoBackend\\Services\\GameManager.cs",
               "ViewState": "AgIAANoAAAAAAAAAAAASwO0AAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-25T17:14:30.51Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-25T17:14:30.51Z"
             },
             {
               "$type": "Document",
@@ -100,8 +98,7 @@
               "RelativeToolTip": "AhorcadoBackend\\Hubs\\GameHub.cs",
               "ViewState": "AgIAAEwAAAAAAAAAAADgv1oAAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-24T19:13:15.319Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-24T19:13:15.319Z"
             },
             {
               "$type": "Document",
@@ -125,8 +122,7 @@
               "RelativeToolTip": "AhorcadoBackend\\Models\\JuegoEstado.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAAAwwBEAAABBAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-22T03:19:18.707Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-22T03:19:18.707Z"
             },
             {
               "$type": "Document",
@@ -163,8 +159,7 @@
               "RelativeToolTip": "AhorcadoBackend\\Program.cs",
               "ViewState": "AgIAADYAAAAAAAAAAAAAABEAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-05-17T15:10:24.585Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-05-17T15:10:24.585Z"
             }
           ]
         }
