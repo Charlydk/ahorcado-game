@@ -318,7 +318,7 @@ async function crearNuevaPartidaOnline() {
         // *** CAMBIO CLAVE AQUI ***
         // Inmediatamente después de crear la partida y obtener el gameId,
         // el creador se une al grupo de SignalR de esa partida.
-        await connection.invoke("JoinGame", gameId);
+        await connection.invoke("JoinGameGroup", gameId);
         console.log(`Creador (${connection.connectionId}) unido al grupo de SignalR para la partida: ${gameId}`);
         // *** FIN DEL CAMBIO CLAVE ***
 
@@ -414,9 +414,9 @@ async function unirseAPartidaOnline(gameId) {
         // *** CAMBIO AQUI PARA JUGADOR 2 ***
         currentGameId = gameId; // Setear currentGameId antes de unirse al grupo SignalR
         currentMode = "online"; // Setear currentMode
-        console.log(`J2: currentGameId: ${currentGameId}, currentMode: ${currentMode} antes de JoinGame`);
+        console.log(`J2: currentGameId: ${currentGameId}, currentMode: ${currentMode} antes de JoinGameGroup`);
 
-        await connection.invoke("JoinGame", gameId); // El Jugador 2 también se une al grupo SignalR
+        await connection.invoke("JoinGameGroup", gameId); // El Jugador 2 también se une al grupo SignalR
         console.log(`J2: Jugador 2 (${connection.connectionId}) unido al grupo SignalR: ${gameId}`);
         // *** FIN DEL CAMBIO ***
 
@@ -473,53 +473,72 @@ async function manejarEnvioLetra() {
         return;
     }
 
-    const connectionId = connection.connectionId;
-    if (!connectionId) {
-        mensajeJuego.textContent = "Error: Conexión SignalR no establecida. Intenta de nuevo.";
-        return;
-    }
+    // Deshabilitar input y botón para evitar spam de clicks mientras se procesa la letra
+    inputIngresaLetra.disabled = true;
+    botonSubirLetra.disabled = true;
 
     try {
-        // Deshabilitar input y botón para evitar spam de clicks mientras se procesa la letra
-        inputIngresaLetra.disabled = true;
-        botonSubirLetra.disabled = true;
+        if (currentMode === 'solitario' || currentMode === 'versus') {
+            // --- Lógica para modos LOCALES (solitario y versus) ---
+            const response = await fetch("http://127.0.0.1:5195/api/juego/adivinarLetraLocal", { // ¡ENDPOINT CORREGIDO!
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    GameId: currentGameId,
+                    Letra: letra // Propiedad 'Letra' en singular y como caracter
+                })
+            });
 
-        const response = await fetch("http://127.0.0.1:5195/api/juego/verificar-letra", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                Letra: letra,
-                GameId: currentGameId,
-                PlayerConnectionId: connectionId
-            }),
-            credentials: 'include'
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            try {
-                const errorJson = JSON.parse(errorText);
-                mensajeJuego.textContent = `Error: ${errorJson.message || errorText}`;
-            } catch (e) {
-                mensajeJuego.textContent = `Error: ${errorText}`;
-            }
-            inputIngresaLetra.value = "";
-            inputIngresaLetra.focus();
-            // Re-habilitar input y botón si hubo un error del backend que no sea de turno
-            if (!errorText.includes("turno")) { // Asumiendo que tu backend envía "No es tu turno" o similar
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: "Error desconocido al procesar la letra." }));
+                mensajeJuego.textContent = `Error: ${errorData.message || response.statusText}`;
+                inputIngresaLetra.value = "";
+                inputIngresaLetra.focus();
                 inputIngresaLetra.disabled = false;
                 botonSubirLetra.disabled = false;
+                return;
             }
+
+            const data = await response.json();
+            actualizarUIJuego(data); // Se encargará de re-habilitar el input si es necesario
+
+        } else if (currentMode === 'online') {
+            // --- Lógica para modo ONLINE (SignalR) ---
+            if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
+                mensajeJuego.textContent = "Error: Conexión SignalR no establecida o no activa.";
+                inputIngresaLetra.disabled = false;
+                botonSubirLetra.disabled = false;
+                return;
+            }
+
+            const playerConnectionId = connection.connectionId;
+            if (!playerConnectionId) {
+                mensajeJuego.textContent = "Error: No se pudo obtener el ID de conexión de SignalR.";
+                inputIngresaLetra.disabled = false;
+                botonSubirLetra.disabled = false;
+                return;
+            }
+
+            // Llamada al método del Hub en el backend
+            // El backend procesará la letra y luego enviará ReceiveGameUpdate a todos los clientes del grupo
+            await connection.invoke("ProcessLetter", currentGameId, letra);
+            // La UI se actualizará cuando se reciba ReceiveGameUpdate desde el servidor.
+            // No necesitamos esperar una respuesta aquí directamente de un fetch.
+            // Resetear el input aquí, ya que la respuesta vendrá de SignalR.
+            inputIngresaLetra.value = "";
+            inputIngresaLetra.focus();
+
+        } else {
+            mensajeJuego.textContent = "Error: Modo de juego no reconocido. No se puede enviar la letra.";
+            inputIngresaLetra.disabled = false;
+            botonSubirLetra.disabled = false;
             return;
         }
 
-        const data = await response.json();
-        actualizarUIJuego(data); // Se encargará de re-habilitar el input si es necesario
-
     } catch (error) {
-        console.error("Error CATCHED al verificar letra:", error);
-        mensajeJuego.textContent = `Error: ${error.message}`;
-        inputIngresaLetra.disabled = false; // Re-habilitar en caso de error de red/fetch
+        console.error("Error CATCHED al enviar letra:", error);
+        mensajeJuego.textContent = `Error: ${error.message || "Un error inesperado ocurrió."}`;
+        inputIngresaLetra.disabled = false;
         botonSubirLetra.disabled = false;
     }
 }

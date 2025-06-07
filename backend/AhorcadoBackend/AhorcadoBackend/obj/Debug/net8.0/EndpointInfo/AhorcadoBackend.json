@@ -36,37 +36,6 @@
         }
       }
     },
-    "/api/juego/verificar-letra": {
-      "post": {
-        "tags": [
-          "Juego"
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LetraOnlineEntrada"
-              }
-            },
-            "text/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LetraOnlineEntrada"
-              }
-            },
-            "application/*+json": {
-              "schema": {
-                "$ref": "#/components/schemas/LetraOnlineEntrada"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/juego/reiniciar": {
       "post": {
         "tags": [
@@ -87,6 +56,37 @@
             "application/*+json": {
               "schema": {
                 "$ref": "#/components/schemas/ReiniciarJuegoEntrada"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/juego/adivinarLetraLocal": {
+      "post": {
+        "tags": [
+          "Juego"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdivinarLetraEntrada"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdivinarLetraEntrada"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdivinarLetraEntrada"
               }
             }
           }
@@ -163,28 +163,23 @@
   },
   "components": {
     "schemas": {
-      "CrearGameOnlineRequest": {
+      "AdivinarLetraEntrada": {
         "type": "object",
         "properties": {
-          "creatorConnectionId": {
-            "type": "string",
-            "nullable": true
-          }
-        },
-        "additionalProperties": false
-      },
-      "LetraOnlineEntrada": {
-        "type": "object",
-        "properties": {
-          "letra": {
-            "type": "string",
-            "nullable": true
-          },
           "gameId": {
             "type": "string",
             "nullable": true
           },
-          "playerConnectionId": {
+          "letra": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearGameOnlineRequest": {
+        "type": "object",
+        "properties": {
+          "creatorConnectionId": {
             "type": "string",
             "nullable": true
           }

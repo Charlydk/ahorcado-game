@@ -28,28 +28,38 @@ namespace AhorcadoBackend.Services
 
 
         // Crea una nueva partida y la añade al diccionario
-        public JuegoEstado CreateNewGame(string? gameId = null)
+        public JuegoEstado CreateNewGame(string? palabraSecreta = null, string? gameId = null)
         {
-            string newGameId = gameId ?? Guid.NewGuid().ToString().Substring(0, 8).ToUpper(); // Genera un ID de 8 caracteres
+            // Si no se proporciona un gameId, generamos uno.
+            string newGameId = gameId ?? Guid.NewGuid().ToString();
 
-            // Asegurarse de que el ID generado no exista ya (especialmente importante para IDs cortos)
-            while (_activeGames.ContainsKey(newGameId))
+            // Si no se proporciona palabraSecreta, generamos una aleatoria.
+            // Aquí es donde necesitas una lista de palabras en GameManager.
+            // ¡Asegúrate de que GameManager tenga su propia lista de palabras!
+            if (string.IsNullOrEmpty(palabraSecreta))
             {
-                newGameId = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
+                palabraSecreta = GenerarPalabraAleatoria(); // Llama a un método interno para generar palabra
+            }
+            else
+            {
+                palabraSecreta = palabraSecreta.ToUpper(); // Asegura que la palabra esté en mayúsculas
             }
 
-            var nuevaPartida = new JuegoEstado
+            var nuevoEstado = new JuegoEstado
             {
                 GameId = newGameId,
-                PalabraSecreta = GenerarPalabraAleatoria(),
-                IntentosRestantes = 6, // Puedes ajustar esto
-                LastActivityTime = DateTime.UtcNow // Inicializar la última actividad
+                PalabraSecreta = palabraSecreta,
+                GuionesActuales = new string('_', palabraSecreta.Length),
+                IntentosRestantes = 6, // O el número de intentos que desees
+                JuegoTerminado = false
             };
-            nuevaPartida.GuionesActuales = new string('_', nuevaPartida.PalabraSecreta.Length);
 
-            _activeGames.TryAdd(nuevaPartida.GameId, nuevaPartida);
-            return nuevaPartida;
+            _activeGames[newGameId] = nuevoEstado; // Añade la partida al diccionario
+
+            return nuevoEstado;
         }
+
+
 
         // Obtiene el estado de una partida por su ID
         public JuegoEstado? GetGame(string gameId)
@@ -130,15 +140,20 @@ namespace AhorcadoBackend.Services
         }
 
         // Procesa una letra adivinada
-        public JuegoEstado? ProcessLetter(string gameId, char letra, string playerConnectionId)
+        public JuegoEstado? ProcessLetter(string gameId, char letra, string? playerConnectionId) // *** CORRECCIÓN: 'string?' para que sea nullable ***
         {
             if (_activeGames.TryGetValue(gameId, out var game))
             {
                 // Validar que sea el turno del jugador que envía la letra
-                if (game.TurnoActualConnectionId != playerConnectionId)
+                // *** CORRECCIÓN: Solo valida si playerConnectionId NO es null (es decir, en modo online) ***
+                if (playerConnectionId != null && game.TurnoActualConnectionId != playerConnectionId)
                 {
-                    // No es su turno, podrías lanzar una excepción o devolver null/un estado con error
                     Console.WriteLine($"Error: No es el turno de {playerConnectionId} en la partida {gameId}. Turno de {game.TurnoActualConnectionId}");
+                    // Para el frontend, devolver el estado actual con un mensaje de error sería mejor.
+                    // Por ahora, para depurar el error, devolver null podría ser confuso.
+                    // Podríamos modificar JuegoEstadoResponse para llevar un mensaje de error.
+                    // De momento, sigamos la lógica de devolver null si no es el turno,
+                    // pero el frontend debería manejar este null o un status 400.
                     return null;
                 }
 
@@ -146,9 +161,16 @@ namespace AhorcadoBackend.Services
 
                 letra = char.ToUpper(letra);
 
+                // *** CORRECCIÓN: Asegúrate de que las listas estén inicializadas si no lo están ya ***
+                // Aunque lo ideal es que estén inicializadas en JuegoEstado.cs, esto es un "seguro"
+                if (game.LetrasIngresadas == null) game.LetrasIngresadas = new List<char>();
+                if (game.LetrasIncorrectas == null) game.LetrasIncorrectas = new List<char>();
+
+
                 if (game.LetrasIngresadas.Contains(letra))
                 {
-                    // Ya se intentó esta letra
+                    // Ya se intentó esta letra. El frontend debería manejar esto.
+                    // Podrías retornar el estado actual o null si quieres que el frontend lo trate como error.
                     return game;
                 }
 
@@ -182,20 +204,28 @@ namespace AhorcadoBackend.Services
                 if (game.IntentosRestantes <= 0)
                 {
                     game.JuegoTerminado = true;
-                    // Aquí podrías establecer la palabra secreta para revelar
-                    game.PalabraSecreta = game.PalabraSecreta;
+                    game.PalabraSecreta = game.PalabraSecreta; // Revelar la palabra si se pierde
                 }
                 else if (game.GuionesActuales == game.PalabraSecreta)
                 {
-                    game.JuegoTerminado = true;
+                    game.JuegoTerminado = true; // Si se adivina, se gana
                 }
 
                 game.LastActivityTime = DateTime.UtcNow; // Actualizar actividad al procesar letra
 
-                // Cambiar el turno al otro jugador si el juego no ha terminado
+                // Cambiar el turno al otro jugador si el juego no ha terminado y es una partida online (2 jugadores)
                 if (!game.JuegoTerminado && game.PlayerConnectionIds.Count == 2)
                 {
-                    game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != game.TurnoActualConnectionId);
+                    // Asegura que el TurnoActualConnectionId no sea null antes de intentar cambiarlo
+                    if (game.TurnoActualConnectionId != null)
+                    {
+                        game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != game.TurnoActualConnectionId);
+                    }
+                    else
+                    {
+                        // Si por alguna razón el turno actual era null pero hay 2 jugadores, asigna al primero.
+                        game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault();
+                    }
                 }
                 else if (game.JuegoTerminado)
                 {
@@ -204,7 +234,7 @@ namespace AhorcadoBackend.Services
 
                 return game;
             }
-            return null;
+            return null; // Partida no encontrada
         }
 
         // Reinicia una partida existente
@@ -276,5 +306,59 @@ namespace AhorcadoBackend.Services
             Console.WriteLine($"GameManager: Limpieza completada. Partidas activas restantes: {_activeGames.Count}");
         }
 
+
+        // *** NUEVO MÉTODO: Encuentra y remueve un jugador por su ConnectionId de CUALQUIER partida ***
+        public JuegoEstado? FindAndRemovePlayerFromGame(string disconnectedConnectionId)
+        {
+            JuegoEstado? affectedGame = null;
+
+            // Recorre una copia de las partidas para evitar errores de enumeración si se modifican
+            foreach (var entry in _activeGames)
+            {
+                var gameId = entry.Key;
+                var game = entry.Value;
+
+                if (game.PlayerConnectionIds.Contains(disconnectedConnectionId))
+                {
+                    // El jugador desconectado está en esta partida. Remuévelo.
+                    bool removed = game.PlayerConnectionIds.Remove(disconnectedConnectionId);
+                    if (removed)
+                    {
+                        Console.WriteLine($"Jugador {disconnectedConnectionId} removido de la partida {gameId}. Jugadores restantes: {game.PlayerConnectionIds.Count}");
+                        game.LastActivityTime = DateTime.UtcNow;
+                        affectedGame = game;
+
+                        // Lógica para manejar el estado de la partida después de la desconexión
+                        if (game.PlayerConnectionIds.Count == 0)
+                        {
+                            // Si no quedan jugadores, podemos eliminar la partida
+                            Console.WriteLine($"Partida {gameId} quedó sin jugadores, eliminando...");
+                            _activeGames.TryRemove(gameId, out _);
+                            game.JuegoTerminado = true; // Marca como terminada para el retorno
+                            game.Message = "La partida ha terminado debido a la desconexión de todos los jugadores.";
+                        }
+                        else if (game.PlayerConnectionIds.Count == 1)
+                        {
+                            // Si solo queda un jugador, la partida termina para el propósito del juego online de 2 jugadores
+                            game.JuegoTerminado = true;
+                            game.TurnoActualConnectionId = null; // Ya no hay turno
+                            game.Message = "El otro jugador se ha desconectado. La partida ha terminado.";
+                            Console.WriteLine($"Partida {gameId} ahora solo tiene un jugador. Marcada como terminada.");
+                            // Opcional: Podrías eliminarla aquí también si no quieres que el jugador restante siga esperando
+                            // _activeGames.TryRemove(gameId, out _);
+                        }
+                        // Si el jugador desconectado era el del turno, cederlo al otro si existe.
+                        else if (game.TurnoActualConnectionId == disconnectedConnectionId && game.PlayerConnectionIds.Any())
+                        {
+                            game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(); // Cede el turno al jugador restante
+                        }
+
+                        // Ya encontramos la partida y removimos al jugador, salimos.
+                        break;
+                    }
+                }
+            }
+            return affectedGame; // Retorna la partida afectada si se encontró, o null
+        }
     }
 }

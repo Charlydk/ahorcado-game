@@ -16,10 +16,6 @@ builder.Services.AddHostedService<GameCleanupService>();
 builder.Services.AddDistributedMemoryCache();
 
 
-
-// Añadir el servicio de caché en memoria (para que las sesiones funcionen)
-builder.Services.AddDistributedMemoryCache();
-
 // Configuración de Sesiones
 builder.Services.AddSession(options =>
 {

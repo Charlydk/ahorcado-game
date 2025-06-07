@@ -1,6 +1,22 @@
 [
   {
     "ContainingType": "JuegoController",
+    "Method": "AdivinarLetraLocal",
+    "RelativePath": "api/juego/adivinarLetraLocal",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "entrada",
+        "Type": "JuegoController\u002BAdivinarLetraEntrada",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "JuegoController",
     "Method": "CrearPartidaOnline",
     "RelativePath": "api/juego/crear-online",
     "HttpMethod": "POST",
@@ -58,22 +74,6 @@
       {
         "Name": "request",
         "Type": "JuegoController\u002BUnirseGameOnlineRequest",
-        "IsRequired": true
-      }
-    ],
-    "ReturnTypes": []
-  },
-  {
-    "ContainingType": "JuegoController",
-    "Method": "VerificarLetra",
-    "RelativePath": "api/juego/verificar-letra",
-    "HttpMethod": "POST",
-    "IsController": true,
-    "Order": 0,
-    "Parameters": [
-      {
-        "Name": "entrada",
-        "Type": "JuegoController\u002BLetraOnlineEntrada",
         "IsRequired": true
       }
     ],
