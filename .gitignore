@@ -25,22 +25,6 @@
 *.bak
 *.tmp
 
-# Source control and compiler generated files
-*.csproj.user
-*.resharper
-*.vspscc
-*.vsp
-*.vmd
-*.webtest
-*.loadtest
-*.publishprofile
-*.vsmdi
-
-# NuGet packages
-packages/
-*.nupkg
-.nuget/
-
 # Other common .NET specific files
 App_Data/
 TestResults/
