@@ -45,6 +45,7 @@ const contenedorBotonJuegoOnline = document.getElementById("contenedorBotonJuego
 // --- Variables de Estado del Frontend ---
 let currentGameId = null; // Almacenará el ID de la partida activa
 let currentMode = null;   // Almacenará el modo actual (solitario, versus, online)
+let latestGameData = null; // Almacenará los últimos datos del juego recibidos
 
 // --- Funciones de Utilidad para Mostrar/Ocultar Secciones ---
 function mostrarSeccion(seccion) {
@@ -107,19 +108,18 @@ const connection = new signalR.HubConnectionBuilder()
 
 // Escucha eventos del Hub de SignalR
 connection.on("ReceiveGameUpdate", (data) => {
-    console.log("Actualización de juego recibida via SignalR:", data);
+    console.log("ReceiveGameUpdate recibido:", data);
+    latestGameData = data; // Siempre almacena la última data recibida
 
-    console.log("--- ReceiveGameUpdate recibido ---"); // Nuevo log para marcar el inicio
-    console.log(`  Source: ${connection.connectionId === data.turnoActualConnectionId ? 'Propio Turno' : 'Otro Jugador'}`); // Interesante para depurar
-    console.log(`  Actualización de juego recibida via SignalR (para ${connection.connectionId}):`, data);
-    console.log(`  currentGameId local: ${currentGameId}, gameId en data: ${data.gameId}`); // Nuevo log
-
-
-    if (data.gameId === currentGameId) { // Solo actualizar si es la partida actual
-        console.log("  Coincide gameId. Actualizando UI..."); // Nuevo log
+    // Solo actualiza la UI si la sección de juego está actualmente visible.
+    // Esto evita intentar actualizar elementos que están ocultos en otras secciones.
+    if (seccionJuego.style.display !== 'none') { // Verifica si seccionJuego está visible
         actualizarUIJuego(data);
     } else {
-        console.log("  No coincide gameId. Ignorando actualización."); // Nuevo log
+        console.log("ReceiveGameUpdate recibido, pero seccionJuego no está visible. La UI se actualizará cuando el jugador entre a la sección de juego.");
+        // Opcional: podrías mostrar un mensaje sutil en la sala de espera
+        // indicando que el otro jugador se ha unido (si J1 está allí),
+        // pero la clave es la actualización al entrar a la sección de juego.
     }
 });
 
@@ -387,8 +387,24 @@ async function crearNuevaPartidaOnline() {
             console.log("J1: Clic en 'Ir al Juego (esperar)'. Navegando a la sección de juego.");
             ocultarTodasLasSecciones();
             mostrarSeccion(seccionJuego);
-            mensajeJuego.textContent = "Esperando que otro jugador se una...";
-            mensajeJuego.style.color = "blue";
+           // --- LÓGICA CLAVE AQUÍ ---
+    // Si ya tenemos datos de la partida (porque J2 se unió y el backend envió la actualización),
+    // usamos esos datos para actualizar inmediatamente la UI.
+    if (latestGameData && latestGameData.gameId === currentGameId) {
+        console.log("J1: Actualizando UI con latestGameData al entrar al juego (J2 ya unido).");
+        actualizarUIJuego(latestGameData);
+    } else {
+        // Si no hay 'latestGameData' o el gameId no coincide (J2 aún no se ha unido),
+        // mostramos el mensaje de espera. El ReceiveGameUpdate llegará después.
+        console.log("J1: J2 aún no se ha unido. Mostrando mensaje de espera inicial.");
+        mensajeJuego.textContent = "Esperando que otro jugador se una...";
+        mensajeJuego.style.color = "blue";
+        // Asegúrate de que el input y botón de adivinar estén deshabilitados inicialmente
+        inputIngresaLetra.disabled = true;
+        botonSubirLetra.disabled = true;
+    }
+    // --- FIN LÓGICA CLAVE ---
+
             
             // Ocultar el botón "Ir al Juego" y el contenedor del ID una vez que se va al juego
             ocultarSeccion(botonIrAlJuego);
@@ -421,31 +437,26 @@ async function unirseAPartidaOnline(gameId) {
     try {
         const connectionId = connection.connectionId;
         if (!connectionId) {
-
             console.error("Error: Conexión SignalR no establecida para unirse.");
-
             mensajeIdPartida.textContent = "Error: Conexión SignalR no establecida. Intenta de nuevo.";
             mensajeIdPartida.style.color = "red";
             return;
         }
 
-        console.log(`J2: Intentando unirse a partida ${gameId} con connectionId ${connectionId}`); // Nuevo log
-
+        console.log(`J2: Intentando unirse a partida ${gameId} con connectionId ${connectionId}`);
 
         mensajeIdPartida.textContent = "Uniéndose a la partida...";
         mensajeIdPartida.style.color = "blue";
         inputIdPartida.readOnly = true; // Deshabilitar mientras se une
 
-
-
-        // *** CAMBIO AQUI PARA JUGADOR 2 ***
-        currentGameId = gameId; // Setear currentGameId antes de unirse al grupo SignalR
-        currentMode = "online"; // Setear currentMode
+        // Aquí mantenemos el seteo de currentGameId y currentMode
+        currentGameId = gameId;
+        currentMode = "online";
         console.log(`J2: currentGameId: ${currentGameId}, currentMode: ${currentMode} antes de JoinGameGroup`);
 
-        await connection.invoke("JoinGameGroup", gameId); // El Jugador 2 también se une al grupo SignalR
+        // Primero nos unimos al grupo de SignalR
+        await connection.invoke("JoinGameGroup", gameId);
         console.log(`J2: Jugador 2 (${connection.connectionId}) unido al grupo SignalR: ${gameId}`);
-        // *** FIN DEL CAMBIO ***
 
         // Luego de unirse al grupo de SignalR, hacemos la llamada HTTP para registrarse en el GameManager
         const response = await fetch("http://127.0.0.1:5195/api/juego/unirse-online", {
@@ -462,13 +473,16 @@ async function unirseAPartidaOnline(gameId) {
         const data = await response.json(); // Esto es JuegoEstadoResponse del Jugador 2
         console.log("J2: Respuesta de unirse-online (HTTP):", data);
 
-        // Ahora sí, actualizar la UI del Jugador 2 directamente con la respuesta HTTP
-        // (El ReceiveGameUpdate de SignalR podría llegar antes o después, pero la UI debe ser consistente)
+        // Mensaje de éxito de unión
+        mensajeIdPartida.textContent = `¡Te has unido a la partida ${gameId} exitosamente!`;
+        mensajeIdPartida.style.color = "green";
+
+        // Cambiar a la sección de juego y dejar que actualizarUIJuego maneje los mensajes de turno
         ocultarTodasLasSecciones();
         mostrarSeccion(seccionJuego);
-        actualizarUIJuego(data); // Actualiza la UI del Jugador 2 con el estado inicial del juego.
+        actualizarUIJuego(data); // Esto actualizará la UI del Jugador 2 con el estado inicial del juego.
 
-        // Limpiar el input de ID de partida
+        // Limpiar el input de ID de partida y mensaje, ya que ya estamos en la sección de juego
         inputIdPartida.value = "";
         mensajeIdPartida.textContent = "";
 
@@ -476,12 +490,21 @@ async function unirseAPartidaOnline(gameId) {
         console.error("Error al unirse a partida online:", error);
         mensajeIdPartida.textContent = `Error al unirse: ${error.message}`;
         mensajeIdPartida.style.color = "red";
-        // En caso de error, mostrar los botones originales
+        
+        // Restaurar la UI de la sala de espera para reintentar
         ocultarTodasLasSecciones();
         mostrarSeccion(seccionOnline);
+        
+        // Asegúrate de que los botones y el input estén visibles y habilitados para reintentar
         mostrarSeccion(botonCrearPartida);
         mostrarSeccion(botonUnirsePartida);
         mostrarSeccion(inputIdPartida);
+        inputIdPartida.readOnly = false; // Habilitar edición nuevamente
+        
+        // También asegúrate de ocultar los elementos de la sección de creación si estaban visibles
+        ocultarSeccion(contenedorGameId);
+        const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
+        if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego);
     }
 }
 
