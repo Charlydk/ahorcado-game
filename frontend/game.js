@@ -484,7 +484,7 @@ async function unirseAPartidaOnline(gameId) {
 async function manejarEnvioLetra() {
     const letra = inputIngresaLetra.value.trim().toUpperCase();
 
-    if (!letra || letra.length !== 1 || !/^[A-Z]$/.test(letra)) {
+    if (!letra || letra.length !== 1 || !/^[A-ZÑ]$/.test(letra)) {
         mensajeJuego.textContent = "Por favor, ingresa una sola letra válida.";
         inputIngresaLetra.value = "";
         inputIngresaLetra.focus();
@@ -686,7 +686,7 @@ botonEnviarPalabra.addEventListener("click", async function(event) {
         inputPalabraVersus.focus();
         return;
     }
-    if (!/^[A-Z]+$/.test(palabra)) {
+    if (!/^[A-ZÑ]+$/.test(palabra)) {
         txtIngresarPalabraVersus.textContent = "Solo se permiten letras.";
         inputPalabraVersus.focus();
         return;
