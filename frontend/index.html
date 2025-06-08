@@ -44,12 +44,21 @@
 
         <section id="seccionOnline" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
             <h2 class="mb-4">Juego Online</h2>
-            <p id="mensajeIdPartida" class="lead text-muted"></p>
-            <div class="input-group mb-3 w-75 mx-auto"> <input type="text" id="inputIdPartida" class="form-control" placeholder="ID de Partida">
-                <button id="botonCrearPartida" class="btn btn-success">Crear</button>
-                <button id="botonUnirsePartida" class="btn btn-info">Unirse</button>
+            <p id="mensajeIdPartida" class="text-center"></p>
+
+            <div id="contenedorGameId" style="display: none; text-align: center; margin-top: 10px;">
+                <span id="displayGameId" class="lead text-primary" style="font-weight: bold; margin-right: 10px;"></span>
+                <button id="botonCopiarId" class="btn btn-info btn-sm">Copiar ID</button>
             </div>
-            <button id="volverModos" class="btn btn-outline-secondary mt-3">Volver a Modos</button>
+
+            <input type="text" id="inputIdPartida" placeholder="Ingresa ID de partida" class="form-control mb-2">
+            <button id="crearPartida" class="btn btn-success w-100 mb-2">Crear Partida</button>
+            <button id="unirsePartida" class="btn btn-primary w-100 mb-2">Unirse a Partida</button>
+
+            <button id="volverModosOnline" class="btn btn-secondary mt-3">Volver a Modos</button>
+
+            <div id="contenedorBotonJuegoOnline" class="text-center mt-3"></div>
+
         </section>
 
         <section id="seccionIngresarPalabra" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
@@ -73,7 +82,7 @@
                         <button id="botonSubirLetra" class="btn btn-primary">Adivinar</button>
                     </div>
                     <p id="mensajeJuego" class="text-center"></p>
-
+                    
                     <div class="d-grid gap-2 col-6 mx-auto mt-3">
                         <button id="reiniciar" class="btn btn-warning">Reiniciar Partida</button>
                         <button id="volverAlMenu" class="btn btn-outline-secondary">Volver al Menú</button>

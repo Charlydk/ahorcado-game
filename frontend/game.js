@@ -31,11 +31,16 @@ const botonVolverAlMenu = document.getElementById("volverAlMenu");
 
 // --- Elementos para la seccion Online ---
 const seccionOnline = document.getElementById("seccionOnline"); // Cambiado de clase a ID
-const botonCrearPartida = document.getElementById("botonCrearPartida"); // Cambiado de clase a ID
+const botonCrearPartida = document.getElementById("crearPartida"); // Cambiado de clase a ID
 const inputIdPartida = document.getElementById("inputIdPartida"); // Cambiado de clase a ID
-const botonUnirsePartida = document.getElementById("botonUnirsePartida"); // Cambiado de clase a ID
+const botonUnirsePartida = document.getElementById("unirsePartida"); // Cambiado de clase a ID
 const mensajeIdPartida = document.getElementById("mensajeIdPartida"); // Cambiado de clase a ID
-const botonVolverModosOnline = document.getElementById("volverModos"); // <- En index.html es <button id="volverModos" ...> (No está dentro de seccionOnline en tu HTML, es un hermano)
+const botonVolverModosOnline = document.getElementById("volverModosOnline");
+const contenedorGameId = document.getElementById("contenedorGameId");
+const displayGameId = document.getElementById("displayGameId");
+const botonCopiarId = document.getElementById("botonCopiarId");
+const contenedorBotonJuegoOnline = document.getElementById("contenedorBotonJuegoOnline");
+
 
 // --- Variables de Estado del Frontend ---
 let currentGameId = null; // Almacenará el ID de la partida activa
@@ -313,10 +318,15 @@ async function crearNuevaPartidaOnline() {
 
         mensajeIdPartida.textContent = "Creando partida online...";
         mensajeIdPartida.style.color = "blue";
-        inputIdPartida.value = "";
+        
+        // --- Ocultar elementos de creación/unión ---
         ocultarSeccion(botonCrearPartida);
         ocultarSeccion(botonUnirsePartida);
-        ocultarSeccion(inputIdPartida); // Ocultar input al crear para no confundir
+        ocultarSeccion(inputIdPartida); // Ahora solo se usará para UNIRSE
+        ocultarSeccion(botonVolverModosOnline); // Ocultar temporalmente para no confundir
+        
+        // Asegurarse de que el contenedor del ID esté oculto al inicio de la creación
+        ocultarSeccion(contenedorGameId);
 
         const response = await fetch("http://127.0.0.1:5195/api/juego/crear-online", {
             method: "POST",
@@ -335,80 +345,74 @@ async function crearNuevaPartidaOnline() {
         currentGameId = gameId;
         currentMode = "online";
 
-        console.log("J1: Partida creada. currentGameId:", currentGameId, "currentMode:", currentMode); // Nuevo log
+        console.log("J1: Partida creada. currentGameId:", currentGameId, "currentMode:", currentMode);
 
-
-        // *** CAMBIO CLAVE AQUI ***
-        // Inmediatamente después de crear la partida y obtener el gameId,
-        // el creador se une al grupo de SignalR de esa partida.
         await connection.invoke("JoinGameGroup", gameId);
         console.log(`Creador (${connection.connectionId}) unido al grupo de SignalR para la partida: ${gameId}`);
-        // *** FIN DEL CAMBIO CLAVE ***
 
-        // Mostrar los elementos específicos de la sección online para mostrar el ID
-        mostrarSeccion(seccionOnline); // Asegurarse de que seccionOnline esté visible
+        // --- Mostrar el Game ID y el botón Copiar ---
+        mensajeIdPartida.textContent = "¡Partida creada! Comparte este ID:";
+        mensajeIdPartida.style.color = "black"; // Resetear a color normal
+        
+        displayGameId.textContent = gameId; // Mostrar el ID en el span
+        mostrarSeccion(contenedorGameId); // Mostrar el contenedor con el ID y el botón Copiar
 
-        mensajeIdPartida.textContent = `Partida creada. ID: ${gameId}. Copia este ID y compártelo.`;
-        mensajeIdPartida.style.color = "green";
+        // Listener para el botón Copiar ID
+        botonCopiarId.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(gameId);
+                mensajeIdPartida.textContent = `ID '${gameId}' copiado. ¡Compártelo!`;
+                mensajeIdPartida.style.color = "green";
+            } catch (err) {
+                console.error('Error al copiar el ID:', err);
+                mensajeIdPartida.textContent = `No se pudo copiar. Copia manualmente: ${gameId}`;
+                mensajeIdPartida.style.color = "orange";
+            }
+        };
 
-        // Mostrar el input con el ID de solo lectura y un botón para ir al juego
-        mostrarSeccion(inputIdPartida);
-        inputIdPartida.value = gameId;
-        inputIdPartida.readOnly = true;
-
-        let botonContinuar = document.getElementById("botonContinuarOnline");
-        if (!botonContinuar) {
-            botonContinuar = document.createElement("button");
-            botonContinuar.id = "botonContinuarOnline";
-            botonContinuar.textContent = "Ir al Juego (esperar)";
-            botonContinuar.classList.add("botonInicio"); // O cualquier clase de estilo de botón que uses
-            // Insertar después del inputIdPartida (o de mensajeIdPartida, según tu diseño)
-            seccionOnline.appendChild(botonContinuar); // Añadirlo directamente a seccionOnline
+        // --- Crear/obtener y mostrar el botón "Ir al Juego (esperar)" ---
+        let botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline"); // Cambiamos el ID para claridad
+        if (!botonIrAlJuego) {
+            botonIrAlJuego = document.createElement("button");
+            botonIrAlJuego.id = "botonIrAlJuegoOnline";
+            botonIrAlJuego.textContent = "Ir al Juego (esperar)";
+            // Añadir clases de Bootstrap para que se vea como un botón normal
+            botonIrAlJuego.classList.add("btn", "btn-success", "mt-3", "w-100"); // Ej: btn-success para verde, mt-3 para margen
+            contenedorBotonJuegoOnline.appendChild(botonIrAlJuego); // Insertar en el nuevo contenedor
         }
-        mostrarSeccion(botonContinuar);
+        mostrarSeccion(botonIrAlJuego);
+        mostrarSeccion(botonVolverModosOnline); // Volver a mostrar este botón para que pueda salir si quiere
 
-        // Cuando se haga clic en el botón "Continuar", el jugador va a la UI del juego,
-        // pero YA ESTÁ UNIDO al grupo de SignalR.
-        botonContinuar.onclick = async () => {
-            console.log("J1: Clic en 'Ir al Juego (esperar)'. Navegando a la sección de juego."); // Nuevo log
-
-            // Cambiar a la sección de juego
-            ocultarTodasLasSecciones(); // Oculta todo
-            mostrarSeccion(seccionJuego); // Muestra solo la sección de juego
+        botonIrAlJuego.onclick = async () => {
+            console.log("J1: Clic en 'Ir al Juego (esperar)'. Navegando a la sección de juego.");
+            ocultarTodasLasSecciones();
+            mostrarSeccion(seccionJuego);
+            mensajeJuego.textContent = "Esperando que otro jugador se una...";
+            mensajeJuego.style.color = "blue";
             
-            // *** QUITA O COMENTA ESTAS LÍNEAS ***
-            // mensajeJuego.textContent = "Esperando a otro jugador..."; // <-- QUITA ESTO
-            // mostrarSeccion(mensajeTurno); // <-- QUITA ESTO
-            // inputIngresaLetra.disabled = true; // <-- QUITA ESTO
-            // botonSubirLetra.disabled = true; // <-- QUITA ESTO
-            // ocultarSeccion(inputIngresaLetra); // <-- QUITA ESTO
-            // ocultarSeccion(botonSubirLetra); // <-- QUITA ESTO
-            // *** FIN DE LAS LÍNEAS A QUITAR ***
-
-            ocultarSeccion(botonContinuar); // Ocultar el botón de continuar una vez que se va al juego
-            
-            // La UI será actualizada por el ReceiveGameUpdate que ya se recibió o que llegará.
-            // Si el Jugador 2 ya se unió y el ReceiveGameUpdate llegó, la UI ya debería estar correcta.
-            // Si el Jugador 2 AÚN NO se unió, entonces el estado inicial que viene del backend
-            // (a través de algún ReceiveGameUpdate si lo envías al crear, o simplemente
-            // por la inicialización de la UI) deberá ser el de "Esperando".
-            // Sin embargo, en el backend, cuando creas la partida, el creador tiene el primer turno
-            // (lo vimos en tu GameManager.cs `TurnoActualConnectionId = connectionId;`).
-            // Por lo tanto, si el backend te da el turno, la UI debería reflejarlo.
+            // Ocultar el botón "Ir al Juego" y el contenedor del ID una vez que se va al juego
+            ocultarSeccion(botonIrAlJuego);
+            ocultarSeccion(contenedorGameId);
         };
 
     } catch (error) {
         console.error("Error CATCHED al crear partida online:", error);
         mensajeIdPartida.textContent = `Error: ${error.message}`;
         mensajeIdPartida.style.color = "red";
-        // En caso de error, restaurar la UI para permitir reintentar o volver
-        ocultarTodasLasSecciones();
-        mostrarSeccion(seccionOnline); // Volver a la sección de online
+        // En caso de error, restaurar la UI de la sala de espera
+        // Ocultar el botón "Ir al Juego" si existe
+        const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
+        if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego);
+        ocultarSeccion(contenedorGameId); // Ocultar el display del ID
+
+        // Mostrar los controles principales de la sala
+        ocultarTodasLasSecciones(); // Limpia antes de mostrar lo correcto
+        mostrarSeccion(seccionOnline);
         mostrarSeccion(botonCrearPartida);
         mostrarSeccion(botonUnirsePartida);
         mostrarSeccion(inputIdPartida);
         inputIdPartida.readOnly = false;
-        ocultarSeccion(document.getElementById("botonContinuarOnline")); // Ocultar si existía
+        mostrarSeccion(botonVolverModosOnline);
     }
 }
 
@@ -637,6 +641,13 @@ if (botonOnline) {
         ocultarSeccion(seccionModosJuego);
         mostrarSeccion(seccionOnline);
 
+        // --- AÑADIR ESTAS LÍNEAS ---
+        ocultarSeccion(contenedorGameId); // Ocultar el display del ID al inicio
+        const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
+        if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego); // Ocultar el botón Ir al Juego
+        // --- FIN AÑADIR ESTAS LÍNEAS ---
+
+
         // --- Asegurarse de que todos los elementos de online estén visibles y habilitados ---
         mensajeIdPartida.textContent = "Crea una partida o únete a una existente:"; // Resetear mensaje
         mensajeIdPartida.style.color = "black"; // Resetear color
@@ -806,9 +817,13 @@ if (botonReiniciar) {
             console.warn("Modo de juego no definido al reiniciar. Volviendo a selección de modos.");
             mostrarSeccion(seccionModosJuego);
         }
-        
-        // Asegúrate de que el mensaje de juego se resetee apropiadamente al iniciar una nueva fase/juego.
-        // Esto a menudo se maneja dentro de iniciarJuego o al mostrar las secciones.
+    
+         // --- AÑADIR ESTAS LÍNEAS (para el reseteo de la sala online) ---
+         ocultarSeccion(contenedorGameId); // Ocultar el display del ID al reiniciar
+         const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
+         if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego); // Ocultar el botón Ir al Juego
+         // --- FIN AÑADIR ESTAS LÍNEAS ---
+    
     });
 }
 
