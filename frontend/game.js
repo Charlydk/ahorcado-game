@@ -735,8 +735,8 @@ if (botonSubirLetra) {
         }
         
         // Si todas las validaciones pasan, PASAMOS LA LETRA COMO ARGUMENTO
-       // mensajeJuego.textContent = "Adivinando...";
-       // mensajeJuego.style.color = "black";
+        //mensajeJuego.textContent = "Adivinando...";
+        //mensajeJuego.style.color = "black";
 
         await manejarEnvioLetra(letraIngresada); // <-- ¡AHORA PASA LA LETRA AQUÍ!
         inputIngresaLetra.value = ""; // Limpiar el input después de enviar
