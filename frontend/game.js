@@ -27,6 +27,7 @@ const botonSubirLetra = document.getElementById("botonSubirLetra"); // <- En ind
 const botonReiniciar = document.getElementById("reiniciar"); // <- En index.html es <button id="reiniciar" ...>
 const mensajeTurno = document.getElementById("mensajeTurno"); // <- En index.html es <p id="mensajeTurno" ...>
 const letrasIncorrectasSpan = document.getElementById("letrasIncorrectasSpan"); // OK - Coincide
+const botonVolverAlMenu = document.getElementById("volverAlMenu");
 
 // --- Elementos para la seccion Online ---
 const seccionOnline = document.getElementById("seccionOnline"); // Cambiado de clase a ID
@@ -193,6 +194,7 @@ async function iniciarJuego(modo, palabraVersus = "") {
         resetearUIJuego(); // Primero reseteamos la UI
         ocultarTodasLasSecciones(); // Luego ocultamos todo
         mostrarSeccion(seccionJuego); // Y mostramos la sección de juego
+        
 
         actualizarUIJuego(data); // Usamos la función actualizarUIJuego para el estado inicial
         // Con esto, se inicializa el mensajeJuego, guiones y demás.
@@ -200,7 +202,7 @@ async function iniciarJuego(modo, palabraVersus = "") {
     } catch (error) {
         console.error("Error CATCHED al iniciar el juego:", error);
         mensajeJuego.textContent = `Error: ${error.message}. Por favor, reinicia o inténtalo de nuevo.`;
-        // Opcional: mostrar botón de reiniciar o volver a modos
+        mensajeJuego.style.color = "red"; // Añadir color para que sea más visible
     }
 }
 
@@ -208,8 +210,14 @@ function actualizarUIJuego(data) {
     console.log("   Dentro de actualizarUIJuego. currentMode:", currentMode);
     console.log("   Datos recibidos para actualizar UI:", data);
 
-    inputGuiones.value = data.palabra;
-    inputLetrasOut.value = data.letrasIncorrectas;
+    if (inputGuiones) { // Siempre es buena práctica verificar que el elemento existe
+        inputGuiones.textContent = data.palabra.split('').join(' ');
+    }
+    if (inputLetrasOut) { // Este es el <span> donde se muestran las letras incorrectas
+        // Si data.letrasIncorrectas es un array (ej. ["A", "B", "C"]), únelo a un string
+        // Si ya es un string (ej. "A, B, C"), simplemente asígnalo
+        inputLetrasOut.textContent = Array.isArray(data.letrasIncorrectas) ? data.letrasIncorrectas.join(", ") : data.letrasIncorrectas;
+    }
     letrasIncorrectasSpan.textContent = `Letras incorrectas: ${data.letrasIncorrectas}`;
 
     const cantidadErradasCalculada = 6 - data.intentosRestantes;
@@ -712,6 +720,16 @@ inputIngresaLetra.addEventListener("keypress", async function(event) {
         await manejarEnvioLetra();
     }
 });
+
+if (botonVolverAlMenu) {
+    botonVolverAlMenu.addEventListener("click", () => {
+        console.log("Clic en 'Volver al Menú'.");
+        // Reinicia la UI completamente para volver a la pantalla inicial
+        // Esto oculta todas las secciones y muestra la bienvenida
+        inicializarUI(); 
+    });
+}
+
 
 // Inicializar la interfaz al cargar la página
 // Inicializar la interfaz al cargar la página
