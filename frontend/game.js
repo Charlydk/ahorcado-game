@@ -622,6 +622,7 @@ botonSolitario.addEventListener("click", async function(event) {
 
 botonVersus.addEventListener("click", function(event) {
     event.preventDefault();
+    currentMode = 'versus';
     ocultarTodasLasSecciones();
     mostrarSeccion(seccionIngresarPalabra);
     inputPalabraVersus.value = ""; // Limpiar el input al entrar
@@ -631,18 +632,33 @@ botonVersus.addEventListener("click", function(event) {
 
 if (botonOnline) {
     botonOnline.addEventListener("click", () => {
-        ocultarTodasLasSecciones();
-        mostrarSeccion(seccionOnline); // Mostrar la sección de online
-        // Asegurarse de que los elementos específicos de online estén visibles para empezar
-        mostrarSeccion(botonCrearPartida);
+        console.log("Modo Online seleccionado.");
+        currentMode = 'online';
+        ocultarSeccion(seccionModosJuego);
+        mostrarSeccion(seccionOnline);
+
+        // --- Asegurarse de que todos los elementos de online estén visibles y habilitados ---
+        mensajeIdPartida.textContent = "Crea una partida o únete a una existente:"; // Resetear mensaje
+        mensajeIdPartida.style.color = "black"; // Resetear color
+        mostrarSeccion(mensajeIdPartida);
+        
+        inputIdPartida.value = ""; // Limpiar cualquier ID previo
+        inputIdPartida.readOnly = false; // ¡IMPORTANTE! Habilitar para escribir
+        inputIdPartida.disabled = false; // ¡IMPORTANTE! Habilitar input
         mostrarSeccion(inputIdPartida);
+        
+        botonCrearPartida.disabled = false; // ¡IMPORTANTE! Habilitar botón
+        mostrarSeccion(botonCrearPartida);
+        
+        botonUnirsePartida.disabled = false; // ¡IMPORTANTE! Habilitar botón
         mostrarSeccion(botonUnirsePartida);
-        mostrarSeccion(botonVolverModosOnline); // El botón de volver a modos es parte de esta sección
-        mensajeIdPartida.textContent = ""; // Limpiar mensaje de ID
-        inputIdPartida.value = ""; // Limpiar input de ID
-        inputIdPartida.readOnly = false; // Asegurar que sea editable para unirse
-        let botonContinuar = document.getElementById("botonContinuarOnline");
-        if (botonContinuar) ocultarSeccion(botonContinuar); // Ocultar el botón "Ir al Juego" si estaba visible
+        
+        // Asegúrate de que el botón de continuar esté oculto si existe
+        const botonContinuar = document.getElementById("botonContinuarOnline");
+        if (botonContinuar) ocultarSeccion(botonContinuar);
+
+        mostrarSeccion(botonVolverModosOnline); // Este botón siempre visible en esta sección
+        // --- FIN de aseguramiento de elementos online ---
     });
 }
 
@@ -652,6 +668,7 @@ botonCrearPartida.addEventListener("click", async () => {
 });
 
 botonUnirsePartida.addEventListener("click", async () => {
+    currentMode = 'online';
     const gameId = inputIdPartida.value.trim();
     if (gameId) {
         console.log(`Intentando unirse a la partida: ${gameId}`);
@@ -743,10 +760,57 @@ if (botonSubirLetra) {
     });
 }
 
-botonReiniciar.addEventListener("click", async function(event) {
-    event.preventDefault();
-    await reiniciarJuego();
-});
+// --- Event Listener para el botón Reiniciar Partida ---
+if (botonReiniciar) {
+    botonReiniciar.addEventListener("click", () => {
+        console.log("Clic en 'Reiniciar Partida'. Modo actual:", currentMode);
+
+        ocultarTodasLasSecciones(); // Limpia la UI para la nueva pantalla
+
+        // Reinicia la partida según el modo de juego actual
+        if (currentMode === 'solitario') {
+            iniciarJuego('solitario'); // Inicia una nueva partida en modo solitario
+        } else if (currentMode === 'versus') {
+            // Regresa a la pantalla de ingreso de palabra para el modo Versus
+            mostrarSeccion(seccionIngresarPalabra);
+            inputPalabraVersus.value = ""; // Limpiar el input
+            txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo"; // Resetear mensaje
+            inputPalabraVersus.focus();
+        } else if (currentMode === 'online') {
+            // --- Reseteo de la sección online para permitir crear/unirse ---
+            mostrarSeccion(seccionOnline);
+            
+            mensajeIdPartida.textContent = "Crea una partida o únete a una existente:";
+            mensajeIdPartida.style.color = "black"; // Resetear color
+            mostrarSeccion(mensajeIdPartida);
+            
+            inputIdPartida.value = ""; // Limpiar ID previo
+            inputIdPartida.readOnly = false; // Habilitar para escribir
+            inputIdPartida.disabled = false; // Habilitar input
+            mostrarSeccion(inputIdPartida);
+            
+            botonCrearPartida.disabled = false; // Habilitar botón
+            mostrarSeccion(botonCrearPartida);
+            
+            botonUnirsePartida.disabled = false; // Habilitar botón
+            mostrarSeccion(botonUnirsePartida);
+
+            // Asegúrate de que el botón "Ir al Juego" esté oculto si existe
+            const botonContinuar = document.getElementById("botonContinuarOnline");
+            if (botonContinuar) ocultarSeccion(botonContinuar);
+            
+            mostrarSeccion(botonVolverModosOnline);
+            // --- FIN del reseteo de la sección online ---
+        } else {
+            // Fallback por si currentMode no está definido (aunque no debería pasar con los pasos anteriores)
+            console.warn("Modo de juego no definido al reiniciar. Volviendo a selección de modos.");
+            mostrarSeccion(seccionModosJuego);
+        }
+        
+        // Asegúrate de que el mensaje de juego se resetee apropiadamente al iniciar una nueva fase/juego.
+        // Esto a menudo se maneja dentro de iniciarJuego o al mostrar las secciones.
+    });
+}
 
 inputIngresaLetra.addEventListener("keypress", async function(event) {
     if (event.key === "Enter") {
@@ -766,12 +830,13 @@ if (botonVolverAlMenu) {
 
 
 // Inicializar la interfaz al cargar la página
-// Inicializar la interfaz al cargar la página
 function inicializarUI() {
     ocultarTodasLasSecciones(); // Primero, asegura que todo esté oculto usando la nueva lógica.
 
     // La pantalla de bienvenida es la primera que se muestra al inicio
     mostrarSeccion(seccionBienvenida); // Ahora mostramos la sección de bienvenida
+
+    currentMode = null;
 
     // Ocultar todos los elementos de la sección online por defecto
     // (Estos ya están ocultos por ocultarTodasLasSecciones, pero se mantienen para claridad si se necesita un override)
