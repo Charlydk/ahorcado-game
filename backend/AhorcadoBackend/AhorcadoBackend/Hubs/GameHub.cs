@@ -94,7 +94,7 @@ namespace AhorcadoBackend.Hubs
         {
             Console.WriteLine($"Cliente desconectado: {Context.ConnectionId}. Error: {exception?.Message}");
 
-            // Usar el nuevo método del GameManager para encontrar y remover al jugador
+            // El GameManager maneja la lógica de remover al jugador y determinar el estado de la partida
             var affectedGame = _gameManager.FindAndRemovePlayerFromGame(Context.ConnectionId);
 
             if (affectedGame != null)
@@ -102,32 +102,45 @@ namespace AhorcadoBackend.Hubs
                 Console.WriteLine($"Jugador {Context.ConnectionId} se desconectó de la partida {affectedGame.GameId}.");
 
                 // Si la partida se marcó como terminada en el GameManager debido a la desconexión
-                if (affectedGame.JuegoTerminado)
+                // Y hay un jugador restante para notificar
+                if (affectedGame.JuegoTerminado && affectedGame.PlayerConnectionIds.Any())
                 {
-                    Console.WriteLine($"Partida {affectedGame.GameId} ha terminado por desconexión de jugador.");
-                    // Notificar a los jugadores restantes en el grupo
-                    // Asegúrate de enviar un JuegoEstadoResponse completo.
-                    await _hubContext.Clients.Group(affectedGame.GameId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
-                    {
-                        GameId = affectedGame.GameId,
-                        Palabra = affectedGame.GuionesActuales,
-                        IntentosRestantes = affectedGame.IntentosRestantes,
-                        LetrasIncorrectas = string.Join(", ", affectedGame.LetrasIncorrectas),
-                        JuegoTerminado = affectedGame.JuegoTerminado,
-                        PalabraSecreta = affectedGame.PalabraSecreta, // Revela la palabra
-                        TurnoActualConnectionId = affectedGame.TurnoActualConnectionId,
-                        Message = affectedGame.Message // El mensaje del GameManager sobre la terminación de la partida
-                    });
+                    // Encuentra al otro jugador (el que quedó)
+                    string remainingPlayerConnectionId = affectedGame.PlayerConnectionIds.First();
+
+                    Console.WriteLine($"Notificando a {remainingPlayerConnectionId} que su oponente se desconectó de la partida {affectedGame.GameId}.");
+
+                    // Envía el evento específico de desconexión de oponente.
+                    // Podríamos enviar un mensaje más detallado aquí si es necesario.
+                    await Clients.Client(remainingPlayerConnectionId).SendAsync("OpponentDisconnected", affectedGame.GameId);
+
+                    // Opcional: También puedes enviar un ReceiveGameUpdate con el estado final de la partida
+                    // si quieres que la UI del jugador restante refleje el "GAME OVER" directamente.
+                    // var response = new JuegoEstadoResponse
+                    // {
+                    //     GameId = affectedGame.GameId,
+                    //     // ... populate other fields ...
+                    //     JuegoTerminado = true,
+                    //     Message = affectedGame.Message // Mensaje de "El otro jugador se desconectó"
+                    // };
+                    // await Clients.Client(remainingPlayerConnectionId).SendAsync("ReceiveGameUpdate", response);
                 }
-                else
+                else if (affectedGame.PlayerConnectionIds.Count == 0)
                 {
-                    // Si la partida no terminó (ej. solo se removió el jugador, pero aún quedan dos y es un modo flexible)
-                    // Podrías enviar una actualización normal o un mensaje de que un jugador se fue.
-                    // Por ahora, asumimos que si un jugador se va en online, la partida termina.
+                    // Si la partida quedó vacía, ya fue removida por GameManager, no hay nadie a quien notificar.
+                    Console.WriteLine($"Partida {affectedGame.GameId} quedó sin jugadores y fue eliminada. No hay jugadores para notificar.");
                 }
+                // Si affectedGame.JuegoTerminado es false, significa que GameManager no la marcó como terminada.
+                // Esto podría ocurrir si tu lógica de GameManager permite que una partida online continúe con 1 jugador
+                // (lo cual no es común para el ahorcado de 2). Asumo que FindAndRemovePlayerFromGame siempre la marca como terminada si queda 1.
+            }
+            else
+            {
+                Console.WriteLine($"Cliente {Context.ConnectionId} desconectado de una partida no encontrada o ya vacía.");
             }
 
             await base.OnDisconnectedAsync(exception);
         }
     }
 }
+

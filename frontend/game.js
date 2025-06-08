@@ -106,6 +106,27 @@ const connection = new signalR.HubConnectionBuilder()
     .withAutomaticReconnect()
     .build();
 
+
+// --- NUEVO: Manejar la desconexión del propio cliente ---
+connection.onclose(async (error) => {
+    console.log("Conexión SignalR cerrada. ", error);
+
+    // Si la conexión se cerró inesperadamente (no por un disconnect intencional del cliente)
+    // Esto se dispara si el servidor se cae, el cliente pierde internet, etc.
+    if (connection.state === signalR.HubConnectionState.Disconnected) {
+        alert("¡Conexión con el servidor perdida! Por favor, verifica tu conexión o el estado del servidor y vuelve a intentarlo.");
+        
+        // Limpiar cualquier estado de partida online en el cliente
+        currentGameId = null;
+        currentMode = null;
+        latestGameData = null; // Reiniciar data del juego
+
+        // Redirigir al usuario a la pantalla de modos de juego o bienvenida
+        ocultarTodasLasSecciones();
+        mostrarSeccion(seccionModosJuego); // O seccionBienvenida, según prefieras
+    }
+});
+
 // Escucha eventos del Hub de SignalR
 connection.on("ReceiveGameUpdate", (data) => {
     console.log("ReceiveGameUpdate recibido:", data);
@@ -117,11 +138,29 @@ connection.on("ReceiveGameUpdate", (data) => {
         actualizarUIJuego(data);
     } else {
         console.log("ReceiveGameUpdate recibido, pero seccionJuego no está visible. La UI se actualizará cuando el jugador entre a la sección de juego.");
-        // Opcional: podrías mostrar un mensaje sutil en la sala de espera
-        // indicando que el otro jugador se ha unido (si J1 está allí),
-        // pero la clave es la actualización al entrar a la sección de juego.
+     
     }
 });
+
+// --- NUEVO: Manejar la desconexión del oponente ---
+connection.on("OpponentDisconnected", (gameId) => {
+    console.log(`Tu oponente se desconectó de la partida ${gameId}.`);
+    
+    // Solo actuamos si la desconexión es de la partida actual
+    if (currentGameId === gameId) {
+        alert("¡Tu oponente se ha desconectado! La partida ha terminado.");
+        
+        // Limpiar estado del juego online en el cliente
+        currentGameId = null;
+        currentMode = null;
+        latestGameData = null; // Reiniciar data del juego
+
+        // Redirigir al usuario al menú principal (o modos de juego)
+        ocultarTodasLasSecciones();
+        mostrarSeccion(seccionModosJuego); 
+    }
+});
+
 
 // Cuando un segundo jugador se une a una partida online
 connection.on("PlayerJoined", (gameId, playerConnectionId) => {
@@ -131,6 +170,7 @@ connection.on("PlayerJoined", (gameId, playerConnectionId) => {
         // Opcional: Podrías hacer un fetch al endpoint de /juego/obtenerEstado si lo tienes para asegurarte de que la UI se actualice
         // al unirse el segundo jugador.
         mensajeJuego.textContent = "¡Otro jugador se ha unido! Comienza el juego.";
+        mensajeJuego.style.color = "green";
         // Si el jugador creador está esperando, esto lo llevará a la pantalla de juego
         if (currentMode === "online") {
             ocultarTodasLasSecciones();
