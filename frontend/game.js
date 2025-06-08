@@ -481,88 +481,78 @@ async function unirseAPartidaOnline(gameId) {
     }
 }
 
-async function manejarEnvioLetra() {
-    const letra = inputIngresaLetra.value.trim().toUpperCase();
+async function manejarEnvioLetra(letra) { // <--- ¡AQUÍ: ACEPTA 'letra' COMO ARGUMENTO!
+    console.log("Enviando letra:", letra); // Para depuración
 
-    if (!letra || letra.length !== 1 || !/^[A-ZÑ]$/.test(letra)) {
-        mensajeJuego.textContent = "Por favor, ingresa una sola letra válida.";
-        inputIngresaLetra.value = "";
-        inputIngresaLetra.focus();
-        return;
-    }
-
+   
     if (!currentGameId) {
         mensajeJuego.textContent = "Error: No hay una partida activa.";
+        inputIngresaLetra.disabled = false; // Asegurarse de re-habilitar en caso de error temprano
+        botonSubirLetra.disabled = false;
         return;
     }
 
-    // Deshabilitar input y botón para evitar spam de clicks mientras se procesa la letra
-    inputIngresaLetra.disabled = true;
-    botonSubirLetra.disabled = true;
 
     try {
         if (currentMode === 'solitario' || currentMode === 'versus') {
-            // --- Lógica para modos LOCALES (solitario y versus) ---
-            const response = await fetch("http://127.0.0.1:5195/api/juego/adivinarLetraLocal", { // ¡ENDPOINT CORREGIDO!
+            const response = await fetch("http://127.0.0.1:5195/api/juego/adivinarLetraLocal", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     GameId: currentGameId,
-                    Letra: letra // Propiedad 'Letra' en singular y como caracter
+                    Letra: letra // Usas la 'letra' que recibes como argumento
                 })
             });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ message: "Error desconocido al procesar la letra." }));
                 mensajeJuego.textContent = `Error: ${errorData.message || response.statusText}`;
+                mensajeJuego.style.color = "red"; // Asegurar que el error se muestre en rojo
                 inputIngresaLetra.value = "";
                 inputIngresaLetra.focus();
-                inputIngresaLetra.disabled = false;
-                botonSubirLetra.disabled = false;
+                inputIngresaLetra.disabled = false; // Re-habilitar
+                botonSubirLetra.disabled = false;    // Re-habilitar
                 return;
             }
 
             const data = await response.json();
-            actualizarUIJuego(data); // Se encargará de re-habilitar el input si es necesario
+            actualizarUIJuego(data); // `actualizarUIJuego` debe re-habilitar el input/botón si el juego continúa
 
         } else if (currentMode === 'online') {
-            // --- Lógica para modo ONLINE (SignalR) ---
             if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
                 mensajeJuego.textContent = "Error: Conexión SignalR no establecida o no activa.";
-                inputIngresaLetra.disabled = false;
-                botonSubirLetra.disabled = false;
+                mensajeJuego.style.color = "red"; // Asegurar que el error se muestre en rojo
+                inputIngresaLetra.disabled = false; // Re-habilitar
+                botonSubirLetra.disabled = false;    // Re-habilitar
                 return;
             }
 
             const playerConnectionId = connection.connectionId;
             if (!playerConnectionId) {
                 mensajeJuego.textContent = "Error: No se pudo obtener el ID de conexión de SignalR.";
-                inputIngresaLetra.disabled = false;
-                botonSubirLetra.disabled = false;
+                mensajeJuego.style.color = "red"; // Asegurar que el error se muestre en rojo
+                inputIngresaLetra.disabled = false; // Re-habilitar
+                botonSubirLetra.disabled = false;    // Re-habilitar
                 return;
             }
 
-            // Llamada al método del Hub en el backend
-            // El backend procesará la letra y luego enviará ReceiveGameUpdate a todos los clientes del grupo
-            await connection.invoke("ProcessLetter", currentGameId, letra);
-            // La UI se actualizará cuando se reciba ReceiveGameUpdate desde el servidor.
-            // No necesitamos esperar una respuesta aquí directamente de un fetch.
-            // Resetear el input aquí, ya que la respuesta vendrá de SignalR.
-            inputIngresaLetra.value = "";
-            inputIngresaLetra.focus();
-
+            await connection.invoke("ProcessLetter", currentGameId, letra); // Usas la 'letra' que recibes
+           
+            
         } else {
             mensajeJuego.textContent = "Error: Modo de juego no reconocido. No se puede enviar la letra.";
-            inputIngresaLetra.disabled = false;
-            botonSubirLetra.disabled = false;
+            mensajeJuego.style.color = "red"; // Asegurar que el error se muestre en rojo
+            inputIngresaLetra.disabled = false; // Re-habilitar
+            botonSubirLetra.disabled = false;    // Re-habilitar
             return;
         }
 
     } catch (error) {
         console.error("Error CATCHED al enviar letra:", error);
         mensajeJuego.textContent = `Error: ${error.message || "Un error inesperado ocurrió."}`;
-        inputIngresaLetra.disabled = false;
-        botonSubirLetra.disabled = false;
+        mensajeJuego.style.color = "red";
+        inputIngresaLetra.disabled = false; // Re-habilitar
+        botonSubirLetra.disabled = false;    // Re-habilitar
     }
 }
 
@@ -704,10 +694,54 @@ botonCancelarVersus.addEventListener("click", function(event) {
     txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo";
 });
 
-botonSubirLetra.addEventListener("click", async function(event) {
-    event.preventDefault();
-    await manejarEnvioLetra();
-});
+if (botonSubirLetra) {
+    botonSubirLetra.addEventListener("click", async (event) => {
+        event.preventDefault(); // Previene el comportamiento por defecto del formulario
+
+        const letraIngresada = inputIngresaLetra.value.toUpperCase().trim();
+        
+        // 1. Validación de Vacío
+        if (letraIngresada.length === 0) {
+            mensajeJuego.textContent = "Por favor, ingresa una letra.";
+            mensajeJuego.style.color = "red";
+            inputIngresaLetra.focus();
+            return;
+        }
+
+        // 2. Validación de una sola letra y solo letras (A-Z, Ñ)
+        if (letraIngresada.length !== 1 || !/^[A-ZÑ]$/.test(letraIngresada)) {
+            mensajeJuego.textContent = "Ingresa una sola letra válida (A-Z, Ñ).";
+            mensajeJuego.style.color = "red";
+            inputIngresaLetra.value = "";
+            inputIngresaLetra.focus();
+            return;
+        }
+
+        // 3. Validación de letra YA ADIVINADA
+        const letrasCorrectasAdivinadas = inputGuiones.textContent.replace(/ /g, '').split('');
+        const letrasIncorrectasAdivinadas = inputLetrasOut.textContent.replace(/, /g, '').split('');
+        
+        const letrasYaIntentadas = [...letrasCorrectasAdivinadas, ...letrasIncorrectasAdivinadas]
+                                    .filter(char => char !== '_' && char !== '');
+        
+        const setLetrasYaIntentadas = new Set(letrasYaIntentadas);
+
+        if (setLetrasYaIntentadas.has(letraIngresada)) {
+            mensajeJuego.textContent = `Ya enviaste la Letra ${letraIngresada} anteriormente. Intenta con otra.`;
+            mensajeJuego.style.color = "orange";
+            inputIngresaLetra.value = "";
+            inputIngresaLetra.focus();
+            return;
+        }
+        
+        // Si todas las validaciones pasan, PASAMOS LA LETRA COMO ARGUMENTO
+       // mensajeJuego.textContent = "Adivinando...";
+       // mensajeJuego.style.color = "black";
+
+        await manejarEnvioLetra(letraIngresada); // <-- ¡AHORA PASA LA LETRA AQUÍ!
+        inputIngresaLetra.value = ""; // Limpiar el input después de enviar
+    });
+}
 
 botonReiniciar.addEventListener("click", async function(event) {
     event.preventDefault();
