@@ -1,40 +1,40 @@
 // --- Elementos HTML de la interfaz (Selección de Modo, Ingreso de Palabra VS, Área de Juego) ---
-const seccionModosJuego = document.querySelector(".seccion-modos-juego");
-const seccionIngresarPalabra = document.querySelector(".seccion-ingresar-palabra");
-const seccionJuego = document.querySelector(".seccion-juego");
-const seccionMenu = document.getElementById("seccionMenu"); // Asegúrate de que este elemento realmente se use o elimínalo si no
+
+const seccionBienvenida = document.getElementById("seccionBienvenida"); // Agregado, ya que la tienes
+const seccionModosJuego = document.getElementById("seccionModosJuego"); // Cambiado de clase a ID
+const seccionIngresarPalabra = document.getElementById("seccionIngresarPalabra"); // Cambiado de clase a ID
+const seccionJuego = document.getElementById("seccionJuego"); // Cambiado de clase a ID
 
 // --- Botones de la Pantalla de Inicio y Selección de Modo ---
-const botonInicio = document.querySelector(".botonInicio");
-const botonSolitario = document.querySelector(".botonSolitario");
-const botonVersus = document.querySelector(".botonVersus");
-const botonOnline = document.querySelector(".botonOnline");
+const botonInicio = document.getElementById("botonInicio"); // Cambiado de clase a ID
+const botonSolitario = document.getElementById("botonSolitario"); // Cambiado de clase a ID
+const botonVersus = document.getElementById("botonVersus"); // Cambiado de clase a ID
+const botonOnline = document.getElementById("botonOnline"); // Cambiado de clase a ID
 
 // --- Elementos de la Sección de Ingreso de Palabra en Modo VS ---
-const inputPalabraVersus = document.querySelector(".inputPalabraVersus");
-const botonEnviarPalabra = document.querySelector(".botonEnviarPalabra");
-const botonCancelarVersus = document.querySelector(".botonCancelarVersus");
-const txtIngresarPalabraVersus = document.querySelector(".txtIngP");
+const inputPalabraVersus = document.getElementById("inputPalabraVersus");
+const botonEnviarPalabra = document.getElementById("botonEnviarPalabra");
+const botonCancelarVersus = document.getElementById("botonCancelarVersus");
+const txtIngresarPalabraVersus = document.getElementById("mensajeIngresarPalabraVersus");
 
 // --- Elementos de la Sección Principal del Juego ---
-const imagenAhorcado = document.getElementById("imagen");
-const mensajeJuego = document.querySelector(".mensaje-juego");
-const inputGuiones = document.querySelector(".guion");
-const inputLetrasOut = document.querySelector(".LetrasOut");
-const inputIngresaLetra = document.getElementById("inputAdivinarLetra");
-const botonSubirLetra = document.querySelector(".subirLetra");
-const botonReiniciar = document.querySelector(".reiniciar");
-const mensajeTurno = document.querySelector(".mensaje-turno"); // Mensaje específico para el turno en online
-const letrasIncorrectasSpan = document.getElementById("letrasIncorrectasSpan");
-
+const imagenAhorcado = document.getElementById("imagen"); // OK - Coincide
+const mensajeJuego = document.getElementById("mensajeJuego"); // <- En index.html es <p id="mensajeJuego" ...>
+const inputGuiones = document.getElementById("palabra-guiones"); // <- En index.html es <p id="palabra-guiones" ...>
+const inputLetrasOut = document.getElementById("letrasIncorrectasValor"); // <- En index.html es <span id="letrasIncorrectasValor">
+const inputIngresaLetra = document.getElementById("inputAdivinarLetra"); // OK - Coincide
+const botonSubirLetra = document.getElementById("botonSubirLetra"); // <- En index.html es <button id="botonSubirLetra" ...>
+const botonReiniciar = document.getElementById("reiniciar"); // <- En index.html es <button id="reiniciar" ...>
+const mensajeTurno = document.getElementById("mensajeTurno"); // <- En index.html es <p id="mensajeTurno" ...>
+const letrasIncorrectasSpan = document.getElementById("letrasIncorrectasSpan"); // OK - Coincide
 
 // --- Elementos para la seccion Online ---
-const seccionOnline = document.querySelector(".seccion-online");
-const botonCrearPartida = document.querySelector(".boton-crear-partida");
-const inputIdPartida = document.querySelector(".input-id-partida");
-const botonUnirsePartida = document.querySelector(".boton-unirse-partida");
-const mensajeIdPartida = document.querySelector(".mensaje-id-partida");
-const botonVolverModosOnline = seccionOnline.querySelector(".volver-modos"); // Correcto: buscar dentro de seccionOnline
+const seccionOnline = document.getElementById("seccionOnline"); // Cambiado de clase a ID
+const botonCrearPartida = document.getElementById("botonCrearPartida"); // Cambiado de clase a ID
+const inputIdPartida = document.getElementById("inputIdPartida"); // Cambiado de clase a ID
+const botonUnirsePartida = document.getElementById("botonUnirsePartida"); // Cambiado de clase a ID
+const mensajeIdPartida = document.getElementById("mensajeIdPartida"); // Cambiado de clase a ID
+const botonVolverModosOnline = document.getElementById("volverModos"); // <- En index.html es <button id="volverModos" ...> (No está dentro de seccionOnline en tu HTML, es un hermano)
 
 // --- Variables de Estado del Frontend ---
 let currentGameId = null; // Almacenará el ID de la partida activa
@@ -42,40 +42,55 @@ let currentMode = null;   // Almacenará el modo actual (solitario, versus, onl
 
 // --- Funciones de Utilidad para Mostrar/Ocultar Secciones ---
 function mostrarSeccion(seccion) {
-    // console.log("Mostrando:", seccion.id || seccion.className || seccion.tagName); // Para depuración
-    if (seccion) { // Agregamos esta verificación para evitar errores si el elemento no existe
-        if (seccion === seccionModosJuego || seccion === seccionIngresarPalabra || seccion === seccionJuego || seccion === seccionOnline || seccion === seccionMenu) {
-            seccion.style.display = "flex";
+    if (seccion) {
+        // Primero, removemos d-none para asegurar que sea visible
+        seccion.classList.remove("d-none");
+        
+        // Luego, añadimos la clase de display adecuada.
+        if (seccion === seccionBienvenida || seccion === seccionModosJuego || seccion === seccionIngresarPalabra || seccion === seccionJuego || seccion === seccionOnline) {
+            seccion.classList.add("d-flex"); // Tus secciones principales usan d-flex
         } else {
-            seccion.style.display = "block";
+            // Para otros elementos que puedan ser "block" por defecto
+            seccion.classList.add("d-block"); // Por ejemplo, si un p o un div dentro de una sección fuera a mostrarse de forma individual
         }
     }
 }
 
 function ocultarSeccion(seccion) {
-    // console.log("Ocultando:", seccion.id || seccion.className || seccion.tagName); // Para depuración
-    if (seccion) { // Agregamos esta verificación
-        seccion.style.display = "none";
+    if (seccion) {
+        // Siempre añadimos d-none para ocultar
+        seccion.classList.add("d-none");
+        // Y removemos d-flex o d-block para limpiar
+        seccion.classList.remove("d-flex", "d-block");
     }
 }
 
 function ocultarTodasLasSecciones() {
-    const secciones = [seccionModosJuego, seccionIngresarPalabra, seccionJuego, seccionOnline, seccionMenu];
-    secciones.forEach(seccion => {
-        ocultarSeccion(seccion); // Usamos la función ocultarSeccion para manejar el `if (seccion)`
+    // Aquí usamos los nuevos nombres de las constantes para las secciones principales
+    const seccionesPrincipales = [
+        seccionBienvenida, // Agregado
+        seccionModosJuego,
+        seccionIngresarPalabra,
+        seccionJuego,
+        seccionOnline,
+      
+    ];
+
+    seccionesPrincipales.forEach(seccion => {
+        // Asegúrate de que la sección exista antes de intentar ocultarla
+        if (seccion) {
+            ocultarSeccion(seccion);
+        }
     });
-    // Adicionalmente, ocultar elementos que no son secciones completas pero se gestionan su visibilidad
-    ocultarSeccion(botonSolitario);
-    ocultarSeccion(botonVersus);
-    ocultarSeccion(botonOnline);
-    ocultarSeccion(botonInicio); // Asegurarse que el botón de inicio también se oculte si se llama desde otros lugares
-    ocultarSeccion(inputIdPartida); // Ocultar por defecto en el reset
+
+    ocultarSeccion(inputIdPartida);
     ocultarSeccion(botonCrearPartida);
     ocultarSeccion(botonUnirsePartida);
     ocultarSeccion(botonVolverModosOnline);
+    ocultarSeccion(mensajeIdPartida);
 
     let botonContinuar = document.getElementById("botonContinuarOnline");
-    if (botonContinuar) ocultarSeccion(botonContinuar); // Asegurar que el botón de continuar online se oculte
+    if (botonContinuar) ocultarSeccion(botonContinuar);
 }
 
 // --- Configuración de SignalR ---
@@ -580,19 +595,26 @@ async function reiniciarJuego() {
 
 // --- Event Listeners de Botones ---
 
-botonInicio.addEventListener("click", function(event) {
-    event.preventDefault();
-    ocultarSeccion(this); // Ocultar el botón "Iniciar Juego"
-    mostrarSeccion(botonSolitario);
-    mostrarSeccion(botonVersus);
-    mostrarSeccion(botonOnline);
-    // Asegurarse de que los elementos de la sección online estén ocultos si el usuario no los elige
-    ocultarSeccion(inputIdPartida);
-    ocultarSeccion(botonCrearPartida);
-    ocultarSeccion(botonUnirsePartida);
-    ocultarSeccion(mensajeIdPartida);
-    ocultarSeccion(botonVolverModosOnline); // Ocultar el botón "Volver a Modos"
-});
+if (botonInicio) { // Siempre es buena práctica verificar si el elemento existe antes de añadir un listener
+    botonInicio.addEventListener("click", function(event) {
+        event.preventDefault(); // Previene el comportamiento por defecto del botón (si fuera un submit de formulario, por ejemplo)
+
+        console.log("Clic en Iniciar Juego - Transicionando a Modos de Juego"); // Para depuración
+
+        // 1. Ocultar la SECCIÓN COMPLETA de bienvenida
+        ocultarSeccion(seccionBienvenida);
+
+        // 2. Mostrar la SECCIÓN COMPLETA de modos de juego
+        mostrarSeccion(seccionModosJuego);
+
+    
+        ocultarSeccion(inputIdPartida);
+        ocultarSeccion(botonCrearPartida);
+        ocultarSeccion(botonUnirsePartida);
+        ocultarSeccion(mensajeIdPartida);
+        ocultarSeccion(botonVolverModosOnline);
+    });
+}
 
 botonSolitario.addEventListener("click", async function(event) {
     event.preventDefault();
@@ -692,39 +714,37 @@ inputIngresaLetra.addEventListener("keypress", async function(event) {
 });
 
 // Inicializar la interfaz al cargar la página
+// Inicializar la interfaz al cargar la página
 function inicializarUI() {
-    ocultarTodasLasSecciones(); // Primero, asegura que todo esté oculto.
-    mostrarSeccion(seccionModosJuego); // Muestra la sección principal de modos.
+    ocultarTodasLasSecciones(); // Primero, asegura que todo esté oculto usando la nueva lógica.
 
-    // Configura la visibilidad inicial de los botones dentro de seccionModosJuego
-    mostrarSeccion(botonInicio);
-    ocultarSeccion(botonSolitario);
-    ocultarSeccion(botonVersus);
-    ocultarSeccion(botonOnline);
+    // La pantalla de bienvenida es la primera que se muestra al inicio
+    mostrarSeccion(seccionBienvenida); // Ahora mostramos la sección de bienvenida
 
     // Ocultar todos los elementos de la sección online por defecto
+    // (Estos ya están ocultos por ocultarTodasLasSecciones, pero se mantienen para claridad si se necesita un override)
     ocultarSeccion(seccionOnline);
     ocultarSeccion(mensajeIdPartida);
     ocultarSeccion(inputIdPartida);
     ocultarSeccion(botonCrearPartida);
     ocultarSeccion(botonUnirsePartida);
-    ocultarSeccion(botonVolverModosOnline); // Ocultar este botón por defecto
-    // Asegurar que el posible botón "Ir al Juego" también esté oculto
+    ocultarSeccion(botonVolverModosOnline);
     let botonContinuar = document.getElementById("botonContinuarOnline");
     if (botonContinuar) ocultarSeccion(botonContinuar);
 
     // Ocultar la sección de ingreso de palabra
     ocultarSeccion(seccionIngresarPalabra);
-    inputPalabraVersus.value = ""; // Limpiar al inicio
-    txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo"; // Resetear mensaje
+    inputPalabraVersus.value = "";
+    // Usar el selector correcto para txtIngresarPalabraVersus si lo cambiaste a ID
+    txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo";
 
     // Ocultar la sección de juego y sus elementos
     ocultarSeccion(seccionJuego);
-    resetearUIJuego(); // Esto limpia los inputs y la imagen del ahorcado
-    ocultarSeccion(inputIngresaLetra); // Ocultar input/botón de adivinar al inicio
+    resetearUIJuego();
+    ocultarSeccion(inputIngresaLetra);
     ocultarSeccion(botonSubirLetra);
-    ocultarSeccion(botonReiniciar); // Ocultar reiniciar al inicio
-    ocultarSeccion(mensajeTurno); // Ocultar el mensaje de turno
+    ocultarSeccion(botonReiniciar);
+    ocultarSeccion(mensajeTurno);
 }
 
 // Llama a la función de inicialización y SignalR cuando el DOM esté completamente cargado
