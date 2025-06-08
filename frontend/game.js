@@ -834,6 +834,20 @@ if (botonSubirLetra) {
     });
 }
 
+// --- NUEVO: Manejar el evento 'Enter' en el input de adivinar letra ---
+if (inputIngresaLetra) {
+    inputIngresaLetra.addEventListener("keydown", (event) => {
+        // Verificar si la tecla presionada es 'Enter' (código 13 o 'Enter' por nombre de tecla)
+        if (event.key === "Enter" || event.keyCode === 13) {
+            event.preventDefault(); // Previene el comportamiento por defecto (ej. submit de formulario, salto de línea)
+            
+            // Simula un clic en el botón de subir letra
+            botonSubirLetra.click(); 
+        }
+    });
+}
+
+
 // --- Event Listener para el botón Reiniciar Partida ---
 if (botonReiniciar) {
     botonReiniciar.addEventListener("click", () => {
