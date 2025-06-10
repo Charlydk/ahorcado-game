@@ -131,6 +131,10 @@ connection.onclose(async (error) => {
 connection.on("ReceiveGameUpdate", (data) => {
     console.log("ReceiveGameUpdate recibido:", data);
     latestGameData = data; // Siempre almacena la última data recibida
+    console.log("ReceiveGameUpdate recibido. Datos:", data); // Muestra todo el objeto gameData
+    console.log("Juego terminado (juegoTerminado):", data.juegoTerminado);
+    console.log("Mensaje recibido (gameData.message):", data.message); // Muestra el mensaje específico
+
 
     // Solo actualiza la UI si la sección de juego está actualmente visible.
     // Esto evita intentar actualizar elementos que están ocultos en otras secciones.
@@ -252,64 +256,75 @@ async function iniciarJuego(modo, palabraVersus = "") {
 }
 
 function actualizarUIJuego(data) {
-    console.log("   Dentro de actualizarUIJuego. currentMode:", currentMode);
-    console.log("   Datos recibidos para actualizar UI:", data);
+    console.log("DEBUG: Datos recibidos en actualizarUIJuego:", data);
+    console.log("    Dentro de actualizarUIJuego. currentMode:", currentMode);
+    console.log("    Datos recibidos para actualizar UI:", data);
+    console.log("    [DEBUG] Mensaje recibido del backend (data.message):", data.message); // Mantén este log para verificar
 
-    if (inputGuiones) { // Siempre es buena práctica verificar que el elemento existe
+    if (inputGuiones) {
         inputGuiones.textContent = data.palabra.split('').join(' ');
     }
-    if (inputLetrasOut) { // Este es el <span> donde se muestran las letras incorrectas
-        // Si data.letrasIncorrectas es un array (ej. ["A", "B", "C"]), únelo a un string
-        // Si ya es un string (ej. "A, B, C"), simplemente asígnalo
+    if (inputLetrasOut) {
         inputLetrasOut.textContent = Array.isArray(data.letrasIncorrectas) ? data.letrasIncorrectas.join(", ") : data.letrasIncorrectas;
     }
     letrasIncorrectasSpan.textContent = `Letras incorrectas: ${data.letrasIncorrectas}`;
 
     const cantidadErradasCalculada = 6 - data.intentosRestantes;
-    console.log("   cantidad de erradas:", cantidadErradasCalculada);
+    console.log("    cantidad de erradas:", cantidadErradasCalculada);
 
     imagenAhorcado.src = `img/ahorcadito_${Math.min(cantidadErradasCalculada + 1, 7)}.png`;
 
     if (data.juegoTerminado) {
         ocultarSeccion(botonSubirLetra);
         ocultarSeccion(inputIngresaLetra);
-        ocultarSeccion(mensajeTurno);
+        ocultarSeccion(mensajeTurno); // Esto ocultará el mensaje de turno.
 
-        if (data.palabra === data.palabraSecreta) {
+        // =========================================================================
+        // ¡¡¡CORRECCIÓN CLAVE AQUÍ!!!
+        // Priorizar el mensaje específico del servidor si existe
+        // =========================================================================
+        if (data.message && data.message !== "") {
+            mensajeJuego.textContent = data.message;
+            // Para la desconexión, usualmente queremos mostrar la imagen final del ahorcado.
+            imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de "GAME OVER"
+        } else if (data.palabra === data.palabraSecreta) {
+            // El juego terminó y se ganó
             mensajeJuego.textContent = `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`;
-            imagenAhorcado.src = `img/ahorcadito_0.png`;
+            imagenAhorcado.src = `img/ahorcadito_0.png`; // Imagen de éxito
         } else {
+            // El juego terminó (perdió por intentos o alguna otra razón no cubierta por un mensaje específico)
             mensajeJuego.textContent = `¡GAME OVER! La palabra era: ${data.palabraSecreta}`;
-            imagenAhorcado.src = `img/ahorcadito_7.png`;
+            imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de "GAME OVER"
         }
-        mostrarSeccion(botonReiniciar);
-        console.log("   Juego Terminado detectado.");
+        // =========================================================================
+        // FIN DE LA CORRECCIÓN
+        // =========================================================================
 
+        mostrarSeccion(botonReiniciar);
+        // Asegúrate de mostrar también el botón de "Volver al Menú" si no lo estás haciendo ya
+        // (es buena práctica al finalizar un juego online)
+        mostrarSeccion(botonVolverAlMenu); 
+
+        console.log("    Juego Terminado detectado. Mensaje establecido en UI:", mensajeJuego.textContent); // Log actualizado
     } else {
         // Si el juego NO ha terminado:
         mostrarSeccion(inputIngresaLetra);
         mostrarSeccion(botonSubirLetra);
         ocultarSeccion(botonReiniciar);
+        mostrarSeccion(botonVolverAlMenu);
 
         if (currentMode === "online") {
-            console.log("   Modo online detectado. Evaluando turno.");
+            console.log("    Modo online detectado. Evaluando turno.");
             mostrarSeccion(mensajeTurno); // Asegurar que el mensaje de turno sea visible en online
 
-            // *** ESTO ES CLAVE PARA EL JUGADOR 1 (CREADOR) ***
-            // Si la partida está lista para empezar (turno asignado)
-            // Y la sección de juego NO está visible (porque J1 sigue en la pantalla de ID)
-            // Entonces, fuerza la transición a la sección de juego.
             if (data.turnoActualConnectionId && data.turnoActualConnectionId !== "" && seccionJuego.style.display === "none") {
-                 console.log("   J1: Partida lista y sección de juego no visible. Transicionando a la sección de juego.");
-                 ocultarTodasLasSecciones();
-                 mostrarSeccion(seccionJuego);
-                 // Importante: Después de la transición, la lógica del turno de abajo se ejecutará para actualizar la UI
+                console.log("    J1: Partida lista y sección de juego no visible. Transicionando a la sección de juego.");
+                ocultarTodasLasSecciones();
+                mostrarSeccion(seccionJuego);
             }
 
-            // *** Lógica de mensaje de turno y habilitar/deshabilitar input para modo ONLINE ***
-            // ESTE BLOQUE DEBE IR DESPUÉS DE LA TRANSICIÓN DE SECCIÓN (si aplica).
             const myConnectionId = connection.connectionId;
-            console.log(`   My connectionId: ${myConnectionId}, Turno actual: ${data.turnoActualConnectionId}`);
+            console.log(`    My connectionId: ${myConnectionId}, Turno actual: ${data.turnoActualConnectionId}`);
 
             if (data.turnoActualConnectionId && myConnectionId) {
                 if (data.turnoActualConnectionId === myConnectionId) {
@@ -317,24 +332,23 @@ function actualizarUIJuego(data) {
                     mensajeJuego.textContent = "Ingresa una Letra";
                     inputIngresaLetra.disabled = false;
                     botonSubirLetra.disabled = false;
-                    console.log("   Es mi turno.");
+                    console.log("    Es mi turno.");
                 } else {
                     mensajeTurno.textContent = "Espera tu turno.";
                     mensajeJuego.textContent = "El otro jugador está adivinando.";
                     inputIngresaLetra.disabled = true;
                     botonSubirLetra.disabled = true;
-                    console.log("   Es el turno del otro jugador.");
+                    console.log("    Es el turno del otro jugador.");
                 }
             } else {
-                // Caso inicial en online antes de que ambos jugadores se unan o turno se asigne
                 mensajeJuego.textContent = "Esperando a otro jugador...";
                 inputIngresaLetra.disabled = true;
                 botonSubirLetra.disabled = true;
-                console.log("   Modo online: Esperando a otro jugador (turno no asignado).");
+                console.log("    Modo online: Esperando a otro jugador (turno no asignado).");
             }
         } else {
             // Para modos solitario y versus:
-            console.log("   Modo solitario/versus detectado.");
+            console.log("    Modo solitario/versus detectado.");
             ocultarSeccion(mensajeTurno);
             mensajeJuego.textContent = "Ingresa una Letra";
             inputIngresaLetra.disabled = false;
@@ -345,7 +359,6 @@ function actualizarUIJuego(data) {
     inputIngresaLetra.value = "";
     inputIngresaLetra.focus();
 }
-
 // --- Lógica para Crear Partida Online ---
 async function crearNuevaPartidaOnline() {
     try {
@@ -355,7 +368,7 @@ async function crearNuevaPartidaOnline() {
             mensajeIdPartida.style.color = "red";
             return;
         }
-
+        resetearUIJuego(); 
         mensajeIdPartida.textContent = "Creando partida online...";
         mensajeIdPartida.style.color = "blue";
         

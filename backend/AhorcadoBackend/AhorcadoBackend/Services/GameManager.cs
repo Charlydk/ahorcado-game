@@ -140,37 +140,36 @@ namespace AhorcadoBackend.Services
         }
 
         // Procesa una letra adivinada
-        public JuegoEstado? ProcessLetter(string gameId, char letra, string? playerConnectionId) // *** CORRECCIÓN: 'string?' para que sea nullable ***
+        public JuegoEstado? ProcessLetter(string gameId, char letra, string? playerConnectionId)
         {
             if (_activeGames.TryGetValue(gameId, out var game))
             {
                 // Validar que sea el turno del jugador que envía la letra
-                // *** CORRECCIÓN: Solo valida si playerConnectionId NO es null (es decir, en modo online) ***
                 if (playerConnectionId != null && game.TurnoActualConnectionId != playerConnectionId)
                 {
                     Console.WriteLine($"Error: No es el turno de {playerConnectionId} en la partida {gameId}. Turno de {game.TurnoActualConnectionId}");
-                    // Para el frontend, devolver el estado actual con un mensaje de error sería mejor.
-                    // Por ahora, para depurar el error, devolver null podría ser confuso.
-                    // Podríamos modificar JuegoEstadoResponse para llevar un mensaje de error.
-                    // De momento, sigamos la lógica de devolver null si no es el turno,
-                    // pero el frontend debería manejar este null o un status 400.
-                    return null;
+                    // Para el frontend, puedes establecer un mensaje aquí si quieres comunicar que no es su turno.
+                    // game.Message = "No es tu turno. Espera."; // Opcional, si quieres enviar un mensaje específico
+                    return null; // O el objeto 'game' con el mensaje actualizado, si prefieres
                 }
 
-                if (game.JuegoTerminado) return game; // No procesar si el juego ya terminó
+                if (game.JuegoTerminado)
+                {
+                    // El juego ya terminó, no procesar más letras.
+                    // El mensaje ya debería estar establecido por la lógica de fin de juego.
+                    return game;
+                }
 
                 letra = char.ToUpper(letra);
 
-                // *** CORRECCIÓN: Asegúrate de que las listas estén inicializadas si no lo están ya ***
-                // Aunque lo ideal es que estén inicializadas en JuegoEstado.cs, esto es un "seguro"
                 if (game.LetrasIngresadas == null) game.LetrasIngresadas = new List<char>();
                 if (game.LetrasIncorrectas == null) game.LetrasIncorrectas = new List<char>();
 
 
                 if (game.LetrasIngresadas.Contains(letra))
                 {
-                    // Ya se intentó esta letra. El frontend debería manejar esto.
-                    // Podrías retornar el estado actual o null si quieres que el frontend lo trate como error.
+                    // La letra ya fue ingresada. Establece un mensaje y retorna.
+                    game.Message = $"La letra '{letra}' ya fue ingresada. Intenta con otra.";
                     return game;
                 }
 
@@ -198,28 +197,44 @@ namespace AhorcadoBackend.Services
                 {
                     game.IntentosRestantes--;
                     game.LetrasIncorrectas.Add(letra);
+                    game.Message = $"¡Incorrecto! La letra '{letra}' no está en la palabra."; // Mensaje de intento incorrecto
+                }
+                else
+                {
+                    game.Message = $"¡Bien! La letra '{letra}' es correcta."; // Mensaje de intento correcto
                 }
 
-                // Verificar si el juego terminó
+
+                // =========================================================================
+                // ¡¡¡CORRECCIÓN CLAVE AQUÍ: Asignar game.Message al FINAL del juego!!!
+                // =========================================================================
                 if (game.IntentosRestantes <= 0)
                 {
                     game.JuegoTerminado = true;
-                    game.PalabraSecreta = game.PalabraSecreta; // Revelar la palabra si se pierde
+                    game.Message = $"¡GAME OVER! La palabra era: {game.PalabraSecreta}"; // ¡Mensaje de Derrota!
+                    game.TurnoActualConnectionId = null; // No hay turno si el juego terminó
                 }
                 else if (game.GuionesActuales == game.PalabraSecreta)
                 {
                     game.JuegoTerminado = true; // Si se adivina, se gana
+                    game.Message = $"¡Felicidades! Has adivinado la palabra: {game.PalabraSecreta}"; // ¡Mensaje de Victoria!
+                    game.TurnoActualConnectionId = null; // No hay turno si el juego terminó
                 }
+                // =========================================================================
+                // FIN DE LA CORRECCIÓN DE MENSAJE DE FIN DE JUEGO
+                // =========================================================================
 
                 game.LastActivityTime = DateTime.UtcNow; // Actualizar actividad al procesar letra
 
                 // Cambiar el turno al otro jugador si el juego no ha terminado y es una partida online (2 jugadores)
+                // ESTE BLOQUE SOLO SE EJECUTA SI EL JUEGO NO ESTÁ TERMINADO.
                 if (!game.JuegoTerminado && game.PlayerConnectionIds.Count == 2)
                 {
-                    // Asegura que el TurnoActualConnectionId no sea null antes de intentar cambiarlo
                     if (game.TurnoActualConnectionId != null)
                     {
                         game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != game.TurnoActualConnectionId);
+                        // NOTA: El game.Message para "Espera tu turno" o "Es tu turno" se maneja en el frontend.
+                        // Aquí solo se asigna el ID del turno.
                     }
                     else
                     {
@@ -227,10 +242,11 @@ namespace AhorcadoBackend.Services
                         game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault();
                     }
                 }
-                else if (game.JuegoTerminado)
-                {
-                    game.TurnoActualConnectionId = null; // No hay turno si el juego terminó
-                }
+                // Si el juego ha terminado, el turno ya se puso a null en los bloques anteriores
+                // else if (game.JuegoTerminado) // Esto ya no es necesario aquí.
+                // {
+                // game.TurnoActualConnectionId = null;
+                // }
 
                 return game;
             }
@@ -265,9 +281,6 @@ namespace AhorcadoBackend.Services
             return null;
         }
 
-        // =========================================================================================
-        // NUEVO MÉTODO: Limpia las partidas inactivas o terminadas
-        // =========================================================================================
         public void CleanInactiveGames(TimeSpan inactivityThreshold, TimeSpan completedGameRetention)
         {
             DateTime now = DateTime.UtcNow;
@@ -305,10 +318,7 @@ namespace AhorcadoBackend.Services
             }
             Console.WriteLine($"GameManager: Limpieza completada. Partidas activas restantes: {_activeGames.Count}");
         }
-
-
-        // *** NUEVO MÉTODO: Encuentra y remueve un jugador por su ConnectionId de CUALQUIER partida ***
-        public JuegoEstado? FindAndRemovePlayerFromGame(string disconnectedConnectionId)
+    public JuegoEstado? FindAndRemovePlayerFromGame(string disconnectedConnectionId)
         {
             JuegoEstado? affectedGame = null;
 
