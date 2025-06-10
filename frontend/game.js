@@ -259,20 +259,27 @@ function actualizarUIJuego(data) {
     console.log("DEBUG: Datos recibidos en actualizarUIJuego:", data);
     console.log("    Dentro de actualizarUIJuego. currentMode:", currentMode);
     console.log("    Datos recibidos para actualizar UI:", data);
-    console.log("    [DEBUG] Mensaje recibido del backend (data.message):", data.message); // Mantén este log para verificar
+    console.log("    [DEBUG] Mensaje recibido del backend (data.message):", data.message);
 
-    if (inputGuiones) {
+    if (inputGuiones) { // Asumo que inputGuiones es guionesDiv
         inputGuiones.textContent = data.palabra.split('').join(' ');
     }
-    if (inputLetrasOut) {
-        inputLetrasOut.textContent = Array.isArray(data.letrasIncorrectas) ? data.letrasIncorrectas.join(", ") : data.letrasIncorrectas;
+    // Si inputLetrasOut es lo mismo que letrasIncorrectasSpan, usa solo uno.
+    // Voy a mantener letrasIncorrectasSpan para el ejemplo.
+    if (letrasIncorrectasSpan) { // Asumo que inputLetrasOut es letrasIncorrectasSpan
+        letrasIncorrectasSpan.textContent = `Letras incorrectas: ${Array.isArray(data.letrasIncorrectas) ? data.letrasIncorrectas.join(", ") : data.letrasIncorrectas}`;
     }
-    letrasIncorrectasSpan.textContent = `Letras incorrectas: ${data.letrasIncorrectas}`;
+    // Quité la línea duplicada de letrasIncorrectasSpan.textContent
 
     const cantidadErradasCalculada = 6 - data.intentosRestantes;
     console.log("    cantidad de erradas:", cantidadErradasCalculada);
 
-    imagenAhorcado.src = `img/ahorcadito_${Math.min(cantidadErradasCalculada + 1, 7)}.png`;
+    // Esta línea es para el estado del juego en curso (no terminado).
+    // Si el juego está en curso, actualiza la imagen según los errores.
+    // Si el juego ya terminó, la lógica de abajo sobrescribirá esto.
+    if (!data.juegoTerminado) { // Solo actualiza esta imagen si el juego no ha terminado
+        imagenAhorcado.src = `img/ahorcadito_${Math.min(cantidadErradasCalculada + 1, 7)}.png`;
+    }
 
     if (data.juegoTerminado) {
         ocultarSeccion(botonSubirLetra);
@@ -280,43 +287,44 @@ function actualizarUIJuego(data) {
         ocultarSeccion(mensajeTurno); // Esto ocultará el mensaje de turno.
 
         // =========================================================================
-        // ¡¡¡CORRECCIÓN CLAVE AQUÍ!!!
-        // Priorizar el mensaje específico del servidor si existe
+        // ¡¡¡CORRECCIÓN CLAVE DE LÓGICA DE IMAGEN Y MENSAJES!!!
+        // Priorizamos la victoria, luego la derrota, y finalmente otros mensajes de fin de juego.
         // =========================================================================
-        if (data.message && data.message !== "") {
-            mensajeJuego.textContent = data.message;
-            // Para la desconexión, usualmente queremos mostrar la imagen final del ahorcado.
-            imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de "GAME OVER"
-        } else if (data.palabra === data.palabraSecreta) {
-            // El juego terminó y se ganó
+        if (data.palabra === data.palabraSecreta) {
+            // El juego terminó y el jugador GANÓ
             mensajeJuego.textContent = `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`;
-            imagenAhorcado.src = `img/ahorcadito_0.png`; // Imagen de éxito
-        } else {
-            // El juego terminó (perdió por intentos o alguna otra razón no cubierta por un mensaje específico)
+            imagenAhorcado.src = `img/ahorcadito_0.png`; // IMAGEN DE ÉXITO (GANASTE)
+        } else if (data.intentosRestantes <= 0) {
+            // El juego terminó y el jugador PERDIÓ por intentos
             mensajeJuego.textContent = `¡GAME OVER! La palabra era: ${data.palabraSecreta}`;
-            imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de "GAME OVER"
+            imagenAhorcado.src = `img/ahorcadito_7.png`; // IMAGEN DE DERROTA (GAME OVER)
+        } else if (data.message && data.message !== "") {
+            // El juego terminó por otra razón (ej. oponente se desconectó)
+            // Aquí puedes decidir qué imagen mostrar. Generalmente, una desconexión es una especie de "fin de juego" forzado.
+            mensajeJuego.textContent = data.message;
+            imagenAhorcado.src = `img/ahorcadito_7.png`; // Usamos la imagen de "GAME OVER" para desconexión también.
         }
         // =========================================================================
-        // FIN DE LA CORRECCIÓN
+        // FIN DE LA CORRECCIÓN DE LÓGICA
         // =========================================================================
 
         mostrarSeccion(botonReiniciar);
-        // Asegúrate de mostrar también el botón de "Volver al Menú" si no lo estás haciendo ya
-        // (es buena práctica al finalizar un juego online)
+        // Asegúrate de mostrar también el botón de "Volver al Menú"
         mostrarSeccion(botonVolverAlMenu); 
 
-        console.log("    Juego Terminado detectado. Mensaje establecido en UI:", mensajeJuego.textContent); // Log actualizado
+        console.log("    Juego Terminado detectado. Mensaje establecido en UI:", mensajeJuego.textContent);
     } else {
         // Si el juego NO ha terminado:
         mostrarSeccion(inputIngresaLetra);
         mostrarSeccion(botonSubirLetra);
         ocultarSeccion(botonReiniciar);
-        mostrarSeccion(botonVolverAlMenu);
+        mostrarSeccion(botonVolverAlMenu); // Se mantiene visible el botón de volver al menú durante el juego si se desea.
 
         if (currentMode === "online") {
             console.log("    Modo online detectado. Evaluando turno.");
             mostrarSeccion(mensajeTurno); // Asegurar que el mensaje de turno sea visible en online
 
+            // Esto se usaba para la transición inicial, quizás ya no es necesario si se maneja al hacer clic en "Ir al Juego"
             if (data.turnoActualConnectionId && data.turnoActualConnectionId !== "" && seccionJuego.style.display === "none") {
                 console.log("    J1: Partida lista y sección de juego no visible. Transicionando a la sección de juego.");
                 ocultarTodasLasSecciones();
@@ -329,19 +337,19 @@ function actualizarUIJuego(data) {
             if (data.turnoActualConnectionId && myConnectionId) {
                 if (data.turnoActualConnectionId === myConnectionId) {
                     mensajeTurno.textContent = "¡Es tu turno!";
-                    mensajeJuego.textContent = "Ingresa una Letra";
+                    mensajeJuego.textContent = "Ingresa una Letra"; // Mensaje para la fase de juego
                     inputIngresaLetra.disabled = false;
                     botonSubirLetra.disabled = false;
                     console.log("    Es mi turno.");
                 } else {
                     mensajeTurno.textContent = "Espera tu turno.";
-                    mensajeJuego.textContent = "El otro jugador está adivinando.";
+                    mensajeJuego.textContent = "El otro jugador está adivinando."; // Mensaje para la fase de juego
                     inputIngresaLetra.disabled = true;
                     botonSubirLetra.disabled = true;
                     console.log("    Es el turno del otro jugador.");
                 }
             } else {
-                mensajeJuego.textContent = "Esperando a otro jugador...";
+                mensajeJuego.textContent = "Esperando a otro jugador..."; // Mensaje si aún no hay turno asignado (J2 no se unió)
                 inputIngresaLetra.disabled = true;
                 botonSubirLetra.disabled = true;
                 console.log("    Modo online: Esperando a otro jugador (turno no asignado).");
@@ -349,8 +357,8 @@ function actualizarUIJuego(data) {
         } else {
             // Para modos solitario y versus:
             console.log("    Modo solitario/versus detectado.");
-            ocultarSeccion(mensajeTurno);
-            mensajeJuego.textContent = "Ingresa una Letra";
+            ocultarSeccion(mensajeTurno); // No es relevante para solitario/versus
+            mensajeJuego.textContent = "Ingresa una Letra"; // Mensaje para la fase de juego
             inputIngresaLetra.disabled = false;
             botonSubirLetra.disabled = false;
         }
