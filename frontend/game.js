@@ -208,8 +208,8 @@ async function startSignalRConnection() {
 // --- Funciones de Lógica de Juego ---
 
 function resetearUIJuego() {
-    inputGuiones.value = " "; // Se inicializa con un espacio, el backend llenará con guiones
-    inputLetrasOut.value = ""; // ¡Esto es clave para limpiar las letras incorrectas!
+    inputGuiones.textContent = " "; // Se inicializa con un espacio, el backend llenará con guiones
+    letrasIncorrectasSpan.textContent = " "; // ¡Esto es clave para limpiar las letras incorrectas!
     imagenAhorcado.src = "img/ahorcadito_1.png"; // Imagen inicial del ahorcado
     mensajeJuego.textContent = ""; // Limpiar el mensaje
     inputIngresaLetra.value = ""; // Limpiar el input de letra
@@ -218,6 +218,7 @@ function resetearUIJuego() {
     mostrarSeccion(inputIngresaLetra);
     mostrarSeccion(botonSubirLetra);
     ocultarSeccion(mensajeTurno); // Ocultar el mensaje de turno por defecto (solo se usa en online)
+    //ocultarSeccion(letrasIncorrectasSpan);
 }
 
 async function iniciarJuego(modo, palabraVersus = "") {
@@ -370,6 +371,12 @@ function actualizarUIJuego(data) {
 // --- Lógica para Crear Partida Online ---
 async function crearNuevaPartidaOnline() {
     try {
+
+        // --- LIMPIEZA INICIAL DE VARIABLES GLOBALES PARA NUEVA PARTIDA ---
+        latestGameData = null; // ¡CLAVE! Limpiar cualquier estado de partida anterior
+        currentGameId = null; // ¡CLAVE! Asegurar que no haya un ID de partida anterior
+        // --- FIN LIMPIEZA ---
+
         const connectionId = connection.connectionId;
         if (!connectionId) {
             mensajeIdPartida.textContent = "Error: Conexión SignalR no establecida. Inténtalo de nuevo.";
