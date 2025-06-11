@@ -218,7 +218,7 @@ function resetearUIJuego() {
     mostrarSeccion(inputIngresaLetra);
     mostrarSeccion(botonSubirLetra);
     ocultarSeccion(mensajeTurno); // Ocultar el mensaje de turno por defecto (solo se usa en online)
-    //ocultarSeccion(letrasIncorrectasSpan);
+
 }
 
 async function iniciarJuego(modo, palabraVersus = "") {
