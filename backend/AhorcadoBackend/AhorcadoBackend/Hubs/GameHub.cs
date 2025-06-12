@@ -1,10 +1,10 @@
-﻿// GameHub.cs
-using AhorcadoBackend.Models;
+﻿using AhorcadoBackend.Models;
 using AhorcadoBackend.Services;
 using Microsoft.AspNetCore.SignalR;
 using System;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Collections.Generic; // Asegúrate de tener esta directiva para List
 
 namespace AhorcadoBackend.Hubs
 {
@@ -35,6 +35,7 @@ namespace AhorcadoBackend.Hubs
             game.PlayerConnectionIds.Add(Context.ConnectionId); // Agrega al creador
             game.CreadorConnectionId = Context.ConnectionId; // Define al creador
             game.TurnoActualConnectionId = Context.ConnectionId; // El creador tiene el primer turno
+            game.Message = $"Partida creada. ID: {game.GameId}. Esperando a otro jugador..."; // Establece el mensaje inicial
 
             await Groups.AddToGroupAsync(Context.ConnectionId, game.GameId);
             Console.WriteLine($"Partida online creada con ID: {game.GameId} por {Context.ConnectionId}");
@@ -48,7 +49,7 @@ namespace AhorcadoBackend.Hubs
                 LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
                 JuegoTerminado = game.JuegoTerminado,
                 TurnoActualConnectionId = game.TurnoActualConnectionId,
-                Message = $"Partida creada. ID: {game.GameId}. Esperando a otro jugador..."
+                Message = game.Message // Usar el mensaje que ya se estableció
             });
 
             return game.GameId; // Devuelve el GameId al cliente
@@ -66,26 +67,30 @@ namespace AhorcadoBackend.Hubs
 
             if (game.PlayerConnectionIds.Count >= 2)
             {
-                await Clients.Caller.SendAsync("ReceiveMessage", "La partida ya está llena.");
-                return;
+                if (game.PlayerConnectionIds.Contains(Context.ConnectionId))
+                {
+                    await Clients.Caller.SendAsync("ReceiveMessage", "Ya estás en esta partida.");
+                    // Aunque ya esté, enviamos el estado actual para refrescar su UI
+                    await Clients.Caller.SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
+                    {
+                        GameId = game.GameId,
+                        Palabra = game.GuionesActuales,
+                        IntentosRestantes = game.IntentosRestantes,
+                        LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+                        JuegoTerminado = game.JuegoTerminado,
+                        TurnoActualConnectionId = game.TurnoActualConnectionId,
+                        PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null, // Revela solo si terminó
+                        Message = game.Message // Usar el mensaje actual del juego
+                    });
+                    return;
+                }
+                else
+                {
+                    await Clients.Caller.SendAsync("ReceiveMessage", "La partida ya está llena.");
+                    return;
+                }
             }
 
-            if (game.PlayerConnectionIds.Contains(Context.ConnectionId))
-            {
-                await Clients.Caller.SendAsync("ReceiveMessage", "Ya estás en esta partida.");
-                // Aunque ya esté, enviamos el estado actual para refrescar su UI
-                await Clients.Caller.SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
-                {
-                    GameId = game.GameId,
-                    Palabra = game.GuionesActuales,
-                    IntentosRestantes = game.IntentosRestantes,
-                    LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
-                    JuegoTerminado = game.JuegoTerminado,
-                    TurnoActualConnectionId = game.TurnoActualConnectionId,
-                    Message = game.Message // Usar el mensaje actual del juego
-                });
-                return;
-            }
 
             game.PlayerConnectionIds.Add(Context.ConnectionId);
             game.LastActivityTime = DateTime.UtcNow; // Actualizar actividad
@@ -98,7 +103,7 @@ namespace AhorcadoBackend.Hubs
                 game.JuegoTerminado = false; // Asegurar que no esté marcado como terminado
                 // Decide quién tiene el primer turno si no lo decidiste al crear.
                 // Aquí, el creador ya tiene el primer turno, lo mantenemos.
-                game.Message = "¡El segundo jugador se ha unido! ¡Comienza la partida!";
+                game.Message = "¡El segundo jugador se ha unido! ¡Comienza la partida!"; // Mensaje para ambos
                 Console.WriteLine($"Partida {gameId} lista para comenzar con 2 jugadores.");
             }
             else
@@ -107,7 +112,6 @@ namespace AhorcadoBackend.Hubs
             }
 
             // Enviar la actualización del estado del juego a TODOS los jugadores del grupo.
-            // Esto es crucial para que ambos, el creador y el que se une, reciban el estado.
             await _hubContext.Clients.Group(gameId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
             {
                 GameId = game.GameId,
@@ -116,7 +120,8 @@ namespace AhorcadoBackend.Hubs
                 LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
                 JuegoTerminado = game.JuegoTerminado,
                 TurnoActualConnectionId = game.TurnoActualConnectionId,
-                Message = game.Message
+                Message = game.Message, // El mensaje actual del juego (ej. "¡El segundo jugador se ha unido!")
+                PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null // Revela solo si terminó
             });
         }
 
@@ -124,35 +129,36 @@ namespace AhorcadoBackend.Hubs
         // Método para procesar una letra ingresada por un cliente
         public async Task ProcessLetter(string gameId, char letter)
         {
-            var game = _gameManager.GetGame(gameId);
-            if (game == null || game.JuegoTerminado)
+            // El GameManager ahora valida el turno. Aquí solo recuperamos el resultado.
+            var result = _gameManager.ProcessLetter(gameId, letter, Context.ConnectionId);
+            var game = result.UpdatedGame; // Obtenemos el estado del juego actualizado del resultado
+
+            if (game == null)
             {
-                await Clients.Caller.SendAsync("ReceiveMessage", "La partida no existe o ha terminado.");
+                // Esto ocurriría si la partida no existe en el GameManager
+                await Clients.Caller.SendAsync("ReceiveMessage", result.Message); // Envía el mensaje de error del GameManager
                 return;
             }
 
-            // Verificar si es el turno del jugador que envió la letra
-            if (game.TurnoActualConnectionId != Context.ConnectionId)
+            // Si no fue el turno del jugador, el GameManager ya lo manejó y nos devolvió un mensaje específico.
+            if (result.Message == "No es tu turno. Espera al otro jugador.")
             {
-                await Clients.Caller.SendAsync("ReceiveMessage", "No es tu turno.");
-                // Opcional: Podrías enviar un ReceiveGameUpdate con el estado actual y un mensaje de "No es tu turno"
-                // para refrescar la UI y el mensaje del juego.
+                await Clients.Caller.SendAsync("ReceiveMessage", result.Message);
+                // Opcional: Podrías enviar un ReceiveGameUpdate con el estado actual y el mensaje,
+                // pero el mensaje "No es tu turno" es más para el cliente que intentó jugar.
+                // await Clients.Caller.SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
+                // {
+                //     GameId = game.GameId,
+                //     Palabra = game.GuionesActuales,
+                //     IntentosRestantes = game.IntentosRestantes,
+                //     LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+                //     JuegoTerminado = game.JuegoTerminado,
+                //     TurnoActualConnectionId = game.TurnoActualConnectionId,
+                //     Message = result.Message // Mensaje específico para el jugador que no es su turno
+                // });
                 return;
             }
 
-            game.LastActivityTime = DateTime.UtcNow; // Actualizar actividad
-
-            var resultado = _gameManager.ProcessLetter(gameId, letter, Context.ConnectionId);
-
-            // Cambiar el turno al otro jugador si el juego no ha terminado y es online
-            if (!game.JuegoTerminado && game.PlayerConnectionIds.Count == 2)
-            {
-                var otherPlayerId = game.PlayerConnectionIds.FirstOrDefault(id => id != Context.ConnectionId);
-                game.TurnoActualConnectionId = otherPlayerId;
-                game.Message = "¡Espera tu turno!"; // Mensaje para el que acaba de jugar
-                // No actualizamos el mensaje en el GameState directamente para el que le toca.
-                // Ese mensaje se establecerá en ReceiveGameUpdate en el cliente.
-            }
 
             // Enviar el estado actualizado del juego a todos los clientes en el grupo
             await _hubContext.Clients.Group(gameId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
@@ -162,9 +168,9 @@ namespace AhorcadoBackend.Hubs
                 IntentosRestantes = game.IntentosRestantes,
                 LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
                 JuegoTerminado = game.JuegoTerminado,
-                PalabraSecreta = game.PalabraSecreta, // Solo se revelará si el juego terminó
+                PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null, // Solo se revelará si el juego terminó
                 TurnoActualConnectionId = game.TurnoActualConnectionId,
-                Message = game.Message // El mensaje actual del juego (ej. "Letra correcta!", "Ya ingresaste esa letra!", etc.)
+                Message = result.Message // ¡Usamos el mensaje específico del resultado del GameManager!
             });
         }
 
@@ -179,12 +185,10 @@ namespace AhorcadoBackend.Hubs
             {
                 Console.WriteLine($"Cliente {disconnectedConnectionId} removido de la partida {affectedGame.GameId}.");
 
-                // Si la partida se marcó como terminada por el GameManager (ej. porque solo un jugador quedó)
-                if (affectedGame.JuegoTerminado)
+                // Notificar a todos los clientes en el grupo (si alguien quedó) con el estado final
+                // Si la partida se marcó como terminada por el GameManager (ej. porque solo un jugador quedó o no quedan)
+                if (affectedGame.JuegoTerminado || affectedGame.PlayerConnectionIds.Count == 0)
                 {
-                    Console.WriteLine($"Partida {affectedGame.GameId} terminada por desconexión de {disconnectedConnectionId}.");
-                    // Notificar a todos los clientes en el grupo (si alguien quedó) con el estado final
-                    // ESTO ES LO QUE NECESITAS DESCOMENTAR Y ASEGURAR QUE ESTÉ ASÍ:
                     Console.WriteLine($"Enviando JuegoEstadoResponse a clientes en grupo {affectedGame.GameId} con mensaje: '{affectedGame.Message}'.");
 
                     await _hubContext.Clients.Group(affectedGame.GameId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
@@ -199,13 +203,8 @@ namespace AhorcadoBackend.Hubs
                         Message = affectedGame.Message // El mensaje del GameManager sobre la terminación de la partida
                     });
                 }
-                else if (affectedGame.PlayerConnectionIds.Count == 0)
-                {
-                    // Si la partida quedó vacía y fue eliminada, no hay nadie a quien notificar en ese grupo.
-                    Console.WriteLine($"Partida {affectedGame.GameId} quedó sin jugadores y fue eliminada. No hay jugadores para notificar.");
-                }
-                // Si la partida no se marcó como terminada (lo cual no debería pasar para online de 2 jugadores
-                // si uno se desconecta y solo queda uno), entonces no haríamos nada aquí.
+                // Si no se marcó como terminada (aunque para 2 jugadores, si uno se va, sí debería),
+                // no enviaríamos una actualización de fin de juego aquí, pero la lógica del GameManager lo hace.
             }
             else
             {

@@ -1,7 +1,8 @@
 ﻿using AhorcadoBackend.Models;
 using System;
 using System.Collections.Concurrent;
-using System.Linq; // Añadir esta directiva using para usar Linq
+using System.Linq;
+using System.Collections.Generic; // Asegúrate de tener esta directiva para List
 
 namespace AhorcadoBackend.Services
 {
@@ -34,11 +35,9 @@ namespace AhorcadoBackend.Services
             string newGameId = gameId ?? Guid.NewGuid().ToString();
 
             // Si no se proporciona palabraSecreta, generamos una aleatoria.
-            // Aquí es donde necesitas una lista de palabras en GameManager.
-            // ¡Asegúrate de que GameManager tenga su propia lista de palabras!
             if (string.IsNullOrEmpty(palabraSecreta))
             {
-                palabraSecreta = GenerarPalabraAleatoria(); // Llama a un método interno para generar palabra
+                palabraSecreta = GenerarPalabraAleatoria();
             }
             else
             {
@@ -139,118 +138,128 @@ namespace AhorcadoBackend.Services
             return false;
         }
 
-        // Procesa una letra adivinada
-        public JuegoEstado? ProcessLetter(string gameId, char letra, string? playerConnectionId)
+        // =========================================================================================
+        // MÉTODO MODIFICADO: Procesa una letra adivinada y devuelve un ProcessLetterResult
+        // =========================================================================================
+        public ProcessLetterResult ProcessLetter(string gameId, char letra, string? playerConnectionId)
         {
-            if (_activeGames.TryGetValue(gameId, out var game))
+            var result = new ProcessLetterResult();
+
+            if (!_activeGames.TryGetValue(gameId, out var game))
             {
-                // Validar que sea el turno del jugador que envía la letra
-                if (playerConnectionId != null && game.TurnoActualConnectionId != playerConnectionId)
+                result.Message = "La partida no existe.";
+                return result; // Retorna con un mensaje de error
+            }
+
+            // Validar que sea el turno del jugador que envía la letra
+            // Esto es crucial para el modo online
+            if (playerConnectionId != null && game.PlayerConnectionIds.Count == 2 && game.TurnoActualConnectionId != playerConnectionId)
+            {
+                result.Message = "No es tu turno. Espera al otro jugador.";
+                result.UpdatedGame = game; // Devuelve el estado actual para refrescar UI
+                return result;
+            }
+
+            if (game.JuegoTerminado)
+            {
+                // El juego ya terminó, no procesar más letras.
+                result.Message = game.Message; // Usa el mensaje de fin de juego que ya está establecido
+                result.UpdatedGame = game;
+                result.IsGameOver = true; // O IsGameWon, según el caso
+                return result;
+            }
+
+            letra = char.ToUpper(letra);
+
+            if (game.LetrasIngresadas == null) game.LetrasIngresadas = new List<char>();
+            if (game.LetrasIncorrectas == null) game.LetrasIncorrectas = new List<char>();
+
+
+            if (game.LetrasIngresadas.Contains(letra))
+            {
+                // La letra ya fue ingresada. Establece un mensaje y retorna.
+                result.Message = $"La letra '{letra}' ya fue ingresada. Intenta con otra.";
+                result.UpdatedGame = game;
+                result.WasLetterAlreadyGuessed = true;
+                return result;
+            }
+
+            game.LetrasIngresadas.Add(letra);
+
+            bool letraCorrecta = false;
+            string nuevaPalabraGuiones = "";
+
+            for (int i = 0; i < game.PalabraSecreta.Length; i++)
+            {
+                if (game.PalabraSecreta[i] == letra)
                 {
-                    Console.WriteLine($"Error: No es el turno de {playerConnectionId} en la partida {gameId}. Turno de {game.TurnoActualConnectionId}");
-                    // Para el frontend, puedes establecer un mensaje aquí si quieres comunicar que no es su turno.
-                    // game.Message = "No es tu turno. Espera."; // Opcional, si quieres enviar un mensaje específico
-                    return null; // O el objeto 'game' con el mensaje actualizado, si prefieres
-                }
-
-                if (game.JuegoTerminado)
-                {
-                    // El juego ya terminó, no procesar más letras.
-                    // El mensaje ya debería estar establecido por la lógica de fin de juego.
-                    return game;
-                }
-
-                letra = char.ToUpper(letra);
-
-                if (game.LetrasIngresadas == null) game.LetrasIngresadas = new List<char>();
-                if (game.LetrasIncorrectas == null) game.LetrasIncorrectas = new List<char>();
-
-
-                if (game.LetrasIngresadas.Contains(letra))
-                {
-                    // La letra ya fue ingresada. Establece un mensaje y retorna.
-                    game.Message = $"La letra '{letra}' ya fue ingresada. Intenta con otra.";
-                    return game;
-                }
-
-                game.LetrasIngresadas.Add(letra);
-
-                bool letraCorrecta = false;
-                string nuevaPalabraGuiones = "";
-
-                for (int i = 0; i < game.PalabraSecreta.Length; i++)
-                {
-                    if (game.PalabraSecreta[i] == letra)
-                    {
-                        nuevaPalabraGuiones += letra;
-                        letraCorrecta = true;
-                    }
-                    else
-                    {
-                        nuevaPalabraGuiones += game.GuionesActuales[i];
-                    }
-                }
-
-                game.GuionesActuales = nuevaPalabraGuiones;
-
-                if (!letraCorrecta)
-                {
-                    game.IntentosRestantes--;
-                    game.LetrasIncorrectas.Add(letra);
-                    game.Message = $"¡Incorrecto! La letra '{letra}' no está en la palabra."; // Mensaje de intento incorrecto
+                    nuevaPalabraGuiones += letra;
+                    letraCorrecta = true;
                 }
                 else
                 {
-                    game.Message = $"¡Bien! La letra '{letra}' es correcta."; // Mensaje de intento correcto
+                    nuevaPalabraGuiones += game.GuionesActuales[i];
                 }
-
-
-                // =========================================================================
-                // ¡¡¡CORRECCIÓN CLAVE AQUÍ: Asignar game.Message al FINAL del juego!!!
-                // =========================================================================
-                if (game.IntentosRestantes <= 0)
-                {
-                    game.JuegoTerminado = true;
-                    game.Message = $"¡GAME OVER! La palabra era: {game.PalabraSecreta}"; // ¡Mensaje de Derrota!
-                    game.TurnoActualConnectionId = null; // No hay turno si el juego terminó
-                }
-                else if (game.GuionesActuales == game.PalabraSecreta)
-                {
-                    game.JuegoTerminado = true; // Si se adivina, se gana
-                    game.Message = $"¡Felicidades! Has adivinado la palabra: {game.PalabraSecreta}"; // ¡Mensaje de Victoria!
-                    game.TurnoActualConnectionId = null; // No hay turno si el juego terminó
-                }
-                // =========================================================================
-                // FIN DE LA CORRECCIÓN DE MENSAJE DE FIN DE JUEGO
-                // =========================================================================
-
-                game.LastActivityTime = DateTime.UtcNow; // Actualizar actividad al procesar letra
-
-                // Cambiar el turno al otro jugador si el juego no ha terminado y es una partida online (2 jugadores)
-                // ESTE BLOQUE SOLO SE EJECUTA SI EL JUEGO NO ESTÁ TERMINADO.
-                if (!game.JuegoTerminado && game.PlayerConnectionIds.Count == 2)
-                {
-                    if (game.TurnoActualConnectionId != null)
-                    {
-                        game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != game.TurnoActualConnectionId);
-                        // NOTA: El game.Message para "Espera tu turno" o "Es tu turno" se maneja en el frontend.
-                        // Aquí solo se asigna el ID del turno.
-                    }
-                    else
-                    {
-                        // Si por alguna razón el turno actual era null pero hay 2 jugadores, asigna al primero.
-                        game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault();
-                    }
-                }
-                // Si el juego ha terminado, el turno ya se puso a null en los bloques anteriores
-                // else if (game.JuegoTerminado) // Esto ya no es necesario aquí.
-                // {
-                // game.TurnoActualConnectionId = null;
-                // }
-
-                return game;
             }
-            return null; // Partida no encontrada
+
+            game.GuionesActuales = nuevaPalabraGuiones;
+
+            if (!letraCorrecta)
+            {
+                game.IntentosRestantes--;
+                game.LetrasIncorrectas.Add(letra);
+                result.Message = $"¡Incorrecto! La letra '{letra}' no está en la palabra."; // Mensaje de intento incorrecto
+                result.WasLetterIncorrect = true;
+            }
+            else
+            {
+                result.Message = $"¡Bien! La letra '{letra}' es correcta."; // Mensaje de intento correcto
+                result.WasLetterCorrect = true;
+            }
+
+            // =========================================================================
+            // Lógica de fin de juego (Victoria/Derrota)
+            // =========================================================================
+            if (game.IntentosRestantes <= 0)
+            {
+                game.JuegoTerminado = true;
+                game.Message = $"¡GAME OVER! La palabra era: {game.PalabraSecreta}"; // ¡Mensaje de Derrota!
+                game.TurnoActualConnectionId = null; // No hay turno si el juego terminó
+                result.IsGameOver = true;
+                result.Message = game.Message; // Actualizar el mensaje de resultado final
+            }
+            else if (game.GuionesActuales == game.PalabraSecreta)
+            {
+                game.JuegoTerminado = true; // Si se adivina, se gana
+                game.Message = $"¡Felicidades! Has adivinado la palabra: {game.PalabraSecreta}"; // ¡Mensaje de Victoria!
+                game.TurnoActualConnectionId = null; // No hay turno si el juego terminó
+                result.IsGameWon = true;
+                result.Message = game.Message; // Actualizar el mensaje de resultado final
+            }
+            // =========================================================================
+            // FIN DE LA LÓGICA DE MENSAJE DE FIN DE JUEGO
+            // =========================================================================
+
+            game.LastActivityTime = DateTime.UtcNow; // Actualizar actividad al procesar letra
+
+
+            if (!game.JuegoTerminado && game.PlayerConnectionIds.Count == 2)
+            {
+                // Si la letra fue enviada por el jugador del turno actual, cambiamos el turno.
+                // (Ya validamos al inicio del método que fuera su turno para llegar hasta aquí).
+                string oldTurnId = game.TurnoActualConnectionId; // Para logging
+                game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != oldTurnId);
+                Console.WriteLine($"DEBUG: Turno cambiado en partida {game.GameId}. Anterior: {oldTurnId}, Nuevo: {game.TurnoActualConnectionId}");
+            }
+            // Si el juego terminó, TurnoActualConnectionId ya se estableció a null arriba.
+            // Si no hay 2 jugadores (modo solitario/versus), no hay cambio de turno por ConnectionId.
+
+            // NO ASIGNAMOS MENSAJES DE TURNO AQUÍ. ESE MENSAJE DEBE SER GENÉRICO PARA LA ACCIÓN DE LA LETRA.
+            // EL CAMBIO DE TURNO (TurnoActualConnectionId) ES MANEJADO POR EL GameManager
+            // y el frontend lo interpretará para mostrar "Es tu turno" o "Espera tu turno".
+
+            result.UpdatedGame = game; // Asignar el estado del juego actualizado al resultado
+            return result;
         }
 
         // Reinicia una partida existente
@@ -275,6 +284,7 @@ namespace AhorcadoBackend.Services
                 {
                     game.TurnoActualConnectionId = null; // No hay jugadores, no hay turno
                 }
+                game.Message = "La partida ha sido reiniciada. ¡A adivinar!"; // Mensaje para el reinicio
 
                 return game;
             }
@@ -318,7 +328,7 @@ namespace AhorcadoBackend.Services
             }
             Console.WriteLine($"GameManager: Limpieza completada. Partidas activas restantes: {_activeGames.Count}");
         }
-    public JuegoEstado? FindAndRemovePlayerFromGame(string disconnectedConnectionId)
+        public JuegoEstado? FindAndRemovePlayerFromGame(string disconnectedConnectionId)
         {
             JuegoEstado? affectedGame = null;
 
