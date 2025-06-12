@@ -47,6 +47,13 @@ let currentGameId = null; // Almacenará el ID de la partida activa
 let currentMode = null;   // Almacenará el modo actual (solitario, versus, online)
 let latestGameData = null; // Almacenará los últimos datos del juego recibidos
 
+function limpiarEstadoGlobalDeJuego() {
+    currentGameId = null;
+    currentMode = null;
+    latestGameData = null;
+}
+
+
 // --- Funciones de Utilidad para Mostrar/Ocultar Secciones ---
 function mostrarSeccion(seccion) {
     if (seccion) {
@@ -99,6 +106,10 @@ function ocultarTodasLasSecciones() {
     let botonContinuar = document.getElementById("botonContinuarOnline");
     if (botonContinuar) ocultarSeccion(botonContinuar);
 }
+
+
+
+
 
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
@@ -258,113 +269,133 @@ async function iniciarJuego(modo, palabraVersus = "") {
 
 function actualizarUIJuego(data) {
     console.log("DEBUG: Datos recibidos en actualizarUIJuego:", data);
-    console.log("    Dentro de actualizarUIJuego. currentMode:", currentMode);
-    console.log("    Datos recibidos para actualizar UI:", data);
-    console.log("    [DEBUG] Mensaje recibido del backend (data.message):", data.message);
+    console.log("     Dentro de actualizarUIJuego. currentMode:", currentMode);
+    console.log("     Datos recibidos para actualizar UI:", data);
+    console.log("     [DEBUG] Mensaje recibido del backend (data.message):", data.message);
 
-    if (inputGuiones) { // Asumo que inputGuiones es guionesDiv
-        inputGuiones.textContent = data.palabra.split('').join(' ');
+    // --- Validar que los elementos HTML existan antes de usarlos ---
+    // Aunque ya los tienes como constantes globales, es buena práctica hacer una revisión rápida
+    // si son críticos y podrían faltar. Para este caso, tus constantes globales ya manejan esto.
+    // Solo me aseguro de que el 'intentosRestantes' si lo tienes, esté actualizado.
+    const intentosRestantesSpan = document.getElementById("intentosRestantes"); 
+    if (intentosRestantesSpan) {
+        intentosRestantesSpan.textContent = data.intentosRestantes;
     }
-    // Si inputLetrasOut es lo mismo que letrasIncorrectasSpan, usa solo uno.
-    // Voy a mantener letrasIncorrectasSpan para el ejemplo.
-    if (letrasIncorrectasSpan) { // Asumo que inputLetrasOut es letrasIncorrectasSpan
-        letrasIncorrectasSpan.textContent = `Letras incorrectas: ${Array.isArray(data.letrasIncorrectas) ? data.letrasIncorrectas.join(", ") : data.letrasIncorrectas}`;
-    }
-    // Quité la línea duplicada de letrasIncorrectasSpan.textContent
+
+    // --- Actualización de elementos básicos ---
+    // Estas líneas son las primeras que deberían actualizarse sin importar el estado del juego
+    inputGuiones.textContent = data.palabra.split('').join(' ');
+    letrasIncorrectasSpan.textContent = `Letras incorrectas: ${Array.isArray(data.letrasIncorrectas) ? data.letrasIncorrectas.join(", ") : data.letrasIncorrectas}`;
 
     const cantidadErradasCalculada = 6 - data.intentosRestantes;
-    console.log("    cantidad de erradas:", cantidadErradasCalculada);
+    console.log("     cantidad de erradas:", cantidadErradasCalculada);
 
-    // Esta línea es para el estado del juego en curso (no terminado).
-    // Si el juego está en curso, actualiza la imagen según los errores.
-    // Si el juego ya terminó, la lógica de abajo sobrescribirá esto.
-    if (!data.juegoTerminado) { // Solo actualiza esta imagen si el juego no ha terminado
-        imagenAhorcado.src = `img/ahorcadito_${Math.min(cantidadErradasCalculada + 1, 7)}.png`;
-    }
-
+    // --- Lógica de fin de juego (PRIORIDAD ALTA) ---
     if (data.juegoTerminado) {
         ocultarSeccion(botonSubirLetra);
         ocultarSeccion(inputIngresaLetra);
-        ocultarSeccion(mensajeTurno); // Esto ocultará el mensaje de turno.
+        ocultarSeccion(mensajeTurno); // Ocultar mensaje de turno al terminar el juego
 
-        // =========================================================================
-        // ¡¡¡CORRECCIÓN CLAVE DE LÓGICA DE IMAGEN Y MENSAJES!!!
-        // Priorizamos la victoria, luego la derrota, y finalmente otros mensajes de fin de juego.
-        // =========================================================================
         if (data.palabra === data.palabraSecreta) {
-            // El juego terminó y el jugador GANÓ
             mensajeJuego.textContent = `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`;
-            imagenAhorcado.src = `img/ahorcadito_0.png`; // IMAGEN DE ÉXITO (GANASTE)
+            mensajeJuego.style.color = "green";
+            imagenAhorcado.src = `img/ahorcadito_0.png`; // Imagen de éxito
         } else if (data.intentosRestantes <= 0) {
-            // El juego terminó y el jugador PERDIÓ por intentos
             mensajeJuego.textContent = `¡GAME OVER! La palabra era: ${data.palabraSecreta}`;
-            imagenAhorcado.src = `img/ahorcadito_7.png`; // IMAGEN DE DERROTA (GAME OVER)
+            mensajeJuego.style.color = "red";
+            imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de derrota
         } else if (data.message && data.message !== "") {
             // El juego terminó por otra razón (ej. oponente se desconectó)
-            // Aquí puedes decidir qué imagen mostrar. Generalmente, una desconexión es una especie de "fin de juego" forzado.
             mensajeJuego.textContent = data.message;
-            imagenAhorcado.src = `img/ahorcadito_7.png`; // Usamos la imagen de "GAME OVER" para desconexión también.
+            mensajeJuego.style.color = "red"; // Usamos rojo para mensajes de finalización inesperada
+            imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de derrota para desconexión
+        } else {
+            // Mensaje por defecto si no hay uno específico y el juego ha terminado
+            mensajeJuego.textContent = "El juego ha terminado.";
+            mensajeJuego.style.color = "black";
+            imagenAhorcado.src = `img/ahorcadito_7.png`; // Por si acaso
         }
-        // =========================================================================
-        // FIN DE LA CORRECCIÓN DE LÓGICA
-        // =========================================================================
-
+        
         mostrarSeccion(botonReiniciar);
-        // Asegúrate de mostrar también el botón de "Volver al Menú"
         mostrarSeccion(botonVolverAlMenu); 
-
         console.log("    Juego Terminado detectado. Mensaje establecido en UI:", mensajeJuego.textContent);
+
     } else {
-        // Si el juego NO ha terminado:
+        // --- Si el juego NO ha terminado ---
+        // Actualiza la imagen del ahorcado según los errores actuales
+        imagenAhorcado.src = `img/ahorcadito_${Math.min(cantidadErradasCalculada + 1, 7)}.png`;
+        
         mostrarSeccion(inputIngresaLetra);
         mostrarSeccion(botonSubirLetra);
         ocultarSeccion(botonReiniciar);
-        mostrarSeccion(botonVolverAlMenu); // Se mantiene visible el botón de volver al menú durante el juego si se desea.
+        mostrarSeccion(botonVolverAlMenu);
 
+        // --- Lógica para el mensaje principal (mensajeJuego) ---
+        // Priorizamos el mensaje del backend (data.message)
+        if (data.message && data.message !== "") {
+            console.log("    Mostrando data.message:", data.message);
+            mensajeJuego.textContent = data.message;
+            if (data.message.includes("ya fue ingresada") || data.message.includes("Incorrecto") || data.message.includes("La letra no está en la palabra")) {
+                mensajeJuego.style.color = "orange";
+            } else if (data.message.includes("Correcto") || data.message.includes("La letra está en la palabra")) {
+                mensajeJuego.style.color = "green";
+            } else {
+                mensajeJuego.style.color = "black";
+            }
+        } else {
+            // Si el backend no envió un mensaje específico, limpiamos el mensaje del juego.
+            // La lógica de turno/modo establecerá un mensaje general si es necesario.
+            mensajeJuego.textContent = ""; 
+            mensajeJuego.style.color = "black"; 
+        }
+        
+        // --- Lógica para modo online (turno y mensajes secundarios) ---
         if (currentMode === "online") {
             console.log("    Modo online detectado. Evaluando turno.");
-            mostrarSeccion(mensajeTurno); // Asegurar que el mensaje de turno sea visible en online
-
-            // Esto se usaba para la transición inicial, quizás ya no es necesario si se maneja al hacer clic en "Ir al Juego"
-            if (data.turnoActualConnectionId && data.turnoActualConnectionId !== "" && seccionJuego.style.display === "none") {
-                console.log("    J1: Partida lista y sección de juego no visible. Transicionando a la sección de juego.");
-                ocultarTodasLasSecciones();
-                mostrarSeccion(seccionJuego);
-            }
+            mostrarSeccion(mensajeTurno);
 
             const myConnectionId = connection.connectionId;
-            console.log(`    My connectionId: ${myConnectionId}, Turno actual: ${data.turnoActualConnectionId}`);
-
             if (data.turnoActualConnectionId && myConnectionId) {
                 if (data.turnoActualConnectionId === myConnectionId) {
                     mensajeTurno.textContent = "¡Es tu turno!";
-                    mensajeJuego.textContent = "Ingresa una Letra"; // Mensaje para la fase de juego
                     inputIngresaLetra.disabled = false;
                     botonSubirLetra.disabled = false;
+                    // Solo si mensajeJuego está vacío (no fue rellenado por data.message), se pone un mensaje por defecto
+                    if (mensajeJuego.textContent === "") { 
+                        mensajeJuego.textContent = "Ingresa una Letra";
+                    }
                     console.log("    Es mi turno.");
                 } else {
                     mensajeTurno.textContent = "Espera tu turno.";
-                    mensajeJuego.textContent = "El otro jugador está adivinando."; // Mensaje para la fase de juego
                     inputIngresaLetra.disabled = true;
                     botonSubirLetra.disabled = true;
+                    // Solo si mensajeJuego está vacío, se pone un mensaje por defecto
+                    if (mensajeJuego.textContent === "") {
+                         mensajeJuego.textContent = "El otro jugador está adivinando.";
+                    }
                     console.log("    Es el turno del otro jugador.");
                 }
             } else {
-                mensajeJuego.textContent = "Esperando a otro jugador..."; // Mensaje si aún no hay turno asignado (J2 no se unió)
+                // Si aún no hay turno asignado (ej. esperando segundo jugador en online)
+                mensajeJuego.textContent = "Esperando a otro jugador...";
                 inputIngresaLetra.disabled = true;
                 botonSubirLetra.disabled = true;
                 console.log("    Modo online: Esperando a otro jugador (turno no asignado).");
             }
         } else {
-            // Para modos solitario y versus:
+            // --- Lógica para modos solitario y versus ---
             console.log("    Modo solitario/versus detectado.");
             ocultarSeccion(mensajeTurno); // No es relevante para solitario/versus
-            mensajeJuego.textContent = "Ingresa una Letra"; // Mensaje para la fase de juego
             inputIngresaLetra.disabled = false;
             botonSubirLetra.disabled = false;
+            // Solo si mensajeJuego está vacío, se pone un mensaje por defecto
+            if (mensajeJuego.textContent === "") {
+                mensajeJuego.textContent = "Ingresa una Letra";
+            }
         }
     }
 
+    // Limpiar el input y poner el foco al final de la actualización de la UI
     inputIngresaLetra.value = "";
     inputIngresaLetra.focus();
 }
@@ -818,7 +849,7 @@ if (botonSubirLetra) {
         event.preventDefault(); // Previene el comportamiento por defecto del formulario
 
         const letraIngresada = inputIngresaLetra.value.toUpperCase().trim();
-        
+
         // 1. Validación de Vacío
         if (letraIngresada.length === 0) {
             mensajeJuego.textContent = "Por favor, ingresa una letra.";
@@ -836,29 +867,44 @@ if (botonSubirLetra) {
             return;
         }
 
-        // 3. Validación de letra YA ADIVINADA
-        const letrasCorrectasAdivinadas = inputGuiones.textContent.replace(/ /g, '').split('');
-        const letrasIncorrectasAdivinadas = inputLetrasOut.textContent.replace(/, /g, '').split('');
+        // 3. Validación de letra YA ADIVINADA (¡CORRECCIÓN APLICADA AQUÍ!)
+        const letrasCorrectasEnGuiones = inputGuiones.textContent.replace(/ /g, ''); // Solo las letras adivinadas, sin guiones ni espacios
         
-        const letrasYaIntentadas = [...letrasCorrectasAdivinadas, ...letrasIncorrectasAdivinadas]
-                                    .filter(char => char !== '_' && char !== '');
-        
-        const setLetrasYaIntentadas = new Set(letrasYaIntentadas);
+        // Extraer solo las letras de la cadena "Letras incorrectas: A, B"
+        const textoLetrasIncorrectas = letrasIncorrectasSpan.textContent;
+        let letrasIncorrectasArray = [];
+        const match = textoLetrasIncorrectas.match(/:\s*([A-ZÑ,\s]*)$/); // Usa regex para capturar solo las letras
+        if (match && match[1]) {
+            letrasIncorrectasArray = match[1].replace(/,\s*/g, '').split(''); // Elimina comas y espacios, luego divide
+        }
 
-        if (setLetrasYaIntentadas.has(letraIngresada)) {
-            mensajeJuego.textContent = `Ya enviaste la Letra ${letraIngresada} anteriormente. Intenta con otra.`;
-            mensajeJuego.style.color = "orange";
+        const letrasYaIntentadas = new Set();
+        // Agrega las letras adivinadas correctamente
+        letrasCorrectasEnGuiones.split('').filter(char => char !== '_').forEach(char => letrasYaIntentadas.add(char));
+        // Agrega las letras incorrectas
+        letrasIncorrectasArray.forEach(char => letrasYaIntentadas.add(char));
+
+        if (letrasYaIntentadas.has(letraIngresada)) {
+            mensajeJuego.textContent = `Ya enviaste la letra ${letraIngresada} anteriormente. Intenta con otra.`;
+            mensajeJuego.style.color = "orange"; // Color naranja para este aviso
             inputIngresaLetra.value = "";
             inputIngresaLetra.focus();
-            return;
+            return; // ¡IMPORTANTE! Detener el procesamiento aquí
         }
-        
-        // Si todas las validaciones pasan, PASAMOS LA LETRA COMO ARGUMENTO
-        //mensajeJuego.textContent = "Adivinando...";
-        //mensajeJuego.style.color = "black";
 
+        // Si todas las validaciones pasan, PASAMOS LA LETRA COMO ARGUMENTO
+        // Estos mensajes temporales NO son necesarios ahora que actualizarUIJuego maneja la prioridad
+        // mensajeJuego.textContent = "Adivinando..."; 
+        // mensajeJuego.style.color = "black";
+
+        // Deshabilitar input y botón para evitar doble envío mientras se espera la respuesta
+        inputIngresaLetra.disabled = true;
+        botonSubirLetra.disabled = true;
+        
         await manejarEnvioLetra(letraIngresada); // <-- ¡AHORA PASA LA LETRA AQUÍ!
-        inputIngresaLetra.value = ""; // Limpiar el input después de enviar
+
+        // El input y botón se habilitarán de nuevo en actualizarUIJuego si el juego no ha terminado.
+        // inputIngresaLetra.value = ""; // Ya se hace en actualizarUIJuego
     });
 }
 
