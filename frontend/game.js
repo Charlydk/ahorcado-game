@@ -18,7 +18,7 @@ const botonCancelarVersus = document.getElementById("botonCancelarVersus");
 const txtIngresarPalabraVersus = document.getElementById("mensajeIngresarPalabraVersus");
 
 // --- Elementos de la Sección Principal del Juego ---
-const imagenAhorcado = document.getElementById("imagen"); // OK - Coincide
+const imagenAhorcado = document.getElementById("imagenAhorcado"); // OK - Coincide
 const mensajeJuego = document.getElementById("mensajeJuego"); // <- En index.html es <p id="mensajeJuego" ...>
 const inputGuiones = document.getElementById("palabra-guiones"); // <- En index.html es <p id="palabra-guiones" ...>
 const inputLetrasOut = document.getElementById("letrasIncorrectasValor"); // <- En index.html es <span id="letrasIncorrectasValor">
