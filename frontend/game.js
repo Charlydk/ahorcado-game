@@ -758,6 +758,36 @@ async function reiniciarJuego() {
     }
 }
 
+async function abandonarPartidaOnline() {
+    if (currentMode === 'online' && currentGameId && connection.state === signalR.HubConnectionState.Connected) {
+        try {
+            console.log(`Intentando abandonar partida online ${currentGameId}...`);
+            // Llama a un endpoint de tu backend o a un método de SignalR para notificar
+            // Opción 1: Llamar a un método de SignalR (más directo para el Hub)
+            await connection.invoke("LeaveGameGroup", currentGameId); 
+            console.log(`Abandonado el grupo SignalR para la partida: ${currentGameId}`);
+            
+            // Opción 2 (alternativa, si prefieres un endpoint HTTP para acciones de "abandono"):
+            // const response = await fetch("http://127.0.0.1:5195/api/juego/abandonar-partida", {
+            //     method: "POST",
+            //     headers: { "Content-Type": "application/json" },
+            //     body: JSON.stringify({ gameId: currentGameId, connectionId: connection.connectionId }),
+            //     credentials: 'include'
+            // });
+            // if (!response.ok) {
+            //     console.warn("Fallo al notificar al backend que se abandonó la partida:", await response.text());
+            // }
+
+        } catch (error) {
+            console.error("Error al intentar abandonar la partida online:", error);
+            // No bloqueamos al usuario por este error, ya que lo importante es que abandone localmente.
+        }
+    }
+    // Siempre limpiar el estado local después de intentar notificar al backend
+    limpiarEstadoGlobalDeJuego();
+}
+
+
 // --- Event Listeners de Botones ---
 
 if (botonInicio) { // Siempre es buena práctica verificar si el elemento existe antes de añadir un listener
@@ -825,9 +855,13 @@ botonUnirsePartida.addEventListener("click", async () => {
     }
 });
 
-botonVolverModosOnline.addEventListener("click", () => {
-    ocultarTodasLasSecciones(); // Ocultar todas las secciones (incluida seccionOnline)
-    inicializarUI(); // Volver a la pantalla de inicio de los modos de juego
+botonVolverModosOnline.addEventListener("click", async () => { // Hacer async para await
+    console.log("Volviendo de la sala Online a Modos de Juego.");
+    if (currentMode === 'online' && currentGameId) { // Si había una partida activa (incluso si no se unió otro)
+        await abandonarPartidaOnline(); 
+    }
+    ocultarTodasLasSecciones();
+    inicializarUI(); // Vuelve a la pantalla de inicio limpia (secciónModosJuego)
 });
 
 botonEnviarPalabra.addEventListener("click", async function(event) {
@@ -937,37 +971,27 @@ if (inputIngresaLetra) {
 
 // --- Event Listener para el botón Reiniciar Partida ---
 if (botonReiniciar) {
-    botonReiniciar.addEventListener("click", () => {
+    botonReiniciar.addEventListener("click", async () => { // Hacer async para await
         console.log("Clic en 'Reiniciar Partida'. Modo actual:", currentMode);
 
-        ocultarTodasLasSecciones(); // Limpia la UI para la nueva pantalla
-
-        // Reinicia la partida según el modo de juego actual
-        if (currentMode === 'solitario') {
-            iniciarJuego('solitario'); // Inicia una nueva partida en modo solitario
+        if (currentMode === 'online') {
+            await abandonarPartidaOnline(); // Notificar si estaba en online ANTES de cambiar la UI
+            // La lógica que tienes para mostrar seccionOnline ya está bien para la UI
+            restaurarSeccionOnlineUI(); 
+        } else if (currentMode === 'solitario') {
+            await iniciarJuego('solitario');
         } else if (currentMode === 'versus') {
-            // Regresa a la pantalla de ingreso de palabra para el modo Versus
             mostrarSeccion(seccionIngresarPalabra);
-            inputPalabraVersus.value = ""; // Limpiar el input
-            txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo"; // Resetear mensaje
+            inputPalabraVersus.value = "";
+            txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo";
             inputPalabraVersus.focus();
-        } else if (currentMode === 'online') {
-            // Reinicia el mensaje y color antes de restaurar la UI
-            mensajeIdPartida.textContent = ""; 
-            mensajeIdPartida.style.color = "black";
-            restaurarSeccionOnlineUI();
         } else {
-            // Fallback por si currentMode no está definido (aunque no debería pasar con los pasos anteriores)
             console.warn("Modo de juego no definido al reiniciar. Volviendo a selección de modos.");
             mostrarSeccion(seccionModosJuego);
         }
-    
-         // --- AÑADIR ESTAS LÍNEAS (para el reseteo de la sala online) ---
-         ocultarSeccion(contenedorGameId); // Ocultar el display del ID al reiniciar
-         const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
-         if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego); // Ocultar el botón Ir al Juego
-         // --- FIN AÑADIR ESTAS LÍNEAS ---
-    
+        // Los ocultarSeccion y mostrarSeccion específicos dentro de cada if/else ya manejan la transición visual.
+        // Asegúrate de que `ocultarTodasLasSecciones()` se llame al inicio de cada rama si es necesario
+        // para una limpieza completa antes de mostrar la nueva sección.
     });
 }
 
@@ -979,11 +1003,12 @@ inputIngresaLetra.addEventListener("keypress", async function(event) {
 });
 
 if (botonVolverAlMenu) {
-    botonVolverAlMenu.addEventListener("click", () => {
+    botonVolverAlMenu.addEventListener("click", async () => { // Hacer async para await
         console.log("Clic en 'Volver al Menú'.");
-        // Reinicia la UI completamente para volver a la pantalla inicial
-        // Esto oculta todas las secciones y muestra la bienvenida
-        inicializarUI(); 
+        if (currentMode === 'online') {
+            await abandonarPartidaOnline(); // Notificar si estaba en online
+        }
+        inicializarUI(); // Reinicia la UI completamente
     });
 }
 

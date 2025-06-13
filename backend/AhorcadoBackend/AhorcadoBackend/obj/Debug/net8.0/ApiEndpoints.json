@@ -1,6 +1,6 @@
 [
   {
-    "ContainingType": "JuegoController",
+    "ContainingType": "AhorcadoBackend.Controllers.JuegoController",
     "Method": "AdivinarLetraLocal",
     "RelativePath": "api/juego/adivinarLetraLocal",
     "HttpMethod": "POST",
@@ -9,14 +9,14 @@
     "Parameters": [
       {
         "Name": "entrada",
-        "Type": "JuegoController\u002BAdivinarLetraEntrada",
+        "Type": "AhorcadoBackend.Controllers.JuegoController\u002BAdivinarLetraEntrada",
         "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "JuegoController",
+    "ContainingType": "AhorcadoBackend.Controllers.JuegoController",
     "Method": "CrearPartidaOnline",
     "RelativePath": "api/juego/crear-online",
     "HttpMethod": "POST",
@@ -25,14 +25,14 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "JuegoController\u002BCrearGameOnlineRequest",
+        "Type": "AhorcadoBackend.Controllers.JuegoController\u002BCrearGameOnlineRequest",
         "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "JuegoController",
+    "ContainingType": "AhorcadoBackend.Controllers.JuegoController",
     "Method": "IniciarJuego",
     "RelativePath": "api/juego/iniciar",
     "HttpMethod": "POST",
@@ -41,14 +41,14 @@
     "Parameters": [
       {
         "Name": "entrada",
-        "Type": "JuegoController\u002BPalabraEntrada",
+        "Type": "AhorcadoBackend.Controllers.JuegoController\u002BPalabraEntrada",
         "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "JuegoController",
+    "ContainingType": "AhorcadoBackend.Controllers.JuegoController",
     "Method": "ReiniciarJuego",
     "RelativePath": "api/juego/reiniciar",
     "HttpMethod": "POST",
@@ -57,14 +57,14 @@
     "Parameters": [
       {
         "Name": "entrada",
-        "Type": "JuegoController\u002BReiniciarJuegoEntrada",
+        "Type": "AhorcadoBackend.Controllers.JuegoController\u002BReiniciarJuegoEntrada",
         "IsRequired": true
       }
     ],
     "ReturnTypes": []
   },
   {
-    "ContainingType": "JuegoController",
+    "ContainingType": "AhorcadoBackend.Controllers.JuegoController",
     "Method": "UnirseOnline",
     "RelativePath": "api/juego/unirse-online",
     "HttpMethod": "POST",
@@ -73,7 +73,7 @@
     "Parameters": [
       {
         "Name": "request",
-        "Type": "JuegoController\u002BUnirseGameOnlineRequest",
+        "Type": "AhorcadoBackend.Controllers.JuegoController\u002BUnirseGameOnlineRequest",
         "IsRequired": true
       }
     ],
