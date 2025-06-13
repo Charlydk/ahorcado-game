@@ -283,9 +283,7 @@ footer img:hover {
     color: #000000 !important; /* Naranja para la palabra */
     text-shadow: 1px 1px 3px rgb(255, 255, 255);
 }
-#letrasIncorrectasSpan {
-    color: #dc3545 !important; /* Rojo para letras incorrectas */
-}
+
 #intentos-restantes {
     color: #17a2b8 !important; /* Celeste para intentos restantes */
 }
@@ -361,15 +359,19 @@ footer img:hover {
 /* ------------------------------------------- */
 
 /* Estilo para el contenedor <p> "Letras incorrectas:" */
-#letrasIncorrectasSpan {
-    color: #e0e0e0 !important; /* El texto "Letras incorrectas:" en un color claro */
-    font-weight: bold; /* Hacerlo negrita para que destaque */
-    margin-bottom: 10px; /* Separación del resto */
+p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para mayor especificidad */
+    color: #f5b3b3 !important; /* El texto "Letras incorrectas:" en un color claro */
+    /*font-weight: bold; /* Hacerlo negrita para que destaque */
+    margin-bottom: 5px; /* Separación del resto */
     display: flex; /* Usamos flexbox para alinear el texto y el recuadro de las letras */
     align-items: center; /* Alinea los elementos verticalmente */
     justify-content: center; /* Centra el p y su contenido */
+    text-align: center; 
     flex-wrap: wrap; /* Permite que el contenido se ajuste en pantallas pequeñas */
-    gap: 10px; /* Espacio entre el texto y el recuadro */
+    gap: 4px; /* Espacio entre el texto y el recuadro */
+    background-color: rgba(0, 0, 0, 0.4); /* Fondo negro muy sutil, casi transparente */
+    padding: 5px 10px; /* Opcional: un poco de padding para que el fondo no esté pegado al texto */
+    border-radius: 5px; /* Opcional: bordes redondeados para el fondo */
 }
 
 /* Estilo para el SPAN que muestra las letras incorrectas (letras adivinadas) */
@@ -390,8 +392,5 @@ footer img:hover {
     flex-shrink: 0;
 }
 
-/* Opcional: Para asegurar que el texto "Letras incorrectas:" sea blanco si el <p> tiene text-danger */
-p#letrasIncorrectasSpan.text-danger {
-    color: #e0e0e0 !important; 
-}
+
 
