@@ -47,10 +47,76 @@ let currentGameId = null; // Almacenará el ID de la partida activa
 let currentMode = null;   // Almacenará el modo actual (solitario, versus, online)
 let latestGameData = null; // Almacenará los últimos datos del juego recibidos
 
+
+// --- Funcionalidades de utilidad ---
+
 function limpiarEstadoGlobalDeJuego() {
     currentGameId = null;
     currentMode = null;
     latestGameData = null;
+    // Ocultar y limpiar mensajes al reiniciar el estado
+    ocultarMensajeAlerta(mensajeJuego);
+    ocultarMensajeAlerta(mensajeIdPartida);
+    ocultarMensajeAlerta(mensajeTurno); // También el mensaje de turno
+    ocultarMensajeAlerta(txtIngresarPalabraVersus); // Para la pantalla de palabra versus
+}
+
+
+// --- Funciones de Utilidad para Mostrar Mensajes de UI ---
+
+/**
+ * Muestra un mensaje en un elemento HTML dado, aplicando estilos de alerta de Bootstrap.
+ * @param {HTMLElement} elemento El elemento HTML (ej. mensajeJuego, mensajeIdPartida) donde se mostrará el mensaje.
+ * @param {string} mensaje El texto del mensaje a mostrar.
+ * @param {'success'|'danger'|'warning'|'info'|'primary'|'secondary'|'light'|'dark'|''} tipo La clase de alerta de Bootstrap (ej. 'success', 'danger', 'info'). Vacío para alerta por defecto.
+ * @param {boolean} ocultarDespues Si es true, el mensaje se ocultará automáticamente después de 5 segundos (útil para feedback temporal).
+ */
+function mostrarMensajeAlerta(elemento, mensaje, tipo = 'info') {
+    if (!elemento) {
+        console.error("Error: Elemento de mensaje no encontrado para mostrar alerta.");
+        return;
+    }
+
+    // Limpia todas las clases de alerta previas y d-none
+    elemento.className = '';
+    elemento.classList.add('alert');
+    
+    // Si la alerta es un h3, no le quitamos sus clases base de Bootstrap.
+    // Esto es un ajuste específico para el h3 de ingresar palabra.
+    if (elemento.tagName.toLowerCase() === 'h3') {
+        elemento.classList.add('mb-4', 'text-center'); // Clases que ya tiene en el HTML
+    } else {
+         elemento.classList.add('text-center'); // Por defecto, centramos si no es h3
+    }
+
+    if (tipo) {
+        elemento.classList.add(`alert-${tipo}`);
+    } else {
+        // Si no se especifica tipo, usa 'secondary' o un color neutro que no sea de error/éxito
+        elemento.classList.add('alert-secondary'); 
+    }
+    
+    elemento.textContent = mensaje;
+    elemento.classList.remove('d-none'); // Muestra el mensaje
+   
+}
+
+/**
+ * Oculta un elemento de mensaje y limpia su contenido y clases de alerta.
+ * @param {HTMLElement} elemento El elemento HTML a ocultar.
+ */
+function ocultarMensajeAlerta(elemento) {
+    if (elemento) {
+        elemento.classList.add('d-none');
+        elemento.textContent = '';
+        elemento.className = ''; // Limpia todas las clases
+        // Vuelve a añadir las clases necesarias si no es una alerta
+        if (elemento.tagName.toLowerCase() === 'h3') {
+            elemento.classList.add('mb-4', 'text-center'); // Clases que ya tiene en el HTML
+        } else {
+            elemento.classList.add('text-center'); // Mantiene solo el centrado si es p
+        }
+    }
 }
 
 
@@ -109,40 +175,31 @@ function ocultarTodasLasSecciones() {
 
 
 function restaurarSeccionOnlineUI() {
-    // Primero, ocultamos todo para asegurar un estado limpio
     ocultarTodasLasSecciones();
 
-    // Luego, mostramos SOLO la sección online
+     // Asegurarse de limpiar la UI de juego antes de mostrar la sección online
+     resetearUIJuego(); // Esto limpiará el ahorcado, guiones, etc.
+     ocultarMensajeAlerta(mensajeJuego); // Y asegura que el mensaje de juego esté limpio
+ 
     mostrarSeccion(seccionOnline);
 
-    // *** CAMBIO CLAVE AQUÍ: Solo restablecer el mensaje si no es un error ***
-    // Esto asume que un mensaje de error tendrá color rojo.
-    // Si tienes otra lógica para identificar mensajes de error, úsala.
-    if (mensajeIdPartida.style.color !== "red") {
-        mensajeIdPartida.textContent = "Crea una partida o únete a una existente:";
-        mensajeIdPartida.style.color = "black";
-    }
-    // Si es un error, el mensaje y color ya fueron establecidos en el catch de unirseAPartidaOnline
-    mostrarSeccion(mensajeIdPartida); // Asegurarse de que el mensaje esté visible
+    // Usa la nueva función, con un mensaje por defecto de información
+    mostrarMensajeAlerta(mensajeIdPartida, "Crea una partida o únete a una existente:", 'info'); 
 
-    // Habilita y muestra el input de ID
-    inputIdPartida.value = ""; // Limpia cualquier ID previo
-    inputIdPartida.readOnly = false; // Habilitar para escribir
-    inputIdPartida.disabled = false; // Habilitar input
+    inputIdPartida.value = ""; 
+    inputIdPartida.readOnly = false; 
+    inputIdPartida.disabled = false; 
     mostrarSeccion(inputIdPartida);
 
-    // Habilita y muestra los botones de acción
-    botonCrearPartida.disabled = false; // Habilitar botón
+    botonCrearPartida.disabled = false; 
     mostrarSeccion(botonCrearPartida);
-    botonUnirsePartida.disabled = false; // Habilitar botón
+    botonUnirsePartida.disabled = false; 
     mostrarSeccion(botonUnirsePartida);
 
-    // Ocultar elementos específicos que se muestran *después* de crear/unirse exitosamente
-    ocultarSeccion(contenedorGameId); // El display del ID de la partida creada/unida
+    ocultarSeccion(contenedorGameId); 
     const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
     if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego);
 
-    // Asegúrate de que el botón de "volver a modos online" esté visible
     mostrarSeccion(botonVolverModosOnline);
 }
 
@@ -158,19 +215,18 @@ const connection = new signalR.HubConnectionBuilder()
 connection.onclose(async (error) => {
     console.log("Conexión SignalR cerrada. ", error);
 
-    // Si la conexión se cerró inesperadamente (no por un disconnect intencional del cliente)
-    // Esto se dispara si el servidor se cae, el cliente pierde internet, etc.
     if (connection.state === signalR.HubConnectionState.Disconnected) {
-        alert("¡Conexión con el servidor perdida! Por favor, verifica tu conexión o el estado del servidor y vuelve a intentarlo.");
+        // De nuevo, puedes intentar mostrarlo en la UI si estás en una sección activa
+        if (seccionJuego.classList.contains('d-flex') || seccionModosJuego.classList.contains('d-flex') || seccionOnline.classList.contains('d-flex')) {
+            mostrarMensajeAlerta(mensajeJuego, "¡Conexión con el servidor perdida! Por favor, verifica tu conexión o el estado del servidor y vuelve a intentarlo.", 'danger');
+        } else {
+            alert("¡Conexión con el servidor perdida! Por favor, verifica tu conexión o el estado del servidor y vuelve a intentarlo.");
+        }
         
-        // Limpiar cualquier estado de partida online en el cliente
-        currentGameId = null;
-        currentMode = null;
-        latestGameData = null; // Reiniciar data del juego
+        limpiarEstadoGlobalDeJuego();
 
-        // Redirigir al usuario a la pantalla de modos de juego o bienvenida
         ocultarTodasLasSecciones();
-        mostrarSeccion(seccionModosJuego); // O seccionBienvenida, según prefieras
+        mostrarSeccion(seccionModosJuego); 
     }
 });
 
@@ -197,16 +253,17 @@ connection.on("ReceiveGameUpdate", (data) => {
 connection.on("OpponentDisconnected", (gameId) => {
     console.log(`Tu oponente se desconectó de la partida ${gameId}.`);
     
-    // Solo actuamos si la desconexión es de la partida actual
     if (currentGameId === gameId) {
-        alert("¡Tu oponente se ha desconectado! La partida ha terminado.");
+        // Usa la función de alerta si estás en la sección de juego o sala online
+        if (seccionJuego.classList.contains('d-flex') || seccionOnline.classList.contains('d-flex')) {
+            mostrarMensajeAlerta(mensajeJuego, "¡Tu oponente se ha desconectado! La partida ha terminado.", 'danger');
+        } else {
+            // Si no está en ninguna de esas secciones, usa alert() como fallback
+            alert("¡Tu oponente se ha desconectado! La partida ha terminado.");
+        }
         
-        // Limpiar estado del juego online en el cliente
-        currentGameId = null;
-        currentMode = null;
-        latestGameData = null; // Reiniciar data del juego
+        limpiarEstadoGlobalDeJuego();
 
-        // Redirigir al usuario al menú principal (o modos de juego)
         ocultarTodasLasSecciones();
         mostrarSeccion(seccionModosJuego); 
     }
@@ -217,23 +274,18 @@ connection.on("OpponentDisconnected", (gameId) => {
 connection.on("PlayerJoined", (gameId, playerConnectionId) => {
     console.log(`Jugador ${playerConnectionId} se unió a la partida ${gameId}.`);
     if (gameId === currentGameId) {
-        // Asumiendo que el backend envía el estado inicial del juego una vez que los dos jugadores están conectados
-        // Opcional: Podrías hacer un fetch al endpoint de /juego/obtenerEstado si lo tienes para asegurarte de que la UI se actualice
-        // al unirse el segundo jugador.
-        mensajeJuego.textContent = "¡Otro jugador se ha unido! Comienza el juego.";
-        mensajeJuego.style.color = "green";
-        // Si el jugador creador está esperando, esto lo llevará a la pantalla de juego
+        // En lugar de style.color, usa la función de alerta
+        mostrarMensajeAlerta(mensajeJuego, "¡Otro jugador se ha unido! Comienza el juego.", 'success', true);
+        
         if (currentMode === "online") {
             ocultarTodasLasSecciones();
             mostrarSeccion(seccionJuego);
-            // La UI del juego se actualizará automáticamente con el siguiente ReceiveGameUpdate
-            // o con un fetch explícito si no hay un update inmediato del backend.
-            inputIngresaLetra.disabled = false; // Habilitar input para el jugador que empieza el turno
+            inputIngresaLetra.disabled = false; 
             botonSubirLetra.disabled = false;
             mostrarSeccion(inputIngresaLetra);
             mostrarSeccion(botonSubirLetra);
-            mensajeTurno.textContent = "Esperando que el juego inicie..."; // Será sobrescrito por el turno
-            mostrarSeccion(mensajeTurno); // Asegurar que el mensaje de turno sea visible
+            mensajeTurno.textContent = "Esperando que el juego inicie..."; 
+            mostrarSeccion(mensajeTurno); 
         }
     }
 });
@@ -255,17 +307,16 @@ async function startSignalRConnection() {
 // --- Funciones de Lógica de Juego ---
 
 function resetearUIJuego() {
-    inputGuiones.textContent = " "; // Se inicializa con un espacio, el backend llenará con guiones
-    letrasIncorrectasSpan.textContent = " "; // ¡Esto es clave para limpiar las letras incorrectas!
-    imagenAhorcado.src = "img/ahorcadito_1.png"; // Imagen inicial del ahorcado
-    mensajeJuego.textContent = ""; // Limpiar el mensaje
-    inputIngresaLetra.value = ""; // Limpiar el input de letra
+    inputGuiones.textContent = " "; 
+    letrasIncorrectasSpan.textContent = " "; 
+    imagenAhorcado.src = "img/ahorcadito_1.png"; 
+    ocultarMensajeAlerta(mensajeJuego); // <-- Usar la nueva función
+    inputIngresaLetra.value = ""; 
     inputIngresaLetra.disabled = false;
     botonSubirLetra.disabled = false;
     mostrarSeccion(inputIngresaLetra);
     mostrarSeccion(botonSubirLetra);
-    ocultarSeccion(mensajeTurno); // Ocultar el mensaje de turno por defecto (solo se usa en online)
-
+    ocultarMensajeAlerta(mensajeTurno); // <-- Usar la nueva función
 }
 
 async function iniciarJuego(modo, palabraVersus = "") {
@@ -298,8 +349,8 @@ async function iniciarJuego(modo, palabraVersus = "") {
         inputIngresaLetra.focus();
     } catch (error) {
         console.error("Error CATCHED al iniciar el juego:", error);
-        mensajeJuego.textContent = `Error: ${error.message}. Por favor, reinicia o inténtalo de nuevo.`;
-        mensajeJuego.style.color = "red"; // Añadir color para que sea más visible
+        // Usa la nueva función para mostrar el error
+        mostrarMensajeAlerta(mensajeJuego, `Error: ${error.message}. Por favor, reinicia o inténtalo de nuevo.`, 'danger');
     }
 }
 
@@ -309,56 +360,41 @@ function actualizarUIJuego(data) {
     console.log("     Datos recibidos para actualizar UI:", data);
     console.log("     [DEBUG] Mensaje recibido del backend (data.message):", data.message);
 
-    // --- Validar que los elementos HTML existan antes de usarlos ---
-    // Aunque ya los tienes como constantes globales, es buena práctica hacer una revisión rápida
-    // si son críticos y podrían faltar. Para este caso, tus constantes globales ya manejan esto.
-    // Solo me aseguro de que el 'intentosRestantes' si lo tienes, esté actualizado.
     const intentosRestantesSpan = document.getElementById("intentosRestantes"); 
     if (intentosRestantesSpan) {
         intentosRestantesSpan.textContent = data.intentosRestantes;
     }
 
-    // --- Actualización de elementos básicos ---
-    // Estas líneas son las primeras que deberían actualizarse sin importar el estado del juego
     inputGuiones.textContent = data.palabra.split('').join(' ');
     letrasIncorrectasSpan.textContent = `Letras incorrectas: ${Array.isArray(data.letrasIncorrectas) ? data.letrasIncorrectas.join(", ") : data.letrasIncorrectas}`;
 
     const cantidadErradasCalculada = 6 - data.intentosRestantes;
     console.log("     cantidad de erradas:", cantidadErradasCalculada);
 
-    // --- Lógica de fin de juego (PRIORIDAD ALTA) ---
     if (data.juegoTerminado) {
         ocultarSeccion(botonSubirLetra);
         ocultarSeccion(inputIngresaLetra);
-        ocultarSeccion(mensajeTurno); // Ocultar mensaje de turno al terminar el juego
+        ocultarMensajeAlerta(mensajeTurno); // Ocultar mensaje de turno al terminar el juego
 
         if (data.palabra === data.palabraSecreta) {
-            mensajeJuego.textContent = `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`;
-            mensajeJuego.style.color = "green";
+            mostrarMensajeAlerta(mensajeJuego, `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`, 'success');
             imagenAhorcado.src = `img/ahorcadito_0.png`; // Imagen de éxito
         } else if (data.intentosRestantes <= 0) {
-            mensajeJuego.textContent = `¡GAME OVER! La palabra era: ${data.palabraSecreta}`;
-            mensajeJuego.style.color = "red";
+            mostrarMensajeAlerta(mensajeJuego, `¡GAME OVER! La palabra era: ${data.palabraSecreta}`, 'danger');
             imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de derrota
         } else if (data.message && data.message !== "") {
-            // El juego terminó por otra razón (ej. oponente se desconectó)
-            mensajeJuego.textContent = data.message;
-            mensajeJuego.style.color = "red"; // Usamos rojo para mensajes de finalización inesperada
-            imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de derrota para desconexión
+            mostrarMensajeAlerta(mensajeJuego, data.message, 'danger'); // Usamos danger para finalización inesperada
+            imagenAhorcado.src = `img/ahorcadito_7.png`; 
         } else {
-            // Mensaje por defecto si no hay uno específico y el juego ha terminado
-            mensajeJuego.textContent = "El juego ha terminado.";
-            mensajeJuego.style.color = "black";
-            imagenAhorcado.src = `img/ahorcadito_7.png`; // Por si acaso
+            mostrarMensajeAlerta(mensajeJuego, "El juego ha terminado.", 'info'); // Mensaje por defecto
+            imagenAhorcado.src = `img/ahorcadito_7.png`; 
         }
         
         mostrarSeccion(botonReiniciar);
         mostrarSeccion(botonVolverAlMenu); 
-        console.log("    Juego Terminado detectado. Mensaje establecido en UI:", mensajeJuego.textContent);
+        console.log("     Juego Terminado detectado. Mensaje establecido en UI:", mensajeJuego.textContent);
 
     } else {
-        // --- Si el juego NO ha terminado ---
-        // Actualiza la imagen del ahorcado según los errores actuales
         imagenAhorcado.src = `img/ahorcadito_${Math.min(cantidadErradasCalculada + 1, 7)}.png`;
         
         mostrarSeccion(inputIngresaLetra);
@@ -366,29 +402,28 @@ function actualizarUIJuego(data) {
         ocultarSeccion(botonReiniciar);
         mostrarSeccion(botonVolverAlMenu);
 
-        // --- Lógica para el mensaje principal (mensajeJuego) ---
-        // Priorizamos el mensaje del backend (data.message)
         if (data.message && data.message !== "") {
-            console.log("    Mostrando data.message:", data.message);
-            mensajeJuego.textContent = data.message;
-            if (data.message.includes("ya fue ingresada") || data.message.includes("Incorrecto") || data.message.includes("La letra no está en la palabra")) {
-                mensajeJuego.style.color = "orange";
-            } else if (data.message.includes("Correcto") || data.message.includes("La letra está en la palabra")) {
-                mensajeJuego.style.color = "green";
+            console.log("     Mostrando data.message:", data.message);
+            // Si el mensaje indica una letra ya ingresada, es una ADVERTENCIA (amarillo)
+            if (data.message.includes("enviaste") || data.message.includes("anteriormente") || data.message.includes("Intenta con otra")) {
+                mostrarMensajeAlerta(mensajeJuego, data.message, 'warning');
+            // Si el mensaje indica que la letra es INCORRECTA (rojo)
+            } else if (data.message.includes("Incorrecto") || data.message.includes("La letra no está en la palabra")) {
+                mostrarMensajeAlerta(mensajeJuego, data.message, 'danger'); // <--- ¡CAMBIO AQUÍ: 'danger' para incorrecto!
+            // Si el mensaje es una letra CORRECTA (verde)
+            } else if (data.message.includes("correcta.") || data.message.includes("¡Bien!")) {
+                mostrarMensajeAlerta(mensajeJuego, data.message, 'success'); 
+            // Para otros mensajes informativos (azul por defecto)
             } else {
-                mensajeJuego.style.color = "black";
+                mostrarMensajeAlerta(mensajeJuego, data.message, 'info'); 
             }
         } else {
-            // Si el backend no envió un mensaje específico, limpiamos el mensaje del juego.
-            // La lógica de turno/modo establecerá un mensaje general si es necesario.
-            mensajeJuego.textContent = ""; 
-            mensajeJuego.style.color = "black"; 
+            ocultarMensajeAlerta(mensajeJuego); 
         }
         
-        // --- Lógica para modo online (turno y mensajes secundarios) ---
         if (currentMode === "online") {
-            console.log("    Modo online detectado. Evaluando turno.");
-            mostrarSeccion(mensajeTurno);
+            console.log("     Modo online detectado. Evaluando turno.");
+            mostrarSeccion(mensajeTurno); // El mensaje de turno no es una alerta, se muestra directamente
 
             const myConnectionId = connection.connectionId;
             if (data.turnoActualConnectionId && myConnectionId) {
@@ -396,71 +431,59 @@ function actualizarUIJuego(data) {
                     mensajeTurno.textContent = "¡Es tu turno!";
                     inputIngresaLetra.disabled = false;
                     botonSubirLetra.disabled = false;
-                    // Solo si mensajeJuego está vacío (no fue rellenado por data.message), se pone un mensaje por defecto
-                    if (mensajeJuego.textContent === "") { 
-                        mensajeJuego.textContent = "Ingresa una Letra";
-                    }
-                    console.log("    Es mi turno.");
+                    // Ya no necesitas modificar mensajeJuego si data.message está vacío,
+                    // la alerta se oculta sola o no se muestra.
+                    // if (mensajeJuego.textContent === "") { 
+                    //     mensajeJuego.textContent = "Ingresa una Letra";
+                    // }
+                    console.log("     Es mi turno.");
                 } else {
                     mensajeTurno.textContent = "Espera tu turno.";
                     inputIngresaLetra.disabled = true;
                     botonSubirLetra.disabled = true;
-                    // Solo si mensajeJuego está vacío, se pone un mensaje por defecto
-                    if (mensajeJuego.textContent === "") {
-                         mensajeJuego.textContent = "El otro jugador está adivinando.";
-                    }
-                    console.log("    Es el turno del otro jugador.");
+                    // if (mensajeJuego.textContent === "") {
+                    //      mensajeJuego.textContent = "El otro jugador está adivinando.";
+                    // }
+                    console.log("     Es el turno del otro jugador.");
                 }
             } else {
-                // Si aún no hay turno asignado (ej. esperando segundo jugador en online)
-                mensajeJuego.textContent = "Esperando a otro jugador...";
+                mensajeJuego.textContent = "Esperando a otro jugador..."; // Este sí se queda sin alerta
                 inputIngresaLetra.disabled = true;
                 botonSubirLetra.disabled = true;
-                console.log("    Modo online: Esperando a otro jugador (turno no asignado).");
+                console.log("     Modo online: Esperando a otro jugador (turno no asignado).");
             }
         } else {
-            // --- Lógica para modos solitario y versus ---
-            console.log("    Modo solitario/versus detectado.");
-            ocultarSeccion(mensajeTurno); // No es relevante para solitario/versus
+            console.log("     Modo solitario/versus detectado.");
+            ocultarMensajeAlerta(mensajeTurno); // Ocultar mensaje de turno (no es una alerta)
             inputIngresaLetra.disabled = false;
             botonSubirLetra.disabled = false;
-            // Solo si mensajeJuego está vacío, se pone un mensaje por defecto
-            if (mensajeJuego.textContent === "") {
-                mensajeJuego.textContent = "Ingresa una Letra";
-            }
+            // if (mensajeJuego.textContent === "") {
+            //     mensajeJuego.textContent = "Ingresa una Letra";
+            // }
         }
     }
 
-    // Limpiar el input y poner el foco al final de la actualización de la UI
     inputIngresaLetra.value = "";
     inputIngresaLetra.focus();
 }
 // --- Lógica para Crear Partida Online ---
 async function crearNuevaPartidaOnline() {
     try {
-
-        // --- LIMPIEZA INICIAL DE VARIABLES GLOBALES PARA NUEVA PARTIDA ---
-        latestGameData = null; // ¡CLAVE! Limpiar cualquier estado de partida anterior
-        currentGameId = null; // ¡CLAVE! Asegurar que no haya un ID de partida anterior
-        // --- FIN LIMPIEZA ---
+        limpiarEstadoGlobalDeJuego(); 
 
         const connectionId = connection.connectionId;
         if (!connectionId) {
-            mensajeIdPartida.textContent = "Error: Conexión SignalR no establecida. Inténtalo de nuevo.";
-            mensajeIdPartida.style.color = "red";
+            mostrarMensajeAlerta(mensajeIdPartida, "Error: Conexión SignalR no establecida. Inténtalo de nuevo.", 'danger');
             return;
         }
-        resetearUIJuego(); 
-        mensajeIdPartida.textContent = "Creando partida online...";
-        mensajeIdPartida.style.color = "blue";
+        ocultarMensajeAlerta(mensajeJuego); // Asegurarse de que el mensaje de juego principal esté limpio.
+
+        mostrarMensajeAlerta(mensajeIdPartida, "Creando partida online...", 'info');
         
-        // --- Ocultar elementos de creación/unión ---
         ocultarSeccion(botonCrearPartida);
         ocultarSeccion(botonUnirsePartida);
-        ocultarSeccion(inputIdPartida); // Ahora solo se usará para UNIRSE
-        ocultarSeccion(botonVolverModosOnline); // Ocultar temporalmente para no confundir
-        
-        // Asegurarse de que el contenedor del ID esté oculto al inicio de la creación
+        ocultarSeccion(inputIdPartida); 
+        ocultarSeccion(botonVolverModosOnline); 
         ocultarSeccion(contenedorGameId);
 
         const response = await fetch("http://127.0.0.1:5195/api/juego/crear-online", {
@@ -485,79 +508,58 @@ async function crearNuevaPartidaOnline() {
         await connection.invoke("JoinGameGroup", gameId);
         console.log(`Creador (${connection.connectionId}) unido al grupo de SignalR para la partida: ${gameId}`);
 
-        // --- Mostrar el Game ID y el botón Copiar ---
-        mensajeIdPartida.textContent = "¡Partida creada! Comparte este ID:";
-        mensajeIdPartida.style.color = "black"; // Resetear a color normal
+        mostrarMensajeAlerta(mensajeIdPartida, "¡Partida creada! Comparte este ID:", 'success');
         
-        displayGameId.textContent = gameId; // Mostrar el ID en el span
-        mostrarSeccion(contenedorGameId); // Mostrar el contenedor con el ID y el botón Copiar
+        displayGameId.textContent = gameId; 
+        mostrarSeccion(contenedorGameId); 
 
-        // Listener para el botón Copiar ID
         botonCopiarId.onclick = async () => {
             try {
                 await navigator.clipboard.writeText(gameId);
-                mensajeIdPartida.textContent = `ID '${gameId}' copiado. ¡Compártelo!`;
-                mensajeIdPartida.style.color = "green";
+                mostrarMensajeAlerta(mensajeIdPartida, `ID '${gameId}' copiado. ¡Compártelo!`, 'success');
             } catch (err) {
                 console.error('Error al copiar el ID:', err);
-                mensajeIdPartida.textContent = `No se pudo copiar. Copia manualmente: ${gameId}`;
-                mensajeIdPartida.style.color = "orange";
+                mostrarMensajeAlerta(mensajeIdPartida, `No se pudo copiar. Copia manualmente: ${gameId}`, 'warning');
             }
         };
 
-        // --- Crear/obtener y mostrar el botón "Ir al Juego (esperar)" ---
-        let botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline"); // Cambiamos el ID para claridad
+        let botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline"); 
         if (!botonIrAlJuego) {
             botonIrAlJuego = document.createElement("button");
             botonIrAlJuego.id = "botonIrAlJuegoOnline";
             botonIrAlJuego.textContent = "Ir al Juego (esperar)";
-            // Añadir clases de Bootstrap para que se vea como un botón normal
-            botonIrAlJuego.classList.add("btn", "btn-success", "mt-3", "w-100"); // Ej: btn-success para verde, mt-3 para margen
-            contenedorBotonJuegoOnline.appendChild(botonIrAlJuego); // Insertar en el nuevo contenedor
+            botonIrAlJuego.classList.add("btn", "btn-success", "mt-3", "w-100"); 
+            contenedorBotonJuegoOnline.appendChild(botonIrAlJuego); 
         }
         mostrarSeccion(botonIrAlJuego);
-        mostrarSeccion(botonVolverModosOnline); // Volver a mostrar este botón para que pueda salir si quiere
+        mostrarSeccion(botonVolverModosOnline); 
 
         botonIrAlJuego.onclick = async () => {
             console.log("J1: Clic en 'Ir al Juego (esperar)'. Navegando a la sección de juego.");
             ocultarTodasLasSecciones();
             mostrarSeccion(seccionJuego);
-           // --- LÓGICA CLAVE AQUÍ ---
-    // Si ya tenemos datos de la partida (porque J2 se unió y el backend envió la actualización),
-    // usamos esos datos para actualizar inmediatamente la UI.
-    if (latestGameData && latestGameData.gameId === currentGameId) {
-        console.log("J1: Actualizando UI con latestGameData al entrar al juego (J2 ya unido).");
-        actualizarUIJuego(latestGameData);
-    } else {
-        // Si no hay 'latestGameData' o el gameId no coincide (J2 aún no se ha unido),
-        // mostramos el mensaje de espera. El ReceiveGameUpdate llegará después.
-        console.log("J1: J2 aún no se ha unido. Mostrando mensaje de espera inicial.");
-        mensajeJuego.textContent = "Esperando que otro jugador se una...";
-        mensajeJuego.style.color = "blue";
-        // Asegúrate de que el input y botón de adivinar estén deshabilitados inicialmente
-        inputIngresaLetra.disabled = true;
-        botonSubirLetra.disabled = true;
-    }
-    // --- FIN LÓGICA CLAVE ---
-
-            
-            // Ocultar el botón "Ir al Juego" y el contenedor del ID una vez que se va al juego
+            if (latestGameData && latestGameData.gameId === currentGameId) {
+                console.log("J1: Actualizando UI con latestGameData al entrar al juego (J2 ya unido).");
+                actualizarUIJuego(latestGameData);
+            } else {
+                console.log("J1: J2 aún no se ha unido. Mostrando mensaje de espera inicial.");
+                mostrarMensajeAlerta(mensajeJuego, "Esperando que otro jugador se una...", 'info');
+                inputIngresaLetra.disabled = true;
+                botonSubirLetra.disabled = true;
+            }
             ocultarSeccion(botonIrAlJuego);
             ocultarSeccion(contenedorGameId);
         };
 
     } catch (error) {
         console.error("Error CATCHED al crear partida online:", error);
-        mensajeIdPartida.textContent = `Error: ${error.message}`;
-        mensajeIdPartida.style.color = "red";
-        // En caso de error, restaurar la UI de la sala de espera
-        // Ocultar el botón "Ir al Juego" si existe
+        mostrarMensajeAlerta(mensajeIdPartida, `Error: ${error.message}`, 'danger');
+        
         const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
         if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego);
-        ocultarSeccion(contenedorGameId); // Ocultar el display del ID
+        ocultarSeccion(contenedorGameId); 
 
-        // Mostrar los controles principales de la sala
-        ocultarTodasLasSecciones(); // Limpia antes de mostrar lo correcto
+        ocultarTodasLasSecciones(); 
         mostrarSeccion(seccionOnline);
         mostrarSeccion(botonCrearPartida);
         mostrarSeccion(botonUnirsePartida);
@@ -566,42 +568,31 @@ async function crearNuevaPartidaOnline() {
         mostrarSeccion(botonVolverModosOnline);
     }
 }
-
-// --- Lógica para Unirse a Partida Online ---
 // --- Lógica para Unirse a Partida Online ---
 async function unirseAPartidaOnline(gameId) {
     try {
         const connectionId = connection.connectionId;
         if (!connectionId) {
             console.error("Error: Conexión SignalR no establecida para unirse.");
-            mensajeIdPartida.textContent = "Error: Conexión SignalR no establecida. Intenta de nuevo.";
-            mensajeIdPartida.style.color = "red";
+            mostrarMensajeAlerta(mensajeIdPartida, "Error: Conexión SignalR no establecida. Intenta de nuevo.", 'danger');
             return;
         }
 
         console.log(`J2: Intentando unirse a partida ${gameId} con connectionId ${connectionId}`);
 
-        // Deshabilitar temporalmente los botones y el input para evitar doble clic
-        // Esto es importante para una buena UX mientras se espera la respuesta
         inputIdPartida.disabled = true;
         botonCrearPartida.disabled = true;
         botonUnirsePartida.disabled = true;
-        mensajeIdPartida.textContent = "Uniéndose a la partida...";
-        mensajeIdPartida.style.color = "blue";
-        inputIdPartida.readOnly = true; // Deshabilitar mientras se une
+        mostrarMensajeAlerta(mensajeIdPartida, "Uniéndose a la partida...", 'info');
+        inputIdPartida.readOnly = true; 
 
-        // Aquí mantenemos el seteo de currentGameId y currentMode
         currentGameId = gameId;
         currentMode = "online";
         console.log(`J2: currentGameId: ${currentGameId}, currentMode: ${currentMode} antes de JoinGameGroup`);
 
-        // Primero nos unimos al grupo de SignalR
-        // NOTA: Si el ID es inválido, esta invocación puede fallar o el backend la ignorará.
-        // Lo importante es que el fetch de abajo es el que valida el ID de partida.
         await connection.invoke("JoinGameGroup", gameId);
         console.log(`J2: Jugador 2 (${connection.connectionId}) unido al grupo SignalR: ${gameId}`);
 
-        // Luego de unirse al grupo de SignalR, hacemos la llamada HTTP para registrarse en el GameManager
         const response = await fetch("http://127.0.0.1:5195/api/juego/unirse-online", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -610,55 +601,43 @@ async function unirseAPartidaOnline(gameId) {
         });
 
         if (!response.ok) {
-            // Si la respuesta no es OK, intenta leer el cuerpo como JSON
             const errorData = await response.json().catch(() => ({ message: "Error desconocido del servidor." })); 
             const errorMessage = errorData.message || `Error desconocido: ${response.status} ${response.statusText}`;
             throw new Error(errorMessage);
         }
         
-        const data = await response.json(); // Esto es JuegoEstadoResponse del Jugador 2
+        const data = await response.json(); 
         console.log("J2: Respuesta de unirse-online (HTTP):", data);
 
-        // Mensaje de éxito de unión
-        mensajeIdPartida.textContent = `¡Te has unido a la partida ${gameId} exitosamente!`;
-        mensajeIdPartida.style.color = "green";
+        mostrarMensajeAlerta(mensajeIdPartida, `¡Te has unido a la partida ${gameId} exitosamente!`, 'success', true);
 
-        // Cambiar a la sección de juego y dejar que actualizarUIJuego maneje los mensajes de turno
         ocultarTodasLasSecciones();
         mostrarSeccion(seccionJuego);
-        actualizarUIJuego(data); // Esto actualizará la UI del Jugador 2 con el estado inicial del juego.
+        actualizarUIJuego(data); 
 
-        // Limpiar el input de ID de partida y mensaje, ya que ya estamos en la sección de juego
         inputIdPartida.value = "";
-        mensajeIdPartida.textContent = "";
+        ocultarMensajeAlerta(mensajeIdPartida); // Limpiar y ocultar el mensaje de la sala online
 
     } catch (error) {
         console.error("Error al unirse a partida online:", error);
-        // Ahora error.message ya contendrá el mensaje del backend si es un JSON
-        mensajeIdPartida.textContent = `Error al unirse: ${error.message}`;
-        mensajeIdPartida.style.color = "red";
+        mostrarMensajeAlerta(mensajeIdPartida, `Error al unirse: ${error.message}`, 'danger');
         
-        // *** AQUÍ ESTÁ EL CAMBIO CLAVE: Llamar a la nueva función de restauración ***
         restaurarSeccionOnlineUI(); 
-        // Enfocar el input de ID de partida para que el usuario pueda corregirlo
         inputIdPartida.focus(); 
     }
 }
 
 // Asegúrate de que tus funciones ocultarTodasLasSecciones, mostrarSeccion, etc. estén correctamente implementadas.
 // Y que los IDs de los elementos HTML como "mensajeIdPartida", "inputIdPartida", etc., coincidan.
+async function manejarEnvioLetra(letra) { 
+    console.log("Enviando letra:", letra); 
 
-async function manejarEnvioLetra(letra) { // <--- ¡AQUÍ: ACEPTA 'letra' COMO ARGUMENTO!
-    console.log("Enviando letra:", letra); // Para depuración
-
-   
     if (!currentGameId) {
-        mensajeJuego.textContent = "Error: No hay una partida activa.";
-        inputIngresaLetra.disabled = false; // Asegurarse de re-habilitar en caso de error temprano
+        mostrarMensajeAlerta(mensajeJuego, "Error: No hay una partida activa.", 'danger');
+        inputIngresaLetra.disabled = false; 
         botonSubirLetra.disabled = false;
         return;
     }
-
 
     try {
         if (currentMode === 'solitario' || currentMode === 'versus') {
@@ -667,59 +646,52 @@ async function manejarEnvioLetra(letra) { // <--- ¡AQUÍ: ACEPTA 'letra' COMO A
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     GameId: currentGameId,
-                    Letra: letra // Usas la 'letra' que recibes como argumento
+                    Letra: letra 
                 })
             });
 
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({ message: "Error desconocido al procesar la letra." }));
-                mensajeJuego.textContent = `Error: ${errorData.message || response.statusText}`;
-                mensajeJuego.style.color = "red"; // Asegurar que el error se muestre en rojo
+                mostrarMensajeAlerta(mensajeJuego, `Error: ${errorData.message || response.statusText}`, 'danger');
                 inputIngresaLetra.value = "";
                 inputIngresaLetra.focus();
-                inputIngresaLetra.disabled = false; // Re-habilitar
-                botonSubirLetra.disabled = false;    // Re-habilitar
+                inputIngresaLetra.disabled = false; 
+                botonSubirLetra.disabled = false; 
                 return;
             }
 
             const data = await response.json();
-            actualizarUIJuego(data); // `actualizarUIJuego` debe re-habilitar el input/botón si el juego continúa
+            actualizarUIJuego(data); 
 
         } else if (currentMode === 'online') {
             if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
-                mensajeJuego.textContent = "Error: Conexión SignalR no establecida o no activa.";
-                mensajeJuego.style.color = "red"; // Asegurar que el error se muestre en rojo
-                inputIngresaLetra.disabled = false; // Re-habilitar
-                botonSubirLetra.disabled = false;    // Re-habilitar
+                mostrarMensajeAlerta(mensajeJuego, "Error: Conexión SignalR no establecida o no activa.", 'danger');
+                inputIngresaLetra.disabled = false; 
+                botonSubirLetra.disabled = false; 
                 return;
             }
 
             const playerConnectionId = connection.connectionId;
             if (!playerConnectionId) {
-                mensajeJuego.textContent = "Error: No se pudo obtener el ID de conexión de SignalR.";
-                mensajeJuego.style.color = "red"; // Asegurar que el error se muestre en rojo
-                inputIngresaLetra.disabled = false; // Re-habilitar
-                botonSubirLetra.disabled = false;    // Re-habilitar
+                mostrarMensajeAlerta(mensajeJuego, "Error: No se pudo obtener el ID de conexión de SignalR.", 'danger');
+                inputIngresaLetra.disabled = false; 
+                botonSubirLetra.disabled = false; 
                 return;
             }
 
-            await connection.invoke("ProcessLetter", currentGameId, letra); // Usas la 'letra' que recibes
-           
-            
+            await connection.invoke("ProcessLetter", currentGameId, letra); 
         } else {
-            mensajeJuego.textContent = "Error: Modo de juego no reconocido. No se puede enviar la letra.";
-            mensajeJuego.style.color = "red"; // Asegurar que el error se muestre en rojo
-            inputIngresaLetra.disabled = false; // Re-habilitar
-            botonSubirLetra.disabled = false;    // Re-habilitar
+            mostrarMensajeAlerta(mensajeJuego, "Error: Modo de juego no reconocido. No se puede enviar la letra.", 'danger');
+            inputIngresaLetra.disabled = false; 
+            botonSubirLetra.disabled = false; 
             return;
         }
 
     } catch (error) {
         console.error("Error CATCHED al enviar letra:", error);
-        mensajeJuego.textContent = `Error: ${error.message || "Un error inesperado ocurrió."}`;
-        mensajeJuego.style.color = "red";
-        inputIngresaLetra.disabled = false; // Re-habilitar
-        botonSubirLetra.disabled = false;    // Re-habilitar
+        mostrarMensajeAlerta(mensajeJuego, `Error: ${error.message || "Un error inesperado ocurrió."}`, 'danger');
+        inputIngresaLetra.disabled = false; 
+        botonSubirLetra.disabled = false; 
     }
 }
 
@@ -831,9 +803,7 @@ if (botonOnline) {
     botonOnline.addEventListener("click", () => {
         console.log("Modo Online seleccionado.");
         currentMode = 'online';
-        // Reinicia el mensaje y color antes de restaurar la UI
-        mensajeIdPartida.textContent = ""; 
-        mensajeIdPartida.style.color = "black";
+        // Simplemente restaura la UI, la función ya establece el mensaje por defecto
         restaurarSeccionOnlineUI(); 
     });
 }
@@ -850,8 +820,7 @@ botonUnirsePartida.addEventListener("click", async () => {
         console.log(`Intentando unirse a la partida: ${gameId}`);
         await unirseAPartidaOnline(gameId);
     } else {
-        mensajeIdPartida.textContent = "Por favor, ingresa un ID de partida.";
-        mensajeIdPartida.style.color = "red";
+        mostrarMensajeAlerta(mensajeIdPartida, "Por favor, ingresa un ID de partida.", 'warning');
     }
 });
 
@@ -869,89 +838,83 @@ botonEnviarPalabra.addEventListener("click", async function(event) {
     const palabra = inputPalabraVersus.value.toUpperCase().trim();
 
     if (palabra.length < 4 || palabra.length > 8) {
-        txtIngresarPalabraVersus.textContent = "La palabra debe tener entre 4 y 8 letras.";
+        mostrarMensajeAlerta(txtIngresarPalabraVersus, "La palabra debe tener entre 4 y 8 letras.", 'warning');
         inputPalabraVersus.focus();
         return;
     }
     if (!/^[A-ZÑ]+$/.test(palabra)) {
-        txtIngresarPalabraVersus.textContent = "Solo se permiten letras.";
+        mostrarMensajeAlerta(txtIngresarPalabraVersus, "Solo se permiten letras.", 'warning');
         inputPalabraVersus.focus();
         return;
     }
 
     inputPalabraVersus.value = "";
+    // Ocultar el mensaje después de enviar la palabra si todo está bien
+    ocultarMensajeAlerta(txtIngresarPalabraVersus); 
     await iniciarJuego("versus", palabra);
 });
 
 botonCancelarVersus.addEventListener("click", function(event) {
     event.preventDefault();
     ocultarTodasLasSecciones();
-    inicializarUI(); // Vuelve a la pantalla de inicio limpia
+    inicializarUI(); 
     inputPalabraVersus.value = "";
-    txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo";
+    // Reiniciar el mensaje en la pantalla de ingresar palabra
+    ocultarMensajeAlerta(txtIngresarPalabraVersus); 
+    // Puedes poner un mensaje inicial si quieres:
+    // txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo";
+    // mostrarMensajeAlerta(txtIngresarPalabraVersus, "Ingresa una palabra de 4 a 8 letras para tu amigo", 'info');
 });
 
 if (botonSubirLetra) {
     botonSubirLetra.addEventListener("click", async (event) => {
-        event.preventDefault(); // Previene el comportamiento por defecto del formulario
+        event.preventDefault(); 
 
         const letraIngresada = inputIngresaLetra.value.toUpperCase().trim();
 
         // 1. Validación de Vacío
         if (letraIngresada.length === 0) {
-            mensajeJuego.textContent = "Por favor, ingresa una letra.";
-            mensajeJuego.style.color = "red";
+            mostrarMensajeAlerta(mensajeJuego, "Por favor, ingresa una letra.", 'warning');
             inputIngresaLetra.focus();
             return;
         }
 
         // 2. Validación de una sola letra y solo letras (A-Z, Ñ)
         if (letraIngresada.length !== 1 || !/^[A-ZÑ]$/.test(letraIngresada)) {
-            mensajeJuego.textContent = "Ingresa una sola letra válida (A-Z, Ñ).";
-            mensajeJuego.style.color = "red";
+            mostrarMensajeAlerta(mensajeJuego, "Ingresa una sola letra válida (A-Z, Ñ).", 'warning');
             inputIngresaLetra.value = "";
             inputIngresaLetra.focus();
             return;
         }
 
-        // 3. Validación de letra YA ADIVINADA (¡CORRECCIÓN APLICADA AQUÍ!)
-        const letrasCorrectasEnGuiones = inputGuiones.textContent.replace(/ /g, ''); // Solo las letras adivinadas, sin guiones ni espacios
+        // 3. Validación de letra YA ADIVINADA
+        const letrasCorrectasEnGuiones = inputGuiones.textContent.replace(/ /g, ''); 
         
-        // Extraer solo las letras de la cadena "Letras incorrectas: A, B"
         const textoLetrasIncorrectas = letrasIncorrectasSpan.textContent;
         let letrasIncorrectasArray = [];
-        const match = textoLetrasIncorrectas.match(/:\s*([A-ZÑ,\s]*)$/); // Usa regex para capturar solo las letras
+        const match = textoLetrasIncorrectas.match(/:\s*([A-ZÑ,\s]*)$/); 
         if (match && match[1]) {
-            letrasIncorrectasArray = match[1].replace(/,\s*/g, '').split(''); // Elimina comas y espacios, luego divide
+            letrasIncorrectasArray = match[1].replace(/,\s*/g, '').split(''); 
         }
 
         const letrasYaIntentadas = new Set();
-        // Agrega las letras adivinadas correctamente
         letrasCorrectasEnGuiones.split('').filter(char => char !== '_').forEach(char => letrasYaIntentadas.add(char));
-        // Agrega las letras incorrectas
         letrasIncorrectasArray.forEach(char => letrasYaIntentadas.add(char));
 
         if (letrasYaIntentadas.has(letraIngresada)) {
-            mensajeJuego.textContent = `Ya enviaste la letra ${letraIngresada} anteriormente. Intenta con otra.`;
-            mensajeJuego.style.color = "orange"; // Color naranja para este aviso
+            
+            mostrarMensajeAlerta(mensajeJuego, `Ya enviaste la letra ${letraIngresada} anteriormente. Intenta con otra.`, 'warning'); 
             inputIngresaLetra.value = "";
             inputIngresaLetra.focus();
-            return; // ¡IMPORTANTE! Detener el procesamiento aquí
+            return; 
         }
 
         // Si todas las validaciones pasan, PASAMOS LA LETRA COMO ARGUMENTO
-        // Estos mensajes temporales NO son necesarios ahora que actualizarUIJuego maneja la prioridad
-        // mensajeJuego.textContent = "Adivinando..."; 
-        // mensajeJuego.style.color = "black";
-
         // Deshabilitar input y botón para evitar doble envío mientras se espera la respuesta
         inputIngresaLetra.disabled = true;
         botonSubirLetra.disabled = true;
         
-        await manejarEnvioLetra(letraIngresada); // <-- ¡AHORA PASA LA LETRA AQUÍ!
-
-        // El input y botón se habilitarán de nuevo en actualizarUIJuego si el juego no ha terminado.
-        // inputIngresaLetra.value = ""; // Ya se hace en actualizarUIJuego
+        await manejarEnvioLetra(letraIngresada); 
     });
 }
 
@@ -998,7 +961,8 @@ if (botonReiniciar) {
 inputIngresaLetra.addEventListener("keypress", async function(event) {
     if (event.key === "Enter") {
         event.preventDefault();
-        await manejarEnvioLetra();
+        // Llama al click del botón para centralizar la lógica de validación
+        botonSubirLetra.click(); 
     }
 });
 
@@ -1015,37 +979,41 @@ if (botonVolverAlMenu) {
 
 // Inicializar la interfaz al cargar la página
 function inicializarUI() {
-    ocultarTodasLasSecciones(); // Primero, asegura que todo esté oculto usando la nueva lógica.
+    ocultarTodasLasSecciones(); // Esto ya oculta todas las secciones principales
 
     // La pantalla de bienvenida es la primera que se muestra al inicio
-    mostrarSeccion(seccionBienvenida); // Ahora mostramos la sección de bienvenida
-
+    mostrarSeccion(seccionBienvenida); 
     currentMode = null;
 
-    // Ocultar todos los elementos de la sección online por defecto
-    // (Estos ya están ocultos por ocultarTodasLasSecciones, pero se mantienen para claridad si se necesita un override)
-    ocultarSeccion(seccionOnline);
-    ocultarSeccion(mensajeIdPartida);
-    ocultarSeccion(inputIdPartida);
+    ocultarMensajeAlerta(mensajeIdPartida);
+    ocultarMensajeAlerta(txtIngresarPalabraVersus); 
+    ocultarMensajeAlerta(mensajeJuego);
+    ocultarMensajeAlerta(mensajeTurno); 
+
+
+    // Para la sección online (elementos dentro de ella que no son la sección en sí)
+    inputIdPartida.value = ""; // Limpiar el input
+    ocultarSeccion(inputIdPartida); // Asegurar que el input esté oculto
     ocultarSeccion(botonCrearPartida);
     ocultarSeccion(botonUnirsePartida);
     ocultarSeccion(botonVolverModosOnline);
     let botonContinuar = document.getElementById("botonContinuarOnline");
     if (botonContinuar) ocultarSeccion(botonContinuar);
+    ocultarSeccion(contenedorGameId); // Asegurarse de que el contenedor del ID esté oculto
 
-    // Ocultar la sección de ingreso de palabra
-    ocultarSeccion(seccionIngresarPalabra);
-    inputPalabraVersus.value = "";
-    // Usar el selector correcto para txtIngresarPalabraVersus si lo cambiaste a ID
-    txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo";
+    // Para la sección de ingreso de palabra
+    inputPalabraVersus.value = ""; // Limpiar el input
+    // Establecer el texto inicial para esta sección, ya que la alerta la limpiará
+    txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo"; 
+    txtIngresarPalabraVersus.classList.add('d-none'); // Asegurar que el h3 esté oculto al inicio
 
-    // Ocultar la sección de juego y sus elementos
-    ocultarSeccion(seccionJuego);
-    resetearUIJuego();
+    // Para la sección de juego
+    resetearUIJuego(); // Esto ya reinicia muchos elementos de la UI del juego
+    // Asegurar que los botones de juego estén ocultos al inicio,
+    // ya que solo aparecen cuando se inicia una partida.
     ocultarSeccion(inputIngresaLetra);
     ocultarSeccion(botonSubirLetra);
     ocultarSeccion(botonReiniciar);
-    ocultarSeccion(mensajeTurno);
 }
 
 // Llama a la función de inicialización y SignalR cuando el DOM esté completamente cargado
