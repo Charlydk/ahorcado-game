@@ -1,0 +1,362 @@
+/* custom.css */
+
+/* ------------------------------------------- */
+/* ESTILOS GENERALES DEL BODY Y FONDO */
+/* ------------------------------------------- */
+body {
+    background-image: url('img/castillo_sombrío_est.png'); /* Ruta a tu imagen */
+    background-size: cover;       /* Cubre todo el viewport */
+    background-position: center center; /* Centra la imagen */
+    background-repeat: no-repeat; /* Evita que la imagen se repita */
+    background-attachment: fixed; /* Hace que el fondo sea fijo al hacer scroll */
+    background-color: #0d0d0d;    /* Color de fallback */
+    
+    color: #e0e0e0; /* Color de texto claro por defecto para todo el body */
+    /* Las clases Bootstrap d-flex flex-column h-100 ya están en el HTML */
+    /* Aseguramos que el body sea un contenedor flex para el sticky footer y centrado general */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* Sobrescribir el color de fondo de Bootstrap en el body si se aplica */
+body.bg-light {
+    background-color: transparent !important; /* Haz que el bg-light no interfiera */
+}
+
+* ------------------------------------------- */
+/* ESTILOS DEL TÍTULO SVG EN LA PANTALLA DE BIENVENIDA (Alternativa 1 Mejorada) */
+/* ------------------------------------------- */
+
+/* Contenedor SVG principal */
+.titulo-principal-svg { 
+    width: 90%; /* Ancho del SVG */
+    max-width: 900px; /* Tamaño máximo para que no se desborde */
+    height: auto; /* Mantiene la proporción */
+    margin: 40px auto 30px auto; /* Centra y da margen */
+    display: block; /* Asegura que ocupe su propio espacio */
+    overflow: visible; /* Importante para que los filtros de sombra y brillo no se corten */
+}
+
+/* Estilo para los elementos <text> dentro del symbol (ESTO ES LO QUE SE ESTILIZA REALMENTE) */
+#s-text text {
+    font-family: 'Creepster', cursive; /* Asegúrate de que esta fuente esté importada */
+    font-size: 150px; /* AJUSTA ESTE TAMAÑO para que se vea bien en tu layout */
+    font-weight: bold; /* Para que las letras sean gruesas */
+    text-transform: uppercase; /* Si quieres que siempre sea mayúsculas */
+    
+    /* Aplica el filtro combinado AQUÍ */
+    filter: url(#combined-effect); 
+    
+    /* ANIMACIÓN: Usaremos las animaciones directamente en este selector */
+    animation: 
+        pulseColor 3s infinite alternate, /* Animación del color del texto */
+        pulseScale 2s infinite alternate; /* Animación de escala para un efecto de "latido" */
+    
+    transform-origin: center center; /* Asegura que la escala se centre */
+    will-change: transform, fill, filter; /* Optimización para animaciones */
+}
+
+/* Propiedades específicas para las líneas de texto si las necesitas */
+/* Quita estas reglas si no quieres diferencias de tamaño entre "JUEGO DEL" y "AHORCADO" */
+#s-text text.titulo-linea-superior { 
+    font-size: 130px; /* Ligeramente más pequeño para "JUEGO DEL" */
+}
+
+#s-text text.titulo-linea-inferior { 
+    font-size: 180px; /* Más grande para "AHORCADO" */
+}
+
+
+/* ------------------------------------------- */
+/* ANIMACIONES PARA EL TÍTULO SVG */
+/* ------------------------------------------- */
+
+/* Animación de color del texto base */
+@keyframes pulseColor {
+    from {
+        fill: #e01313; /* Color inicial (blanco/gris claro) */
+    }
+    to {
+        fill: #ff7b7b; /* Ligeramente más brillante */
+    }
+}
+
+/* Animación de escala (efecto de "latido" o "respiración") */
+@keyframes pulseScale {
+    from {
+        transform: scale(1);
+    }
+    to {
+        transform: scale(1.10); /* Aumenta la escala un 3% para que sea visible */
+    }
+}
+
+/*
+    Si quieres una animación de brillo MÁS INTENSA, podrías definir
+    dos versiones de tu filtro combinado (una 'start' y una 'end')
+    en las <defs> del SVG y animar la propiedad 'filter' entre ellas.
+    Pero eso añade más complejidad. Para empezar, las animaciones de
+    'fill' y 'transform' sobre el texto deberían ser visibles.
+*/
+
+
+/* ------------------------------------------- */
+/* ESTILOS PARA HEADER */
+/* ------------------------------------------- */
+header.navbar { /* Seleccionamos el header por su clase navbar */
+    background-color: rgba(0, 0, 0, 0.8) !important; /* Negro semi-transparente */
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important; /* Sombra oscura */
+    margin-bottom: 20px; /* Margen para separar del main */
+    color: #e0e0e0 !important; /* Asegura el texto claro por si navbar-light lo sobreescribe */
+    width: 100%; /* Asegura que ocupe todo el ancho del viewport */
+    flex-shrink: 0; /* Evita que se encoja */
+}
+
+header .navbar-brand h2 { /* El título "Juego del Ahorcado" */
+    color: #ff6600 !important; /* Naranja Halloween vibrante */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Sombra para que resalte */
+}
+/* Si el img src=" " tuviera un logo, también le daríamos estilos si fuera necesario */
+
+
+/* ------------------------------------------- */
+/* ESTILOS PARA MAIN Y SUS SECCIONES */
+/* ------------------------------------------- */
+main.container-fluid { /* Seleccionamos el main por su clase container-fluid */
+    flex-grow: 1; /* Esto hace que el main ocupe todo el espacio disponible */
+    display: flex; /* Hacemos el main un flex container */
+    flex-direction: column; /* Apilamos las secciones verticalmente */
+    justify-content: center; /* Centra las secciones verticalmente dentro del main */
+    align-items: center; /* ¡Centra las secciones horizontalmente dentro del main! */
+    padding: 0 !important; /* Elimina el padding de Bootstrap del container-fluid si interfiere */
+}
+
+/* Contenedores de las secciones (para que la imagen de fondo se vea por detrás) */
+#seccionBienvenida,
+#seccionModosJuego,
+#seccionOnline,
+#seccionIngresarPalabra,
+#seccionJuego {
+    background-color: rgba(0, 0, 0, 0.75); /* Negro semi-transparente (75% opacidad) */
+    padding: 20px; /* Un poco de padding para que el contenido no se pegue a los bordes */
+    border-radius: 8px; /* Bordes redondeados sutiles */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5); /* Sombra para darle profundidad */
+    margin-top: 20px; /* Margen superior para separarlas */
+    margin-bottom: 20px; /* Margen inferior para separarlas */
+    max-width: 960px; /* Establece un ancho máximo consistente para tus secciones */
+    width: 90%; /* Ancho responsivo, ocupará hasta el 90% del main o 960px */
+    box-sizing: border-box; /* Asegura que padding y border se incluyan en el ancho */
+    /* Ya no necesitamos margin-left: auto; margin-right: auto; aquí,
+       porque el align-items: center del main se encarga de centrar estas secciones. */
+}
+
+
+/* ------------------------------------------- */
+/* ESTILOS PARA FOOTER */
+/* ------------------------------------------- */
+footer { /* Tu footer ya tiene bg-dark, text-white, py-3, mt-auto */
+    background-color: rgba(0, 0, 0, 0.8) !important; /* Negro semi-transparente, sobrescribe bg-dark */
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8음을8px;
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.5) !important; /* Sombra hacia arriba */
+    padding-top: 15px !important; /* Asegura el padding */
+    padding-bottom: 15px !important;
+    color: #e0e0e0 !important; /* Texto claro */
+    width: 100%; /* Ocupa todo el ancho del viewport */
+    flex-shrink: 0; /* Evita que se encoja */
+}
+
+footer h4, footer h5 {
+    color: #e0e0e0 !important; /* Asegura el color claro para los títulos */
+}
+
+/* Estilo para los iconos de GitHub y LinkedIn */
+footer img {
+    filter: invert(100%) brightness(80%); /* Hace los iconos blancos o claros */
+    transition: filter 0.3s ease;
+}
+
+footer img:hover {
+    filter: invert(100%) brightness(100%) drop-shadow(0 0 5px #ff6600); /* Brillo y sombra naranja al pasar el mouse */
+}
+
+
+/* ------------------------------------------- */
+/* AJUSTES PARA ELEMENTOS BOOTSTRAP Y MENSAJES */
+/* ------------------------------------------- */
+
+/* Botones */
+.btn-primary { 
+    background-color: #ff6600 !important; /* Naranja Halloween */
+    border-color: #cc5500 !important;
+    color: #ffffff !important;
+}
+.btn-primary:hover {
+    background-color: #cc5500 !important;
+    border-color: #994400 !important;
+}
+
+.btn-secondary { /* Para los botones de modo de juego */
+    background-color: #4a4a4a !important; /* Gris oscuro */
+    border-color: #3a3a3a !important;
+    color: #e0e0e0 !important;
+}
+.btn-secondary:hover {
+    background-color: #5a5a5a !important;
+    border-color: #4a4a4a !important;
+}
+
+.btn-success { /* Para crear partida online */
+    background-color: #28a745 !important; /* Verde por defecto, o uno más oscuro */
+    border-color: #218838 !important;
+    color: #ffffff !important;
+}
+
+.btn-info { /* Para copiar ID */
+    background-color: #17a2b8 !important; /* Azul claro por defecto, o uno más oscuro */
+    border-color: #138496 !important;
+    color: #ffffff !important;
+}
+
+.btn-warning { /* Para Reiniciar Partida */
+    background-color: #ffc107 !important; /* Amarillo por defecto */
+    border-color: #e0a800 !important;
+    color: #212529 !important; /* Texto oscuro para el amarillo */
+}
+
+.btn-danger { /* Para Cancelar Versus */
+    background-color: #dc3545 !important; /* Rojo por defecto */
+    border-color: #c82333 !important;
+    color: #ffffff !important;
+}
+
+.btn-outline-secondary { /* Volver al Menú */
+    color: #e0e0e0 !important;
+    border-color: #5a5a5a !important;
+    background-color: transparent !important;
+}
+.btn-outline-secondary:hover {
+    color: #ffffff !important;
+    background-color: #5a5a5a !important;
+}
+
+
+/* Mensajes de Alerta (colores que encajen con el tema) */
+.alert-success {
+    background-color: rgba(40, 167, 69, 0.75) !important; /* Verde original con transparencia */
+    border-color: rgba(33, 136, 56, 0.75) !important;
+    color: #ffffff !important; 
+}
+.alert-danger {
+    background-color: rgba(220, 53, 69, 0.75) !important; /* Rojo original con transparencia */
+    border-color: rgba(179, 44, 57, 0.75) !important;
+    color: #ffffff !important;
+}
+.alert-warning {
+    background-color: rgba(255, 193, 7, 0.75) !important; /* Amarillo original con transparencia */
+    border-color: rgba(214, 162, 0, 0.75) !important;
+    color: #343a40 !important; /* Texto oscuro para el amarillo */
+}
+.alert-info {
+    background-color: rgba(23, 162, 184, 0.75) !important; /* Celeste original con transparencia */
+    border-color: rgba(18, 130, 147, 0.75) !important;
+    color: #ffffff !important;
+}
+
+/* Inputs y Textareas */
+.form-control {
+    background-color: #3a3a3a !important; /* Fondo oscuro para inputs */
+    border: 1px solid #5a5a5a !important;
+    color: #e0e0e0 !important; /* Texto claro */
+}
+.form-control::placeholder {
+    color: #999 !important; /* Color del placeholder */
+}
+
+/* Textos específicos */
+#palabra-guiones {
+    color: #ff6600 !important; /* Naranja para la palabra */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+}
+#letrasIncorrectasSpan {
+    color: #dc3545 !important; /* Rojo para letras incorrectas */
+}
+#intentos-restantes {
+    color: #17a2b8 !important; /* Celeste para intentos restantes */
+}
+#mensajeTurno {
+    color: #ff6600 !important; /* Naranja para el mensaje de turno */
+}
+#mensajeIngresarPalabraVersus {
+    color: #ff6600 !important; /* Naranja para el mensaje de ingreso de palabra */
+    background-color: rgba(0, 0, 0, 0.5) !important; /* Fondo oscuro transparente */
+    border-color: rgba(0, 0, 0, 0.7) !important;
+}
+#displayGameId {
+    color: #ff6600 !important; /* Naranja para el ID de partida */
+}
+
+
+/* ------------------------------------------- */
+/* ESTILOS DE LA SECCIÓN DE JUEGO */
+/* ------------------------------------------- */
+
+/* Estilos para la palabra/guiones (letras adivinadas) */
+#palabra-guiones {
+    font-family: 'Creepster', cursive; /* O cualquier fuente que uses para el tema */
+    font-size: 3.2em; /* ¡Aumentado para que resalten! Antes 2.5em */
+    font-weight: bold; /* Hacerlas negritas */
+    color: #e0e0e0; /* Un color blanco brillante para que destaquen */
+    letter-spacing: 5px; /* Espacio entre las letras */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7), 
+                 0 0 10px #ff6600; /* Sombra sutil y un brillo naranja para impacto */
+    margin-bottom: 25px; /* Separación de otros elementos */
+    background-color: rgba(0, 0, 0, 0.3); /* Fondo sutil para darles un poco de cuerpo */
+    padding: 10px 20px; /* Un poco de padding */
+    border-radius: 8px; /* Bordes redondeados */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Borde muy sutil */
+}
+
+
+/* ------------------------------------------- */
+/* ESTILOS PARA LAS LETRAS INCORRECTAS */
+/* ------------------------------------------- */
+
+/* Estilo para el contenedor <p> "Letras incorrectas:" */
+#letrasIncorrectasSpan {
+    color: #e0e0e0 !important; /* El texto "Letras incorrectas:" en un color claro */
+    font-weight: bold; /* Hacerlo negrita para que destaque */
+    margin-bottom: 10px; /* Separación del resto */
+    display: flex; /* Usamos flexbox para alinear el texto y el recuadro de las letras */
+    align-items: center; /* Alinea los elementos verticalmente */
+    justify-content: center; /* Centra el p y su contenido */
+    flex-wrap: wrap; /* Permite que el contenido se ajuste en pantallas pequeñas */
+    gap: 10px; /* Espacio entre el texto y el recuadro */
+}
+
+/* Estilo para el SPAN que muestra las letras incorrectas (letras adivinadas) */
+#letrasIncorrectasValor.incorrect-letters-display { 
+    display: inline-block; /* Permite aplicar padding y margin como un bloque */
+    background-color: rgba(50, 0, 0, 0.6); /* Un rojo oscuro y más transparente (menos opaco) */
+    border: 1px solid #7B0000; /* Borde rojo ligeramente menos intenso */
+    border-radius: 5px; /* Bordes ligeramente redondeados */
+    padding: 3px 8px; /* Un poco menos de padding */
+    min-width: 60px; /* Ancho mínimo ligeramente menor */
+    text-align: center; /* Centra el texto dentro del recuadro */
+    font-family: 'Courier New', Courier, monospace; /* Fuente monoespaciada para las letras */
+    font-size: 1.1em; /* Ligeramente más pequeño, antes 1.2em */
+    color: #ff8800 !important; /* Un naranja un poco más suave */
+    letter-spacing: 1px; /* Menos espacio entre las letras */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Sombra más sutil */
+    flex-grow: 0;
+    flex-shrink: 0;
+}
+
+/* Opcional: Para asegurar que el texto "Letras incorrectas:" sea blanco si el <p> tiene text-danger */
+p#letrasIncorrectasSpan.text-danger {
+    color: #e0e0e0 !important; 
+}
+

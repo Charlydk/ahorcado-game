@@ -307,16 +307,20 @@ async function startSignalRConnection() {
 // --- Funciones de Lógica de Juego ---
 
 function resetearUIJuego() {
-    inputGuiones.textContent = " "; 
-    letrasIncorrectasSpan.textContent = " "; 
-    imagenAhorcado.src = "img/ahorcadito_1.png"; 
-    ocultarMensajeAlerta(mensajeJuego); // <-- Usar la nueva función
-    inputIngresaLetra.value = ""; 
+    inputGuiones.textContent = " ";
+    
+    // ¡CAMBIO AQUÍ! Ya no uses letrasIncorrectasSpan.textContent = " ";
+    // En su lugar, vacía el contenido del span interno:
+    inputLetrasOut.textContent = ""; // Esto vaciará solo las letras, dejando "Letras incorrectas: " intacto.
+    
+    imagenAhorcado.src = "img/ahorcadito_1.png";
+    ocultarMensajeAlerta(mensajeJuego);
+    inputIngresaLetra.value = "";
     inputIngresaLetra.disabled = false;
     botonSubirLetra.disabled = false;
     mostrarSeccion(inputIngresaLetra);
     mostrarSeccion(botonSubirLetra);
-    ocultarMensajeAlerta(mensajeTurno); // <-- Usar la nueva función
+    ocultarMensajeAlerta(mensajeTurno);
 }
 
 async function iniciarJuego(modo, palabraVersus = "") {
@@ -366,7 +370,7 @@ function actualizarUIJuego(data) {
     }
 
     inputGuiones.textContent = data.palabra.split('').join(' ');
-    letrasIncorrectasSpan.textContent = `Letras incorrectas: ${Array.isArray(data.letrasIncorrectas) ? data.letrasIncorrectas.join(", ") : data.letrasIncorrectas}`;
+    inputLetrasOut.textContent = Array.isArray(data.letrasIncorrectas) ? data.letrasIncorrectas.join(", ") : data.letrasIncorrectas;
 
     const cantidadErradasCalculada = 6 - data.intentosRestantes;
     console.log("     cantidad de erradas:", cantidadErradasCalculada);
