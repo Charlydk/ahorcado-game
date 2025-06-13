@@ -280,8 +280,8 @@ footer img:hover {
 
 /* Textos específicos */
 #palabra-guiones {
-    color: #ff6600 !important; /* Naranja para la palabra */
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    color: #000000 !important; /* Naranja para la palabra */
+    text-shadow: 1px 1px 3px rgb(255, 255, 255);
 }
 #letrasIncorrectasSpan {
     color: #dc3545 !important; /* Rojo para letras incorrectas */
@@ -311,15 +311,48 @@ footer img:hover {
     font-family: 'Creepster', cursive; /* O cualquier fuente que uses para el tema */
     font-size: 3.2em; /* ¡Aumentado para que resalten! Antes 2.5em */
     font-weight: bold; /* Hacerlas negritas */
-    color: #e0e0e0; /* Un color blanco brillante para que destaquen */
+    color: #000000; /* Blanco puro para que el resplandor destaque más */
     letter-spacing: 5px; /* Espacio entre las letras */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7), 
-                 0 0 10px #ff6600; /* Sombra sutil y un brillo naranja para impacto */
+    
+    /* ¡EFECTO DE RESPLANDOR MEJORADO! */
+    text-shadow: 
+        0 0 5px #ff0000,     /* Sombra cercana, naranja tenue */
+        0 0 15px #ff0000,    /* Resplandor más amplio, naranja */
+        0 0 25px #ff0000,    /* Resplandor aún más amplio */
+        0 0 40px #ff0000,    /* Resplandor exterior, más difuso */
+        0 0 50px #ff0000;    /* Resplandor muy difuso para un efecto halo */
+
+    /* Animación del resplandor */
+    animation: neonPulse 1.8s ease-in-out infinite alternate; /* Animación para el brillo */
+
     margin-bottom: 25px; /* Separación de otros elementos */
     background-color: rgba(0, 0, 0, 0.3); /* Fondo sutil para darles un poco de cuerpo */
     padding: 10px 20px; /* Un poco de padding */
     border-radius: 8px; /* Bordes redondeados */
     border: 1px solid rgba(255, 255, 255, 0.1); /* Borde muy sutil */
+}
+
+/* ------------------------------------------- */
+/* ANIMACIÓN ESPECÍFICA PARA EL RESPLANDOR DE GUIONES */
+/* ------------------------------------------- */
+@keyframes neonPulse {
+    from {
+        text-shadow: 
+            0 0 4px #b9b4b4, 
+            0 0 12px #ffffff, 
+            0 0 20px #ffffff, 
+            0 0 30px #ffffff;
+        opacity: 0.9;
+    }
+    to {
+        text-shadow: 
+            0 0 6px #ff6600, 
+            0 0 18px #ff6600, 
+            0 0 30px #ff6600, 
+            0 0 45px #ff6600,
+            0 0 60px #ff0000; /* Un poco más amplio y brillante en el 'to' */
+        opacity: 1;
+    }
 }
 
 
