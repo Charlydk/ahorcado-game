@@ -157,30 +157,32 @@ main.container-fluid { /* Seleccionamos el main por su clase container-fluid */
 /* ------------------------------------------- */
 /* ESTILOS PARA FOOTER */
 /* ------------------------------------------- */
-footer { /* Tu footer ya tiene bg-dark, text-white, py-3, mt-auto */
-    background-color: rgba(0, 0, 0, 0.8) !important; /* Negro semi-transparente, sobrescribe bg-dark */
+/* Cambia 'footer' por 'footer.bg-dark' o 'footer.bg-dark.text-white' para mayor especificidad */
+footer.bg-dark { 
+    background-color: rgba(0, 0, 0, 0.8) !important; /* ¡Ahora sí debería funcionar! */
     border-top-left-radius: 8px;
-    border-top-right-radius: 8음을8px;
-    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.5) !important; /* Sombra hacia arriba */
-    padding-top: 15px !important; /* Asegura el padding */
+    border-top-right-radius: 8px; /* Correcto */
+    box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.5) !important;
+    padding-top: 15px !important;
     padding-bottom: 15px !important;
-    color: #e0e0e0 !important; /* Texto claro */
-    width: 100%; /* Ocupa todo el ancho del viewport */
-    flex-shrink: 0; /* Evita que se encoja */
+    color: #e0e0e0 !important; /* Asegura que tu color de texto no sea sobrescrito por Bootstrap */
+    width: 100%;
+    flex-shrink: 0;
 }
 
+/* El resto de tus reglas para footer (h4, h5, img) que no requieren tanta especificidad pueden quedarse como están
+   o también puedes añadirles la clase si experimentas problemas */
 footer h4, footer h5 {
-    color: #e0e0e0 !important; /* Asegura el color claro para los títulos */
+    color: #e0e0e0 !important;
 }
 
-/* Estilo para los iconos de GitHub y LinkedIn */
 footer img {
-    filter: invert(100%) brightness(80%); /* Hace los iconos blancos o claros */
+    filter: invert(100%) brightness(80%);
     transition: filter 0.3s ease;
 }
 
 footer img:hover {
-    filter: invert(100%) brightness(100%) drop-shadow(0 0 5px #ff6600); /* Brillo y sombra naranja al pasar el mouse */
+    filter: invert(100%) brightness(100%) drop-shadow(0 0 5px #ff6600);
 }
 
 
