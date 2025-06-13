@@ -108,7 +108,43 @@ function ocultarTodasLasSecciones() {
 }
 
 
+function restaurarSeccionOnlineUI() {
+    // Primero, ocultamos todo para asegurar un estado limpio
+    ocultarTodasLasSecciones();
 
+    // Luego, mostramos SOLO la sección online
+    mostrarSeccion(seccionOnline);
+
+    // *** CAMBIO CLAVE AQUÍ: Solo restablecer el mensaje si no es un error ***
+    // Esto asume que un mensaje de error tendrá color rojo.
+    // Si tienes otra lógica para identificar mensajes de error, úsala.
+    if (mensajeIdPartida.style.color !== "red") {
+        mensajeIdPartida.textContent = "Crea una partida o únete a una existente:";
+        mensajeIdPartida.style.color = "black";
+    }
+    // Si es un error, el mensaje y color ya fueron establecidos en el catch de unirseAPartidaOnline
+    mostrarSeccion(mensajeIdPartida); // Asegurarse de que el mensaje esté visible
+
+    // Habilita y muestra el input de ID
+    inputIdPartida.value = ""; // Limpia cualquier ID previo
+    inputIdPartida.readOnly = false; // Habilitar para escribir
+    inputIdPartida.disabled = false; // Habilitar input
+    mostrarSeccion(inputIdPartida);
+
+    // Habilita y muestra los botones de acción
+    botonCrearPartida.disabled = false; // Habilitar botón
+    mostrarSeccion(botonCrearPartida);
+    botonUnirsePartida.disabled = false; // Habilitar botón
+    mostrarSeccion(botonUnirsePartida);
+
+    // Ocultar elementos específicos que se muestran *después* de crear/unirse exitosamente
+    ocultarSeccion(contenedorGameId); // El display del ID de la partida creada/unida
+    const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
+    if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego);
+
+    // Asegúrate de que el botón de "volver a modos online" esté visible
+    mostrarSeccion(botonVolverModosOnline);
+}
 
 
 // --- Configuración de SignalR ---
@@ -532,6 +568,7 @@ async function crearNuevaPartidaOnline() {
 }
 
 // --- Lógica para Unirse a Partida Online ---
+// --- Lógica para Unirse a Partida Online ---
 async function unirseAPartidaOnline(gameId) {
     try {
         const connectionId = connection.connectionId;
@@ -544,6 +581,11 @@ async function unirseAPartidaOnline(gameId) {
 
         console.log(`J2: Intentando unirse a partida ${gameId} con connectionId ${connectionId}`);
 
+        // Deshabilitar temporalmente los botones y el input para evitar doble clic
+        // Esto es importante para una buena UX mientras se espera la respuesta
+        inputIdPartida.disabled = true;
+        botonCrearPartida.disabled = true;
+        botonUnirsePartida.disabled = true;
         mensajeIdPartida.textContent = "Uniéndose a la partida...";
         mensajeIdPartida.style.color = "blue";
         inputIdPartida.readOnly = true; // Deshabilitar mientras se une
@@ -554,6 +596,8 @@ async function unirseAPartidaOnline(gameId) {
         console.log(`J2: currentGameId: ${currentGameId}, currentMode: ${currentMode} antes de JoinGameGroup`);
 
         // Primero nos unimos al grupo de SignalR
+        // NOTA: Si el ID es inválido, esta invocación puede fallar o el backend la ignorará.
+        // Lo importante es que el fetch de abajo es el que valida el ID de partida.
         await connection.invoke("JoinGameGroup", gameId);
         console.log(`J2: Jugador 2 (${connection.connectionId}) unido al grupo SignalR: ${gameId}`);
 
@@ -566,9 +610,12 @@ async function unirseAPartidaOnline(gameId) {
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Error al unirse a partida online: ${response.status} - ${errorText}`);
+            // Si la respuesta no es OK, intenta leer el cuerpo como JSON
+            const errorData = await response.json().catch(() => ({ message: "Error desconocido del servidor." })); 
+            const errorMessage = errorData.message || `Error desconocido: ${response.status} ${response.statusText}`;
+            throw new Error(errorMessage);
         }
+        
         const data = await response.json(); // Esto es JuegoEstadoResponse del Jugador 2
         console.log("J2: Respuesta de unirse-online (HTTP):", data);
 
@@ -587,25 +634,19 @@ async function unirseAPartidaOnline(gameId) {
 
     } catch (error) {
         console.error("Error al unirse a partida online:", error);
+        // Ahora error.message ya contendrá el mensaje del backend si es un JSON
         mensajeIdPartida.textContent = `Error al unirse: ${error.message}`;
         mensajeIdPartida.style.color = "red";
         
-        // Restaurar la UI de la sala de espera para reintentar
-        ocultarTodasLasSecciones();
-        mostrarSeccion(seccionOnline);
-        
-        // Asegúrate de que los botones y el input estén visibles y habilitados para reintentar
-        mostrarSeccion(botonCrearPartida);
-        mostrarSeccion(botonUnirsePartida);
-        mostrarSeccion(inputIdPartida);
-        inputIdPartida.readOnly = false; // Habilitar edición nuevamente
-        
-        // También asegúrate de ocultar los elementos de la sección de creación si estaban visibles
-        ocultarSeccion(contenedorGameId);
-        const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
-        if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego);
+        // *** AQUÍ ESTÁ EL CAMBIO CLAVE: Llamar a la nueva función de restauración ***
+        restaurarSeccionOnlineUI(); 
+        // Enfocar el input de ID de partida para que el usuario pueda corregirlo
+        inputIdPartida.focus(); 
     }
 }
+
+// Asegúrate de que tus funciones ocultarTodasLasSecciones, mostrarSeccion, etc. estén correctamente implementadas.
+// Y que los IDs de los elementos HTML como "mensajeIdPartida", "inputIdPartida", etc., coincidan.
 
 async function manejarEnvioLetra(letra) { // <--- ¡AQUÍ: ACEPTA 'letra' COMO ARGUMENTO!
     console.log("Enviando letra:", letra); // Para depuración
@@ -760,38 +801,10 @@ if (botonOnline) {
     botonOnline.addEventListener("click", () => {
         console.log("Modo Online seleccionado.");
         currentMode = 'online';
-        ocultarSeccion(seccionModosJuego);
-        mostrarSeccion(seccionOnline);
-
-        // --- AÑADIR ESTAS LÍNEAS ---
-        ocultarSeccion(contenedorGameId); // Ocultar el display del ID al inicio
-        const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
-        if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego); // Ocultar el botón Ir al Juego
-        // --- FIN AÑADIR ESTAS LÍNEAS ---
-
-
-        // --- Asegurarse de que todos los elementos de online estén visibles y habilitados ---
-        mensajeIdPartida.textContent = "Crea una partida o únete a una existente:"; // Resetear mensaje
-        mensajeIdPartida.style.color = "black"; // Resetear color
-        mostrarSeccion(mensajeIdPartida);
-        
-        inputIdPartida.value = ""; // Limpiar cualquier ID previo
-        inputIdPartida.readOnly = false; // ¡IMPORTANTE! Habilitar para escribir
-        inputIdPartida.disabled = false; // ¡IMPORTANTE! Habilitar input
-        mostrarSeccion(inputIdPartida);
-        
-        botonCrearPartida.disabled = false; // ¡IMPORTANTE! Habilitar botón
-        mostrarSeccion(botonCrearPartida);
-        
-        botonUnirsePartida.disabled = false; // ¡IMPORTANTE! Habilitar botón
-        mostrarSeccion(botonUnirsePartida);
-        
-        // Asegúrate de que el botón de continuar esté oculto si existe
-        const botonContinuar = document.getElementById("botonContinuarOnline");
-        if (botonContinuar) ocultarSeccion(botonContinuar);
-
-        mostrarSeccion(botonVolverModosOnline); // Este botón siempre visible en esta sección
-        // --- FIN de aseguramiento de elementos online ---
+        // Reinicia el mensaje y color antes de restaurar la UI
+        mensajeIdPartida.textContent = ""; 
+        mensajeIdPartida.style.color = "black";
+        restaurarSeccionOnlineUI(); 
     });
 }
 
@@ -939,30 +952,10 @@ if (botonReiniciar) {
             txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo"; // Resetear mensaje
             inputPalabraVersus.focus();
         } else if (currentMode === 'online') {
-            // --- Reseteo de la sección online para permitir crear/unirse ---
-            mostrarSeccion(seccionOnline);
-            
-            mensajeIdPartida.textContent = "Crea una partida o únete a una existente:";
-            mensajeIdPartida.style.color = "black"; // Resetear color
-            mostrarSeccion(mensajeIdPartida);
-            
-            inputIdPartida.value = ""; // Limpiar ID previo
-            inputIdPartida.readOnly = false; // Habilitar para escribir
-            inputIdPartida.disabled = false; // Habilitar input
-            mostrarSeccion(inputIdPartida);
-            
-            botonCrearPartida.disabled = false; // Habilitar botón
-            mostrarSeccion(botonCrearPartida);
-            
-            botonUnirsePartida.disabled = false; // Habilitar botón
-            mostrarSeccion(botonUnirsePartida);
-
-            // Asegúrate de que el botón "Ir al Juego" esté oculto si existe
-            const botonContinuar = document.getElementById("botonContinuarOnline");
-            if (botonContinuar) ocultarSeccion(botonContinuar);
-            
-            mostrarSeccion(botonVolverModosOnline);
-            // --- FIN del reseteo de la sección online ---
+            // Reinicia el mensaje y color antes de restaurar la UI
+            mensajeIdPartida.textContent = ""; 
+            mensajeIdPartida.style.color = "black";
+            restaurarSeccionOnlineUI();
         } else {
             // Fallback por si currentMode no está definido (aunque no debería pasar con los pasos anteriores)
             console.warn("Modo de juego no definido al reiniciar. Volviendo a selección de modos.");

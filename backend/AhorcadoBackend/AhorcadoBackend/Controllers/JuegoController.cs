@@ -253,6 +253,19 @@ public class JuegoController : ControllerBase
     [HttpPost("unirse-online")]
     public async Task<IActionResult> UnirseOnline([FromBody] UnirseGameOnlineRequest request)
     {
+        // PASO 1: Validar si el GameId es nulo o vacío
+        if (string.IsNullOrEmpty(request.GameId))
+        {
+            return BadRequest(new { message = "El ID de partida es requerido." });
+        }
+
+        // PASO 2: AÑADE AQUÍ LA VALIDACIÓN DEL FORMATO GUID DEL GAMEID
+        if (!Guid.TryParse(request.GameId, out _))
+        {
+            return BadRequest(new { message = "El formato del ID de partida es inválido. Asegúrate de ingresar un ID válido." });
+        }
+
+        // PASO 3: Ahora sí, intenta obtener la partida si el formato es correcto
         var game = _gameManager.GetGame(request.GameId);
 
         if (game == null)
@@ -260,10 +273,13 @@ public class JuegoController : ControllerBase
             return NotFound(new { message = "Partida no encontrada." });
         }
 
+        // PASO 4: Validar PlayerConnectionId (esto ya lo tienes bien ubicado)
         if (string.IsNullOrEmpty(request.PlayerConnectionId))
         {
             return BadRequest(new { message = "PlayerConnectionId es requerido para unirse a la partida." });
         }
+
+        // ... (el resto de tu código para añadir el jugador y manejar la lógica de unión)
 
         if (_gameManager.AddPlayerToGame(request.GameId, request.PlayerConnectionId))
         {
