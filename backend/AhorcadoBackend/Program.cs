@@ -64,6 +64,8 @@ app.UseCors("AllowSpecificOrigin");
 
 app.UseAuthorization(); // Se aplica a las rutas después de este punto
 
+app.MapGet("/api/status", () => "¡AhorcadoBackend está vivo en Render!");
+
 // --- Configuración de SignalR ---
 app.MapHub<GameHub>("/gamehub");
 // --- Fin Configuración de SignalR ---
