@@ -51,6 +51,7 @@
 
 
         <section id="seccionModosJuego" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
+            <h2 class="mb-4 text-danger font-creepster neon-glow-effect" style="font-size: 5em;">JUEGO DEL AHORCADO</h2>      <!-- Esto lo vamos a modificar cuando le demos movimientos entre secciones -->
             <h2 class="mb-4">Selecciona el Modo de Juego</h2>
             <div class="d-grid gap-3 col-6 mx-auto"> 
                 <button id="botonSolitario" class="btn btn-secondary btn-lg">Solitario</button>
@@ -92,8 +93,8 @@
             <div class="row w-100 flex-grow-1 align-items-center justify-content-center"> <div class="col-12 col-md-6 d-flex justify-content-center align-items-center p-0"> <img id="imagenAhorcado" src="img/ahorcado_0.png" class="img-fluid" alt="Ahorcado" style="max-height: 80vh;"> </div>
 
                 <div class="col-12 col-md-6 d-flex flex-column justify-content-around align-items-center p-3">
-                    <p id="palabra-guiones" class="fs-1 fw-bold text-center text-primary"></p>
-                    <p id="letrasIncorrectasSpan" class="text-danger fs-4">Letras <br> incorrectas <span id="letrasIncorrectasValor" class="incorrect-letters-display"></span></p>
+                    <p id="palabra-guiones" class="fs-1 fw-bold text-center text-primary neon-glow-effect"></p>
+                    <p id="letrasIncorrectasSpan" class="text-danger fs-6">Letras <br> incorrectas <span id="letrasIncorrectasValor" class="incorrect-letters-display"></span></p>
                     <p id="intentos-restantes" class="text-info fs-5"></p>
                     <p id="mensajeTurno" class="text-primary fw-bold"></p> <div class="input-group mb-3 w-75">
                         <input type="text" id="inputAdivinarLetra" class="form-control text-uppercase" placeholder="Ingresa una letra" maxlength="1">

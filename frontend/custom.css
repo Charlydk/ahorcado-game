@@ -24,8 +24,13 @@ body.bg-light {
     background-color: transparent !important; /* Haz que el bg-light no interfiera */
 }
 
+/* Clase de utilidad para la fuente Creepster */
+.font-creepster {
+    font-family: 'Creepster', cursive;
+}
+
 * ------------------------------------------- */
-/* ESTILOS DEL TÍTULO SVG EN LA PANTALLA DE BIENVENIDA (Alternativa 1 Mejorada) */
+/* ESTILOS DEL TÍTULO SVG EN LA PANTALLA DE BIENVENIDA */
 /* ------------------------------------------- */
 
 /* Contenedor SVG principal */
@@ -42,7 +47,7 @@ body.bg-light {
 #s-text text {
     font-family: 'Creepster', cursive; /* Asegúrate de que esta fuente esté importada */
     font-size: 150px; /* AJUSTA ESTE TAMAÑO para que se vea bien en tu layout */
-    font-weight: bold; /* Para que las letras sean gruesas */
+    /*font-weight: bold; /* Para que las letras sean gruesas */
     text-transform: uppercase; /* Si quieres que siempre sea mayúsculas */
     
     /* Aplica el filtro combinado AQUÍ */
@@ -75,10 +80,10 @@ body.bg-light {
 /* Animación de color del texto base */
 @keyframes pulseColor {
     from {
-        fill: #e01313; /* Color inicial (blanco/gris claro) */
+        fill: #ffffff; /* Color inicial (blanco/gris claro) */
     }
     to {
-        fill: #ff7b7b; /* Ligeramente más brillante */
+        fill: #ff0000; /* Ligeramente más brillante */
     }
 }
 
@@ -311,18 +316,6 @@ footer img:hover {
     font-weight: bold; /* Hacerlas negritas */
     color: #000000; /* Blanco puro para que el resplandor destaque más */
     letter-spacing: 5px; /* Espacio entre las letras */
-    
-    /* ¡EFECTO DE RESPLANDOR MEJORADO! */
-    text-shadow: 
-        0 0 5px #ff0000,     /* Sombra cercana, naranja tenue */
-        0 0 15px #ff0000,    /* Resplandor más amplio, naranja */
-        0 0 25px #ff0000,    /* Resplandor aún más amplio */
-        0 0 40px #ff0000,    /* Resplandor exterior, más difuso */
-        0 0 50px #ff0000;    /* Resplandor muy difuso para un efecto halo */
-
-    /* Animación del resplandor */
-    animation: neonPulse 1.8s ease-in-out infinite alternate; /* Animación para el brillo */
-
     margin-bottom: 25px; /* Separación de otros elementos */
     background-color: rgba(0, 0, 0, 0.3); /* Fondo sutil para darles un poco de cuerpo */
     padding: 10px 20px; /* Un poco de padding */
@@ -331,28 +324,70 @@ footer img:hover {
 }
 
 /* ------------------------------------------- */
-/* ANIMACIÓN ESPECÍFICA PARA EL RESPLANDOR DE GUIONES */
+/* ANIMACIÓN DE RESPLANDOR (NEON) */
 /* ------------------------------------------- */
 @keyframes neonPulse {
-    from {
+    0% {
         text-shadow: 
-            0 0 4px #b9b4b4, 
-            0 0 12px #ffffff, 
-            0 0 20px #ffffff, 
-            0 0 30px #ffffff;
-        opacity: 0.9;
+            0 0 5px #ffffff,    /* Base del resplandor */
+            0 0 15px #ffffff,
+            0 0 25px #ffffff,
+            0 0 40px #ffffff;
     }
-    to {
+    50% {
         text-shadow: 
-            0 0 6px #ff6600, 
-            0 0 18px #ff6600, 
-            0 0 30px #ff6600, 
-            0 0 45px #ff6600,
-            0 0 60px #ff0000; /* Un poco más amplio y brillante en el 'to' */
-        opacity: 1;
+            0 0 8px #049410,    /* El resplandor se intensifica */
+            0 0 20px #049410,
+            0 0 35px #049410,
+            0 0 55px #049410,
+            0 0 70px #049410; /* Un poco más amplio y brillante en el pico */
+    }
+    100% {
+        text-shadow: 
+            0 0 5px #ff6600, 
+            0 0 15px #ff6600, 
+            0 0 25px #ff6600, 
+            0 0 40px #ff6600; /* Vuelve al estado inicial */
     }
 }
 
+/* ------------------------------------------- */
+/* CLASE REUTILIZABLE PARA EL EFECTO NEON */
+/* ------------------------------------------- */
+.neon-glow-effect {
+    /* Aquí va el 'text-shadow' inicial y la animación */
+    text-shadow: 
+        0 0 5px #ff6600,     /* Sombra cercana, naranja tenue */
+        0 0 15px #ff6600,    /* Resplandor más amplio, naranja */
+        0 0 25px #ff6600,    /* Resplandor aún más amplio */
+        0 0 40px #ff6600,    /* Resplandor exterior, más difuso */
+        0 0 50px #ff6600;    /* Resplandor muy difuso para un efecto halo */
+
+    animation: neonPulse 1.8s ease-in-out infinite alternate; /* Aplica la animación */
+}
+
+
+/* ------------------------------------------- */
+/* ESTILOS DE LA SECCIÓN DE JUEGO */
+/* ------------------------------------------- */
+
+/* Estilos para la palabra/guiones (letras adivinadas) */
+#palabra-guiones {
+    font-family: 'Creepster', cursive; /* O cualquier fuente que uses para el tema */
+    font-size: 3.2em;
+    font-weight: bold;
+    color: #fff; /* Blanco puro para que el resplandor destaque más */
+    letter-spacing: 5px;
+    
+    /* ¡Ahora usa la clase reusable! */
+    /* text-shadow y animation se quitan de aquí */
+
+    margin-bottom: 25px;
+    background-color: rgba(0, 0, 0, 0.1);
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
 
 /* ------------------------------------------- */
 /* ESTILOS PARA LAS LETRAS INCORRECTAS */
@@ -360,7 +395,7 @@ footer img:hover {
 
 /* Estilo para el contenedor <p> "Letras incorrectas:" */
 p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para mayor especificidad */
-    color: #f5b3b3 !important; /* El texto "Letras incorrectas:" en un color claro */
+    color: #ffffff !important; /* El texto "Letras incorrectas:" en un color claro */
     /*font-weight: bold; /* Hacerlo negrita para que destaque */
     margin-bottom: 5px; /* Separación del resto */
     display: flex; /* Usamos flexbox para alinear el texto y el recuadro de las letras */
@@ -372,6 +407,7 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     background-color: rgba(0, 0, 0, 0.4); /* Fondo negro muy sutil, casi transparente */
     padding: 5px 10px; /* Opcional: un poco de padding para que el fondo no esté pegado al texto */
     border-radius: 5px; /* Opcional: bordes redondeados para el fondo */
+    
 }
 
 /* Estilo para el SPAN que muestra las letras incorrectas (letras adivinadas) */
@@ -384,13 +420,10 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     min-width: 60px; /* Ancho mínimo ligeramente menor */
     text-align: center; /* Centra el texto dentro del recuadro */
     font-family: 'Courier New', Courier, monospace; /* Fuente monoespaciada para las letras */
-    font-size: 1.1em; /* Ligeramente más pequeño, antes 1.2em */
+    font-size: 1.5em; /* Ligeramente más pequeño, antes 1.2em */
     color: #ff8800 !important; /* Un naranja un poco más suave */
     letter-spacing: 1px; /* Menos espacio entre las letras */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Sombra más sutil */
     flex-grow: 0;
     flex-shrink: 0;
 }
-
-
-

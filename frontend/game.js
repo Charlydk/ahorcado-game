@@ -1,3 +1,10 @@
+/**
+ * Oculta una sección con una animación de desvanecimiento y subida.
+ * @param {HTMLElement} section El elemento de la sección a ocultar.
+ * @param {Function} [onComplete] Función a ejecutar una vez que la animación termina.
+ */
+
+
 // --- Elementos HTML de la interfaz (Selección de Modo, Ingreso de Palabra VS, Área de Juego) ---
 
 const seccionBienvenida = document.getElementById("seccionBienvenida"); // Agregado, ya que la tienes
