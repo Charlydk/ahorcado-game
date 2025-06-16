@@ -1,22 +1,34 @@
 using AhorcadoBackend.Hubs;
 using AhorcadoBackend.Services;
 
+Console.WriteLine("DEBUG: Iniciando la aplicaci√≥n ASP.NET Core...");
+
 var builder = WebApplication.CreateBuilder(args);
 
+Console.WriteLine("DEBUG: Builder creado. Configurando servicios...");
+
+
+// Configura Kestrel para escuchar en el puerto proporcionado por Cloud Run ($PORT)
+builder.WebHost.UseUrls($"http://*:{Environment.GetEnvironmentVariable("PORT") ?? "8080"}");
+// ------------------------------------------
+
+Console.WriteLine("DEBUG: Builder creado. Configurando servicios...");
+
+
 // =========================================================
-// TODAS las llamadas a builder.Services.Add... DEBEN IR AQUÕ
+// TODAS las llamadas a builder.Services.Add... DEBEN IR AQUÔøΩ
 // =========================================================
 
 builder.Services.AddControllers();
 builder.Services.AddSignalR();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<GameManager>();
 builder.Services.AddHostedService<GameCleanupService>();
 builder.Services.AddDistributedMemoryCache();
 
 
-// ConfiguraciÛn de Sesiones
+// ConfiguraciÔøΩn de Sesiones
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -24,31 +36,42 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
-// ConfiguraciÛn de CORS (si es necesaria para tu frontend)
+// ConfiguraciÔøΩn de CORS (si es necesaria para tu frontend)
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowSpecificOrigin", // Nombre de tu polÌtica CORS
-        policy => policy.WithOrigins("http://127.0.0.1:5500", "http://localhost:5500", "https://localhost:7055") // Tus orÌgenes de frontend
-                        .AllowAnyMethod()
-                        .AllowAnyHeader()
-                        .AllowCredentials()); // Esencial para sesiones con CORS
+    options.AddPolicy("AllowSpecificOrigin", // Este es el nombre de tu pol√≠tica CORS existente
+        policy => policy.WithOrigins(
+            "http://127.0.0.1:5500",
+            "http://localhost:5500",
+            "https://localhost:7055",
+            // ¬°¬°¬°A√ëADE LA URL DE TU FUTURO FRONTEND EN GITHUB PAGES AQU√ç!!!
+            // RECUERDA: Reemplaza <TU_USUARIO_GITHUB> y <NOMBRE_REPOSITORIO_FRONTEND> con tus datos reales.
+            // Por ejemplo: "https://charlydk.github.io/ahorcado-frontend"
+            "https://charlydk.github.io/ahorcado-game/frontend/" // <-- ¬°A√ëADE ESTA L√çNEA!
+        )
+        .AllowAnyMethod()
+        .AllowAnyHeader()
+        .AllowCredentials()); // Esencial para sesiones con CORS
 });
 
 
+
 // =========================================================
-// AQUÕ se construye la aplicaciÛn. NADA de builder.Services.Add... debe ir despuÈs de esta lÌnea.
+// AQUÔøΩ se construye la aplicaciÔøΩn. NADA de builder.Services.Add... debe ir despuÔøΩs de esta lÔøΩnea.
 // =========================================================
 var app = builder.Build();
 
+Console.WriteLine("DEBUG: App construida. Configurando pipeline de solicitudes...");
+
 // =========================================================
-// TODAS las llamadas a app.Use... y app.Map... DEBEN IR AQUÕ
+// TODAS las llamadas a app.Use... y app.Map... DEBEN IR AQUÔøΩ
 // =========================================================
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    //app.UseSwagger();
+    //app.UseSwaggerUI();
 }
 
 //app.UseHttpsRedirection(); --> Descomentar si se quiere forzar HTTPS
@@ -56,21 +79,31 @@ if (app.Environment.IsDevelopment())
 // Habilitar el middleware de sesiones (debe ir antes de UseRouting/MapControllers)
 app.UseSession();
 
-// --- °IMPORTANTE! app.UseRouting() DEBE IR AQUÕ ---
+// --- ÔøΩIMPORTANTE! app.UseRouting() DEBE IR AQUÔøΩ ---
 app.UseRouting(); // Habilita el enrutamiento para controladores y SignalR
 
-// Usar la polÌtica CORS definida. Aseg˙rate de usar el mismo nombre aquÌ.
+// Usar la polÔøΩtica CORS definida. AsegÔøΩrate de usar el mismo nombre aquÔøΩ.
 app.UseCors("AllowSpecificOrigin");
 
-app.UseAuthorization(); // Se aplica a las rutas despuÈs de este punto
+app.UseAuthorization(); // Se aplica a las rutas despuÔøΩs de este punto
 
-app.MapGet("/api/status", () => "°AhorcadoBackend est· vivo en Render!");
+app.MapGet("/api/status", () => "ÔøΩAhorcadoBackend estÔøΩ vivo en Render!");
 
-// --- ConfiguraciÛn de SignalR ---
+Console.WriteLine("DEBUG: Configuraci√≥n de middlewares completa. Mapeando endpoints...");
+
+
+// --- ConfiguraciÔøΩn de SignalR ---
 app.MapHub<GameHub>("/gamehub");
-// --- Fin ConfiguraciÛn de SignalR ---
+// --- Fin ConfiguraciÔøΩn de SignalR ---
+
+
 
 app.MapControllers(); // Mapea tus controladores API
 
+Console.WriteLine("DEBUG: Antes de app.Run()...");
+
+
 
 app.Run();
+
+Console.WriteLine("DEBUG: Aplicaci√≥n finalizada."); // Esto rara vez se ve en un servidor

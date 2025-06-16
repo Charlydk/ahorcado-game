@@ -11,23 +11,15 @@ namespace AhorcadoBackend.Hubs
     public class GameHub : Hub
     {
         private readonly GameManager _gameManager;
-        // No necesitas inyectar IHubContext aquí si solo lo usas para _gameManager.Clients.Group/Client.
-        // El _gameManager ya tiene su propia instancia de IHubContext para enviar mensajes.
-        // Por eso, he removido la declaración redundante aquí.
-        // private readonly IHubContext<GameHub> _hubContext; // <-- REMUEVE ESTA LÍNEA
+       
 
-        public GameHub(GameManager gameManager) // <-- SOLO NECESITAS INYECTAR GameManager
+        public GameHub(GameManager gameManager) 
         {
             _gameManager = gameManager;
-            // Si el GameManager necesita IHubContext, se lo pasas en su constructor
-            // y ASP.NET Core se encarga de inyectarlo en GameManager.
-            // No necesitas pasarlo de aquí al GameManager, ya se inyecta directamente allí.
-            // REMUEVE ESTA LÍNEA DE AQUÍ TAMBIÉN -> _hubContext = hubContext; 
+            
         }
 
-        // Método para que los clientes se unan a un grupo de SignalR (por ID de partida)
-        // Este método es puramente para la gestión de grupos de SignalR.
-        // La lógica de añadir el jugador a la partida real (en el GameManager) ocurre en CreateOnlineGame o JoinOnlineGame.
+        
         public async Task JoinGameGroup(string gameId)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
