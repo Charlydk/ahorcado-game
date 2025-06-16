@@ -76,11 +76,11 @@ if (app.Environment.IsDevelopment())
 // Habilitar el middleware de sesiones (debe ir antes de UseRouting/MapControllers)
 app.UseSession();
 
-// --- �IMPORTANTE! app.UseRouting() DEBE IR AQU� ---
-app.UseRouting(); // Habilita el enrutamiento para controladores y SignalR
-
 // Usar la pol�tica CORS definida. Aseg�rate de usar el mismo nombre aqu�.
 app.UseCors("AllowSpecificOrigin");
+
+// --- �IMPORTANTE! app.UseRouting() DEBE IR AQU� ---
+app.UseRouting(); // Habilita el enrutamiento para controladores y SignalR
 
 app.UseAuthorization(); // Se aplica a las rutas despu�s de este punto
 
