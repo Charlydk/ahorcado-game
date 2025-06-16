@@ -213,7 +213,7 @@ function restaurarSeccionOnlineUI() {
 
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("http://127.0.0.1:8080/gamehub")
+    .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub")
     .withAutomaticReconnect()
     .build();
 
@@ -332,7 +332,7 @@ function resetearUIJuego() {
 
 async function iniciarJuego(modo, palabraVersus = "") {
     try {
-        const response = await fetch("http://127.0.0.1:8080/api/juego/iniciar", {
+        const response = await fetch("https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/iniciar", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ Modo: modo, Palabra: palabraVersus }),
@@ -497,7 +497,7 @@ async function crearNuevaPartidaOnline() {
         ocultarSeccion(botonVolverModosOnline); 
         ocultarSeccion(contenedorGameId);
 
-        const response = await fetch("http://127.0.0.1:8080/api/juego/crear-online", {
+        const response = await fetch("https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/crear-online", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ creatorConnectionId: connectionId }),
@@ -604,7 +604,7 @@ async function unirseAPartidaOnline(gameId) {
         await connection.invoke("JoinGameGroup", gameId);
         console.log(`J2: Jugador 2 (${connection.connectionId}) unido al grupo SignalR: ${gameId}`);
 
-        const response = await fetch("http://127.0.0.1:8080/api/juego/unirse-online", {
+        const response = await fetch("https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/unirse-online", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ gameId: gameId, playerConnectionId: connectionId }),
@@ -652,7 +652,7 @@ async function manejarEnvioLetra(letra) {
 
     try {
         if (currentMode === 'solitario' || currentMode === 'versus') {
-            const response = await fetch("http://127.0.0.1:8080/api/juego/adivinarLetraLocal", {
+            const response = await fetch("https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/adivinarLetraLocal", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
