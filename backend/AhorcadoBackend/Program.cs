@@ -44,10 +44,7 @@ builder.Services.AddCors(options =>
             "http://127.0.0.1:5500",
             "http://localhost:5500",
             "https://localhost:7055",
-            // ¡¡¡AÑADE LA URL DE TU FUTURO FRONTEND EN GITHUB PAGES AQUÍ!!!
-            // RECUERDA: Reemplaza <TU_USUARIO_GITHUB> y <NOMBRE_REPOSITORIO_FRONTEND> con tus datos reales.
-            // Por ejemplo: "https://charlydk.github.io/ahorcado-frontend"
-            "https://charlydk.github.io/ahorcado-game/frontend/" // <-- ¡AÑADE ESTA LÍNEA!
+            "https://charlydk.github.io/ahorcado-game/frontend/"
         )
         .AllowAnyMethod()
         .AllowAnyHeader()
