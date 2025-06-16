@@ -44,6 +44,10 @@ builder.Services.AddCors(options =>
             "http://127.0.0.1:5500",
             "http://localhost:5500",
             "https://localhost:7055",
+             "https://charlydk.github.io",     // Sin barra final
+            "https://charlydk.github.io/",    // Con barra final
+            "https://charlydk.github.io/ahorcado-game", // El repo base sin subfolder
+            "https://charlydk.github.io/ahorcado-game/",//
             "https://charlydk.github.io/ahorcado-game/frontend/"
         )
         .AllowAnyMethod()
