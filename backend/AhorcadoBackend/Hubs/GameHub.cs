@@ -11,12 +11,14 @@ namespace AhorcadoBackend.Hubs
     public class GameHub : Hub
     {
         private readonly GameManager _gameManager;
-       
+        private readonly ILogger<GameHub> _logger;
 
-        public GameHub(GameManager gameManager) 
+
+        public GameHub(GameManager gameManager, ILogger<GameHub> logger)
         {
             _gameManager = gameManager;
-            
+            _logger = logger;
+
         }
 
         
@@ -148,17 +150,27 @@ namespace AhorcadoBackend.Hubs
         }
 
         // Método que se llama cuando un cliente se desconecta (cierra navegador, pierde conexión, etc.)
-        public override async Task OnDisconnectedAsync(Exception? exception)
-        {
-            Console.WriteLine($"Cliente {Context.ConnectionId} desconectado. Excepción: {exception?.Message}");
-            var disconnectedConnectionId = Context.ConnectionId;
+       public override async Task OnDisconnectedAsync(Exception? exception) // Usar 'Exception?' para indicar que puede ser nula
+{
+    var connectionId = Context.ConnectionId;
+    var logMessage = $"Cliente {connectionId} desconectado.";
 
-            // Delegamos completamente al GameManager la lógica de encontrar y manejar al jugador desconectado
-            // El GameManager será responsable de enviar "OpponentDisconnected" o "ReceiveGameUpdate"
-            // si la partida afectada necesita una actualización.
-            _gameManager.PlayerDisconnected(disconnectedConnectionId);
+    if (exception != null)
+    {
+        logMessage += $" Excepción: {exception.Message}";
+        // Opcional: registrar el StackTrace si necesitas más detalle en los logs
+        // logMessage += $" StackTrace: {exception.StackTrace}";
+        _logger.LogError(exception, logMessage); // Usa _logger.LogError para registrar la excepción
+    }
+    else
+    {
+        _logger.LogInformation(logMessage + " Desconexión voluntaria o sin excepción visible.");
+    }
 
-            await base.OnDisconnectedAsync(exception);
-        }
+    // ... tu lógica para remover al cliente de la partida ...
+    // (Asegúrate de que la lógica de remoción del cliente ocurra aquí)
+
+    await base.OnDisconnectedAsync(exception);
+}  
     }
 }
