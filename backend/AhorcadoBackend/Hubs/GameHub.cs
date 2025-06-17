@@ -150,27 +150,33 @@ namespace AhorcadoBackend.Hubs
         }
 
         // Método que se llama cuando un cliente se desconecta (cierra navegador, pierde conexión, etc.)
-       public override async Task OnDisconnectedAsync(Exception? exception) // Usar 'Exception?' para indicar que puede ser nula
-{
-    var connectionId = Context.ConnectionId;
-    var logMessage = $"Cliente {connectionId} desconectado.";
+        public override async Task OnDisconnectedAsync(Exception? exception)
+        {
+            var connectionId = Context.ConnectionId;
+            string logMessage;
 
-    if (exception != null)
-    {
-        logMessage += $" Excepción: {exception.Message}";
-        // Opcional: registrar el StackTrace si necesitas más detalle en los logs
-        // logMessage += $" StackTrace: {exception.StackTrace}";
-        _logger.LogError(exception, logMessage); // Usa _logger.LogError para registrar la excepción
-    }
-    else
-    {
-        _logger.LogInformation(logMessage + " Desconexión voluntaria o sin excepción visible.");
-    }
+            if (exception != null)
+            {
+                // Si hay una excepción real al desconectarse
+                logMessage = $"Cliente {connectionId} desconectado. Excepción: {exception.Message}";
+                _logger.LogError(exception, logMessage);
+            }
+            else
+            {
+                // Si no hay una excepción explícita (cierre por timeout, cierre limpio, etc.)
+                logMessage = $"Cliente {connectionId} desconectado. Cierre de conexión sin excepción directa. (Posiblemente timeout de inactividad o cierre de proxy).";
+                _logger.LogWarning(logMessage); // Nivel Warning para seguimiento
+            }
 
-    // ... tu lógica para remover al cliente de la partida ...
-    // (Asegúrate de que la lógica de remoción del cliente ocurra aquí)
+            // Ahora delegamos la lógica de manejo de la desconexión al GameManager.
+            // El GameManager se encargará de encontrar la partida, remover al jugador y notificar al oponente.
+            _gameManager.PlayerDisconnected(connectionId); // <-- CAMBIO AQUÍ: Llamamos al nuevo método en GameManager
 
-    await base.OnDisconnectedAsync(exception);
-}  
+            await base.OnDisconnectedAsync(exception);
+        }
+
+
+
+
     }
 }

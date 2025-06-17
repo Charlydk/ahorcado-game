@@ -5,6 +5,7 @@ using System.Collections.Concurrent;
 using System.Linq;
 using System.Collections.Generic;
 using AhorcadoBackend.Hubs;
+using Microsoft.Extensions.Logging;
 
 namespace AhorcadoBackend.Services
 {
@@ -13,28 +14,22 @@ namespace AhorcadoBackend.Services
         private readonly ConcurrentDictionary<string, JuegoEstado> _activeGames;
         private readonly Random _random;
         private readonly IHubContext<GameHub> _hubContext; // ¡DECLARACIÓN AQUÍ!
+        private readonly ILogger<GameManager> _logger; // <-- ADICIÓN AQUÍ: Declaración del logger
+
 
         // Lista de palabras predefinidas. Considerar cargar desde un archivo o DB a futuro.
         private readonly List<string> _palabras = new List<string>
         { "CASA", "PAYASO", "CAMARA", "HOMERO", "PLATO", "TECLADO", "TRISTEZA", "MONITOR", "PROGRAMACION", "DESARROLLO", "SOFTWARE", "COMPUTADORA", "INTERNET" };
 
         // Constructor que ACEPTA IHubContext<GameHub>
-        public GameManager(IHubContext<GameHub> hubContext)
+        public GameManager(IHubContext<GameHub> hubContext, ILogger<GameManager> logger)
         {
             _hubContext = hubContext; // ASIGNACIÓN AQUÍ
+            _logger = logger; // <-- ASIGNACIÓN AQUÍ
             _activeGames = new ConcurrentDictionary<string, JuegoEstado>();
             _random = new Random();
         }
 
-        // Constructor sin IHubContext (para pruebas o si no se usa SignalR) - OPCIONAL
-        // Si siempre vas a usar SignalR, puedes remover este constructor sin parámetros.
-        public GameManager()
-        {
-            _activeGames = new ConcurrentDictionary<string, JuegoEstado>();
-            _random = new Random();
-            // _hubContext NO se inicializa aquí, esto podría causar NullReferenceException si se usa.
-            // Por eso, es mejor tener un único constructor con la inyección.
-        }
 
 
         private string GenerarPalabraAleatoria()
@@ -106,10 +101,17 @@ namespace AhorcadoBackend.Services
             return game;
         }
 
-        // Remueve una partida por su ID (ej. cuando termina o es inactiva)
+        // Método 'RemoveGame' ya existente, que cumple la función de 'EndGame'
         public void RemoveGame(string gameId)
         {
-            _activeGames.TryRemove(gameId, out _);
+            if (_activeGames.TryRemove(gameId, out _))
+            {
+                _logger.LogInformation($"Partida {gameId} finalizada y eliminada del GameManager."); // <-- LOGGING
+            }
+            else
+            {
+                _logger.LogWarning($"Intento de finalizar la partida {gameId}, pero no fue encontrada en GameManager."); // <-- LOGGING
+            }
         }
 
         // Clase auxiliar para el resultado de un intento de unirse a una partida
@@ -128,6 +130,7 @@ namespace AhorcadoBackend.Services
             if (!_activeGames.TryGetValue(gameId, out var game))
             {
                 result.Message = "La partida no existe.";
+                _logger.LogWarning($"Intento de unirse a partida {gameId} por {connectionId}: Partida no encontrada."); // <-- LOGGING
                 return result;
             }
 
@@ -136,12 +139,14 @@ namespace AhorcadoBackend.Services
                 result.Success = true;
                 result.Message = "Ya estás en esta partida.";
                 result.UpdatedGame = game;
+                _logger.LogInformation($"Jugador {connectionId} ya está en la partida {gameId}."); // <-- LOGGING
                 return result;
             }
 
             if (game.PlayerConnectionIds.Count >= 2)
             {
                 result.Message = "La partida ya está llena.";
+                _logger.LogWarning($"Intento de unirse a partida {gameId} por {connectionId}: Partida llena."); // <-- LOGGING
                 return result;
             }
 
@@ -149,6 +154,7 @@ namespace AhorcadoBackend.Services
             if (game.JuegoTerminado)
             {
                 result.Message = "La partida ya ha terminado y no se puede unir.";
+                _logger.LogWarning($"Intento de unirse a partida {gameId} por {connectionId}: Partida ya terminada."); // <-- LOGGING
                 return result;
             }
 
@@ -162,11 +168,15 @@ namespace AhorcadoBackend.Services
                 // El turno ya debería estar definido por el creador, lo mantenemos.
                 game.Message = "¡El segundo jugador se ha unido! ¡Comienza la partida!";
                 Console.WriteLine($"Partida {gameId} lista para comenzar con 2 jugadores.");
+                _logger.LogInformation($"Partida {gameId} lista para comenzar con 2 jugadores. Jugador {connectionId} se unió."); // <-- LOGGING
+
             }
             else
             {
                 // Esto es más para partidas con N jugadores o si el creador aún está solo
                 game.Message = "Te has unido. Esperando a otro jugador...";
+                _logger.LogInformation($"Jugador {connectionId} se unió a partida {gameId}. Esperando más jugadores."); // <-- LOGGING
+
             }
 
             result.Success = true;
@@ -186,14 +196,20 @@ namespace AhorcadoBackend.Services
                 if (removed)
                 {
                     game.LastActivityTime = DateTime.UtcNow;
+                    _logger.LogInformation($"Jugador {connectionId} removido de la partida {gameId}. Jugadores restantes: {game.PlayerConnectionIds.Count}."); // <-- LOGGING
+
                     // Si el jugador removido era el del turno, cederlo al otro si existe.
                     if (game.TurnoActualConnectionId == connectionId && game.PlayerConnectionIds.Any())
                     {
                         game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != connectionId);
+                        _logger.LogInformation($"Turno cedido en partida {gameId} de {connectionId} a {game.TurnoActualConnectionId}."); // <-- LOGGING
+
                     }
                 }
                 return removed;
             }
+            _logger.LogWarning($"Intento de remover jugador {connectionId} de partida {gameId}: Partida no encontrada o jugador no estaba en ella."); // <-- LOGGING
+
             return false;
         }
 
@@ -207,6 +223,8 @@ namespace AhorcadoBackend.Services
             if (!_activeGames.TryGetValue(gameId, out var game))
             {
                 result.Message = "La partida no existe.";
+                _logger.LogWarning($"Intento de procesar letra '{letra}' en partida {gameId}: Partida no encontrada."); // <-- LOGGING
+
                 return result;
             }
 
@@ -215,6 +233,8 @@ namespace AhorcadoBackend.Services
                 result.Message = game.Message;
                 result.UpdatedGame = game;
                 result.IsGameOver = true;
+                _logger.LogInformation($"Intento de procesar letra '{letra}' en partida {gameId}: Juego ya terminado."); // <-- LOGGING
+
                 return result;
             }
 
@@ -223,6 +243,8 @@ namespace AhorcadoBackend.Services
             {
                 result.Message = "No es tu turno. Espera al otro jugador.";
                 result.UpdatedGame = game;
+                _logger.LogWarning($"Jugador {playerConnectionId} intentó jugar en partida {gameId} cuando no era su turno."); // <-- LOGGING
+
                 return result;
             }
 
@@ -237,6 +259,8 @@ namespace AhorcadoBackend.Services
                 result.Message = $"La letra '{letra}' ya fue ingresada. Intenta con otra.";
                 result.UpdatedGame = game;
                 result.WasLetterAlreadyGuessed = true;
+                _logger.LogInformation($"Letra '{letra}' ya ingresada en partida {gameId}."); // <-- LOGGING
+
                 return result;
             }
 
@@ -266,11 +290,15 @@ namespace AhorcadoBackend.Services
                 game.LetrasIncorrectas.Add(letra);
                 result.Message = $"¡Incorrecto! La letra '{letra}' no está en la palabra.";
                 result.WasLetterIncorrect = true;
+                _logger.LogInformation($"Letra '{letra}' incorrecta en partida {gameId}. Intentos restantes: {game.IntentosRestantes}."); // <-- LOGGING
+
             }
             else
             {
                 result.Message = $"¡Bien! La letra '{letra}' es correcta.";
                 result.WasLetterCorrect = true;
+                _logger.LogInformation($"Letra '{letra}' correcta en partida {gameId}."); // <-- LOGGING
+
             }
 
             // Lógica de fin de juego (Victoria/Derrota)
@@ -281,6 +309,8 @@ namespace AhorcadoBackend.Services
                 game.TurnoActualConnectionId = null;
                 result.IsGameOver = true;
                 result.Message = game.Message;
+                _logger.LogInformation($"Partida {gameId} terminada: DERROTA. Palabra: {game.PalabraSecreta}."); // <-- LOGGING
+
             }
             else if (game.GuionesActuales == game.PalabraSecreta)
             {
@@ -289,6 +319,8 @@ namespace AhorcadoBackend.Services
                 game.TurnoActualConnectionId = null;
                 result.IsGameWon = true;
                 result.Message = game.Message;
+                _logger.LogInformation($"Partida {gameId} terminada: VICTORIA. Palabra: {game.PalabraSecreta}."); // <-- LOGGING
+
             }
 
             game.LastActivityTime = DateTime.UtcNow;
@@ -299,6 +331,8 @@ namespace AhorcadoBackend.Services
                 string oldTurnId = game.TurnoActualConnectionId;
                 game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != oldTurnId);
                 Console.WriteLine($"DEBUG: Turno cambiado en partida {game.GameId}. Anterior: {oldTurnId}, Nuevo: {game.TurnoActualConnectionId}");
+                _logger.LogDebug($"Turno cambiado en partida {game.GameId}. Anterior: {oldTurnId}, Nuevo: {game.TurnoActualConnectionId}"); // <-- LOGGING
+
             }
 
             result.UpdatedGame = game;
@@ -327,16 +361,23 @@ namespace AhorcadoBackend.Services
                     game.TurnoActualConnectionId = null;
                 }
                 game.Message = "La partida ha sido reiniciada. ¡A adivinar!";
+                _logger.LogInformation($"Partida {gameId} reiniciada."); // <-- LOGGING
+
 
                 return game;
             }
+            _logger.LogWarning($"Intento de reiniciar partida {gameId}: Partida no encontrada."); // <-- LOGGING
+
             return null;
         }
 
         public void CleanInactiveGames(TimeSpan inactivityThreshold, TimeSpan completedGameRetention)
         {
             DateTime now = DateTime.UtcNow;
-            var gamesToClean = new List<string>();
+            var gamesToCleanDirectly = new List<string>(); // Para partidas 0 o terminadas
+
+            // Lista para players inactivos que necesitamos "desconectar"
+            var inactivePlayersToDisconnect = new List<(string gameId, string connectionId)>();
 
             foreach (var entry in _activeGames)
             {
@@ -344,26 +385,45 @@ namespace AhorcadoBackend.Services
 
                 if (game.PlayerConnectionIds.Count == 0 && (now - game.LastActivityTime) > inactivityThreshold)
                 {
-                    Console.WriteLine($"Limpiando partida vacía: {game.GameId}");
-                    gamesToClean.Add(game.GameId);
+                    _logger.LogInformation($"Limpiando partida vacía: {game.GameId} por inactividad.");
+                    gamesToCleanDirectly.Add(game.GameId);
                 }
                 else if (game.JuegoTerminado && (now - game.LastActivityTime) > completedGameRetention)
                 {
-                    Console.WriteLine($"Limpiando partida terminada: {game.GameId}");
-                    gamesToClean.Add(game.GameId);
+                    _logger.LogInformation($"Limpiando partida terminada: {game.GameId} por retención.");
+                    gamesToCleanDirectly.Add(game.GameId);
                 }
+                // SI SOLO HAY UN JUGADOR Y ESTÁ INACTIVO, LLAMAMOS A PlayerDisconnected
                 else if (game.PlayerConnectionIds.Count == 1 && (now - game.LastActivityTime) > inactivityThreshold)
                 {
-                    Console.WriteLine($"Limpiando partida de un jugador inactivo: {game.GameId}");
-                    gamesToClean.Add(game.GameId);
+                    string connectionIdOfInactivePlayer = game.PlayerConnectionIds.First();
+                    _logger.LogWarning($"Partida {game.GameId} con jugador {connectionIdOfInactivePlayer} inactivo. Simulating disconnect."); // Usar Warning para destacar
+                    inactivePlayersToDisconnect.Add((game.GameId, connectionIdOfInactivePlayer));
+                    // NO AÑADIMOS game.GameId a gamesToCleanDirectly aquí, porque PlayerDisconnected la removerá si es necesario.
                 }
+                // Opcional: Para partidas con 2 jugadores, podríamos querer una lógica de timeout diferente o no limpiarlas así.
+                // else if (game.PlayerConnectionIds.Count == 2 && (now - game.LastActivityTime) > inactivityThreshold)
+                // {
+                //     _logger.LogWarning($"Partida {game.GameId} con 2 jugadores inactivos. Considerar opciones.");
+                //     // Podrías decidir terminar la partida para ambos, o no hacer nada aquí y esperar a la desconexión del hub.
+                // }
             }
 
-            foreach (var gameId in gamesToClean)
+            // Primero, manejar las "desconexiones" de jugadores inactivos
+            foreach (var (gameId, connectionId) in inactivePlayersToDisconnect)
             {
-                RemoveGame(gameId);
+                // Llama directamente a PlayerDisconnected. Esta función ya usa _hubContext
+                // para notificar al otro jugador si existe y limpia la partida si es necesario.
+                // No necesitas pasar el gameId, ya que PlayerDisconnected lo encuentra.
+                PlayerDisconnected(connectionId);
             }
-            Console.WriteLine($"GameManager: Limpieza completada. Partidas activas restantes: {_activeGames.Count}");
+
+            // Luego, limpiar las partidas que no tienen jugadores o ya terminaron y superaron el tiempo de retención
+            foreach (var gameId in gamesToCleanDirectly)
+            {
+                RemoveGame(gameId); // Este es tu método para eliminar la partida del diccionario.
+            }
+            _logger.LogInformation($"GameManager: Limpieza completada. Partidas activas restantes: {_activeGames.Count}");
         }
 
         // --- Nuevo método para cuando un jugador abandona voluntariamente ---
@@ -371,11 +431,13 @@ namespace AhorcadoBackend.Services
         {
             if (_activeGames.TryGetValue(gameId, out var game))
             {
+                _logger.LogInformation($"Cliente {connectionId} abandonó voluntariamente la partida {gameId}."); // <-- LOGGING
                 Console.WriteLine($"GameManager: Cliente {connectionId} abandonó voluntariamente la partida {gameId}.");
                 RemovePlayerFromGameAndHandleConsequences(game, connectionId, "Tu oponente ha abandonado la partida.");
             }
             else
             {
+                _logger.LogWarning($"Partida {gameId} no encontrada al intentar que {connectionId} la abandone."); // <-- LOGGING
                 Console.WriteLine($"GameManager: Partida {gameId} no encontrada al intentar que {connectionId} la abandone.");
             }
         }
@@ -390,11 +452,13 @@ namespace AhorcadoBackend.Services
                 var gameId = gameEntry.Key;
                 var game = gameEntry.Value;
 
+                _logger.LogWarning($"Cliente {connectionId} se desconectó de la partida {gameId}."); // <-- CAMBIO A WARNING
                 Console.WriteLine($"GameManager: Cliente {connectionId} se desconectó de la partida {gameId}.");
                 RemovePlayerFromGameAndHandleConsequences(game, connectionId, "Tu oponente se ha desconectado.");
             }
             else
             {
+                _logger.LogInformation($"Cliente {connectionId} se desconectó, pero no estaba en ninguna partida activa."); // <-- LOGGING
                 Console.WriteLine($"GameManager: Cliente {connectionId} se desconectó, pero no estaba en ninguna partida activa.");
             }
         }
@@ -404,6 +468,8 @@ namespace AhorcadoBackend.Services
         {
             // Remover el ConnectionId del jugador de la lista
             game.PlayerConnectionIds.Remove(connectionIdToRemove);
+            _logger.LogInformation($"Removido connectionId {connectionIdToRemove} de la partida {game.GameId}."); // <-- LOGGING
+
 
             // Solo aplicar esta lógica si es una partida online y aún quedan jugadores después de la remoción
             if (game.PlayerConnectionIds.Count == 1) // Si queda un jugador después de que el otro se fue
@@ -414,6 +480,7 @@ namespace AhorcadoBackend.Services
 
                 var remainingPlayerConnectionId = game.PlayerConnectionIds.First();
 
+                _logger.LogInformation($"Notificando a jugador {remainingPlayerConnectionId} sobre la desconexión del oponente en partida {game.GameId}."); // <-- LOGGING
                 // Enviar la actualización de estado al jugador restante
                 // Usa _hubContext para enviar al cliente específico
                 _hubContext.Clients.Client(remainingPlayerConnectionId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
@@ -427,6 +494,8 @@ namespace AhorcadoBackend.Services
                     TurnoActualConnectionId = game.TurnoActualConnectionId,
                     Message = game.Message
                 });
+                                // _logger.LogInformation($"Partida {game.GameId} removida después de la desconexión del oponente y notificación."); // <-- LOGGING
+
                 Console.WriteLine($"Partida {game.GameId}: Notificado al jugador {remainingPlayerConnectionId} sobre la desconexión/abandono del oponente.");
 
                 // Remover la partida si quieres que se limpie del GameManager después de la notificación
@@ -435,12 +504,13 @@ namespace AhorcadoBackend.Services
             }
             else if (game.PlayerConnectionIds.Count == 0)
             {
-                // Si no quedan jugadores, simplemente remover la partida
-                _activeGames.TryRemove(game.GameId, out _);
-                Console.WriteLine($"Partida {game.GameId} removida porque no quedan jugadores.");
+                _logger.LogInformation($"Partida {game.GameId} ahora vacía. Removiéndola."); // <-- LOGGING
+                RemoveGame(game.GameId); // <-- USANDO TU MÉTODO EXISTENTE RemoveGame
             }
-            // Si la partida ya estaba terminada (ej. por ganar/perder antes de la desconexión),
-            // o si es un modo no-online de 2 jugadores, la lógica adicional de fin de juego no es necesaria aquí.
+            else
+            {
+                _logger.LogDebug($"Partida {game.GameId}: Conexión de {connectionIdToRemove} manejada, {game.PlayerConnectionIds.Count} jugadores restantes."); // <-- LOGGING
+            }
         }
     }
 }
