@@ -214,7 +214,23 @@ function restaurarSeccionOnlineUI() {
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
     .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub")
-    .withAutomaticReconnect()
+    .withAutomaticReconnect({
+        nextRetryDelayInMilliseconds: retryContext => {
+            // Lógica de reintento (puedes mantener la tuya si ya la tienes)
+            // Ejemplo simple: 0, 2, 10, 30 segundos
+            if (retryContext.elapsedMilliseconds < 60000) { // Menos de 1 minuto
+                if (retryContext.retryReason && retryContext.retryReason.message.includes("WebSocket closed with status code: 1006")) {
+                    console.warn("Reintento debido a cierre inesperado del WebSocket. Intentando de nuevo más rápido.");
+                    return 2000; // 2 segundos
+                }
+                return [0, 2000, 10000, 30000][retryContext.previousRetryCount] || 5000;
+            }
+            return null; // Deja de reintentar después de cierto tiempo
+        }
+    })
+    // Opcional: Aumentar el timeout del cliente si no recibe pings del servidor
+    // El valor por defecto es 30000 ms (30 segundos)
+    .withServerTimeout(45000) // Esperar 45 segundos antes de considerar el servidor desconectado
     .build();
 
 
