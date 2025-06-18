@@ -26,7 +26,7 @@ builder.Services.AddSignalR(hubOptions =>
     // Envía un ping cada 10 segundos para mantener la conexión viva
     hubOptions.KeepAliveInterval = TimeSpan.FromSeconds(10);
     // Opcional: Aumentar el tiempo de espera para el handshake inicial (si hay problemas al conectar)
-    // hubOptions.HandshakeTimeout = TimeSpan.FromSeconds(30); // El valor por defecto es 15 segundos
+    hubOptions.HandshakeTimeout = TimeSpan.FromSeconds(30); // El valor por defecto es 15 segundos
 });
 builder.Services.AddEndpointsApiExplorer();
 //builder.Services.AddSwaggerGen();

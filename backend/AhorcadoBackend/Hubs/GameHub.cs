@@ -151,7 +151,7 @@ namespace AhorcadoBackend.Hubs
  // Método para recibir mensajes de heartbeat del cliente. No necesita hacer nada.
     public Task SendHeartbeat()
     {
-        // Opcional: _logger.LogDebug($"Heartbeat recibido de {Context.ConnectionId}");
+        _logger.LogDebug($"Heartbeat recibido de {Context.ConnectionId}");
         return Task.CompletedTask;
     }
 
