@@ -18,9 +18,7 @@ namespace AhorcadoBackend.Hubs
         {
             _gameManager = gameManager;
             _logger = logger;
-
         }
-
         
         public async Task JoinGameGroup(string gameId)
         {
@@ -148,6 +146,16 @@ namespace AhorcadoBackend.Hubs
             // El GameManager manejará la lógica de la partida (ej. si el otro jugador queda solo, etc.)
             _gameManager.PlayerLeftGame(gameId, Context.ConnectionId);
         }
+
+
+ // Método para recibir mensajes de heartbeat del cliente. No necesita hacer nada.
+    public Task SendHeartbeat()
+    {
+        // Opcional: _logger.LogDebug($"Heartbeat recibido de {Context.ConnectionId}");
+        return Task.CompletedTask;
+    }
+
+
 
         // Método que se llama cuando un cliente se desconecta (cierra navegador, pierde conexión, etc.)
         public override async Task OnDisconnectedAsync(Exception? exception)
