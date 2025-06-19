@@ -294,11 +294,19 @@ connection.onclose(async (error) => {
     }
 });
 
-// *** NUEVO: Manejar la reconexión automática de SignalR ***
-connection.onreconnected(() => {
-    console.log("SignalR reconectado. Reiniciando heartbeat.");
-    startHeartbeat(); // Reinicia el heartbeat cuando la conexión se reconecta
+// Manejar la reconexión automática de SignalR ***
+connection.onreconnected(async () => {
+    console.log("SignalR reconectado. Verificando si la partida sigue activa...");
+    const response = await fetch(`https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/getGame/${currentGameId}`);
+    if (response.ok) {
+        const data = await response.json();
+        actualizarUIJuego(data);
+    } else {
+        console.log("Partida eliminada tras desconexión. Volviendo al menú.");
+        inicializarUI();
+    }
 });
+
 
 
 // Escucha eventos del Hub de SignalR

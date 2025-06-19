@@ -443,25 +443,27 @@ namespace AhorcadoBackend.Services
         }
 
         // --- Método para cuando un jugador se desconecta inesperadamente ---
-        public void PlayerDisconnected(string connectionId)
+        public async Task PlayerDisconnected(string connectionId)
+{
+    var gameEntry = _activeGames.FirstOrDefault(kv => kv.Value.PlayerConnectionIds.Contains(connectionId));
+
+    if (gameEntry.Value != null)
+    {
+        var game = gameEntry.Value;
+        _logger.LogWarning($"Cliente {connectionId} se desconectó de la partida {game.GameId}. Esperando antes de eliminar...");
+
+        // Agregar un retraso antes de cerrar la partida
+        await Task.Delay(TimeSpan.FromSeconds(20)); // Espera 20 segundos para permitir reconexión
+
+        if (!game.PlayerConnectionIds.Contains(connectionId))
         {
-            var gameEntry = _activeGames.FirstOrDefault(kv => kv.Value.PlayerConnectionIds.Contains(connectionId));
-
-            if (gameEntry.Value != null)
-            {
-                var gameId = gameEntry.Key;
-                var game = gameEntry.Value;
-
-                _logger.LogWarning($"Cliente {connectionId} se desconectó de la partida {gameId}."); // <-- CAMBIO A WARNING
-                Console.WriteLine($"GameManager: Cliente {connectionId} se desconectó de la partida {gameId}.");
-                RemovePlayerFromGameAndHandleConsequences(game, connectionId, "Tu oponente se ha desconectado.");
-            }
-            else
-            {
-                _logger.LogInformation($"Cliente {connectionId} se desconectó, pero no estaba en ninguna partida activa."); // <-- LOGGING
-                Console.WriteLine($"GameManager: Cliente {connectionId} se desconectó, pero no estaba en ninguna partida activa.");
-            }
+            game.JuegoTerminado = true;
+            _logger.LogInformation($"Partida {game.GameId} terminada por desconexión de un jugador.");
+            RemoveGame(game.GameId);
         }
+    }
+}
+
 
         // --- Método auxiliar para manejar las consecuencias de remover un jugador ---
         private void RemovePlayerFromGameAndHandleConsequences(JuegoEstado game, string connectionIdToRemove, string disconnectionMessage)
