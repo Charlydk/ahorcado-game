@@ -444,25 +444,43 @@ namespace AhorcadoBackend.Services
 
         // --- Método para cuando un jugador se desconecta inesperadamente ---
         public async Task PlayerDisconnected(string connectionId)
-{
-    var gameEntry = _activeGames.FirstOrDefault(kv => kv.Value.PlayerConnectionIds.Contains(connectionId));
-
-    if (gameEntry.Value != null)
-    {
-        var game = gameEntry.Value;
-        _logger.LogWarning($"Cliente {connectionId} se desconectó de la partida {game.GameId}. Esperando antes de eliminar...");
-
-        // Agregar un retraso antes de cerrar la partida
-        await Task.Delay(TimeSpan.FromSeconds(20)); // Espera 20 segundos para permitir reconexión
-
-        if (!game.PlayerConnectionIds.Contains(connectionId))
         {
-            game.JuegoTerminado = true;
-            _logger.LogInformation($"Partida {game.GameId} terminada por desconexión de un jugador.");
-            RemoveGame(game.GameId);
+            var gameEntry = _activeGames.FirstOrDefault(kv => kv.Value.PlayerConnectionIds.Contains(connectionId));
+
+            if (gameEntry.Value != null)
+            {
+                var game = gameEntry.Value;
+                _logger.LogWarning($"Cliente {connectionId} se desconectó de la partida {game.GameId}. Esperando antes de eliminar...");
+
+                // 🔹 Eliminar al jugador de la partida
+                game.PlayerConnectionIds.Remove(connectionId);
+
+                // 🔹 Si el jugador desconectado tenía el turno, reasignarlo
+                if (game.TurnoActualConnectionId == connectionId && game.PlayerConnectionIds.Count > 0)
+                {
+                    game.TurnoActualConnectionId = game.PlayerConnectionIds.First(); // Cambiar turno al otro jugador
+                    _logger.LogInformation($"Turno transferido en partida {game.GameId} a {game.TurnoActualConnectionId} tras desconexión.");
+                }
+
+                // 🔹 Esperar antes de eliminar la partida, para permitir reconexión
+                await Task.Delay(TimeSpan.FromSeconds(20));
+
+                // 🔹 Verificar si el jugador sigue desconectado
+                if (!game.PlayerConnectionIds.Contains(connectionId))
+                {
+                    if (game.PlayerConnectionIds.Count == 0)
+                    {
+                        _logger.LogInformation($"Partida {game.GameId} vacía tras tiempo de espera. Eliminándola.");
+                        RemoveGame(game.GameId);
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Partida {game.GameId} sigue activa con {game.PlayerConnectionIds.Count} jugadores.");
+                    }
+                }
+            }
         }
-    }
-}
+
 
 
         // --- Método auxiliar para manejar las consecuencias de remover un jugador ---

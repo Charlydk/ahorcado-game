@@ -648,61 +648,71 @@ async function crearNuevaPartidaOnline() {
 }
 // --- Lógica para Unirse a Partida Online ---
 async function unirseAPartidaOnline(gameId) {
-    try {
-        const connectionId = connection.connectionId;
-        if (!connectionId) {
-            console.error("Error: Conexión SignalR no establecida para unirse.");
-            mostrarMensajeAlerta(mensajeIdPartida, "Error: Conexión SignalR no establecida. Intenta de nuevo.", 'danger');
-            return;
-        }
+    try {
+        const connectionId = connection.connectionId;
+        if (!connectionId) {
+            mostrarMensajeAlerta(mensajeIdPartida, "Error: No tienes una conexión activa.", 'danger');
+            return;
+        }
 
-        console.log(`J2: Intentando unirse a partida ${gameId} con connectionId ${connectionId}`);
+        console.log(`J2: Intentando unirse a partida ${gameId} con connectionId ${connectionId}`);
 
-        inputIdPartida.disabled = true;
-        botonCrearPartida.disabled = true;
-        botonUnirsePartida.disabled = true;
-        mostrarMensajeAlerta(mensajeIdPartida, "Uniéndose a la partida...", 'info');
-        inputIdPartida.readOnly = true; 
+        inputIdPartida.disabled = true;
+        botonCrearPartida.disabled = true;
+        botonUnirsePartida.disabled = true;
+        mostrarMensajeAlerta(mensajeIdPartida, "Uniéndose a la partida...", 'info');
+        inputIdPartida.readOnly = true;
 
-        currentGameId = gameId;
-        currentMode = "online";
-        console.log(`J2: currentGameId: ${currentGameId}, currentMode: ${currentMode} antes de JoinGameGroup`);
+        currentGameId = gameId;
+        currentMode = "online";
 
-        await connection.invoke("JoinGameGroup", gameId);
-        console.log(`J2: Jugador 2 (${connection.connectionId}) unido al grupo SignalR: ${gameId}`);
+        // 🔹 Verificar si el jugador ya está en la partida
+        const responseGame = await fetch(`https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/getGame/${gameId}`);
+        if (responseGame.ok) {
+            const gameData = await responseGame.json();
+            
+            if (gameData.playerConnectionIds.includes(connectionId)) {
+                console.log("Jugador ya estaba en la partida, intentando reiniciar su sesión...");
+                await connection.invoke("LeaveGameGroup", gameId);
+            }
+        }
 
-        const response = await fetch("https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/unirse-online", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ gameId: gameId, playerConnectionId: connectionId }),
-            credentials: 'include'
-        });
+        // 🔹 Unirse al grupo de SignalR
+        await connection.invoke("JoinGameGroup", gameId);
+        console.log(`Jugador ${connectionId} unido correctamente al grupo SignalR: ${gameId}`);
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: "Error desconocido del servidor." })); 
-            const errorMessage = errorData.message || `Error desconocido: ${response.status} ${response.statusText}`;
-            throw new Error(errorMessage);
-        }
-        
-        const data = await response.json(); 
-        console.log("J2: Respuesta de unirse-online (HTTP):", data);
+        // 🔹 Enviar solicitud al backend para actualizar la sesión del jugador
+        const response = await fetch("https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/unirse-online", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ gameId: gameId, playerConnectionId: connectionId }),
+            credentials: 'include'
+        });
 
-        mostrarMensajeAlerta(mensajeIdPartida, `¡Te has unido a la partida ${gameId} exitosamente!`, 'success', true);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ message: "Error desconocido del servidor." }));
+            throw new Error(errorData.message || `Error desconocido: ${response.status} ${response.statusText}`);
+        }
 
-        ocultarTodasLasSecciones();
-        mostrarSeccion(seccionJuego);
-        actualizarUIJuego(data); 
+        const data = await response.json();
+        console.log("J2: Respuesta de unirse-online (HTTP):", data);
 
-        inputIdPartida.value = "";
-        ocultarMensajeAlerta(mensajeIdPartida); // Limpiar y ocultar el mensaje de la sala online
+        mostrarMensajeAlerta(mensajeIdPartida, `¡Te has unido a la partida ${gameId} exitosamente!`, 'success', true);
 
-    } catch (error) {
-        console.error("Error al unirse a partida online:", error);
-        mostrarMensajeAlerta(mensajeIdPartida, `Error al unirse: ${error.message}`, 'danger');
-        
-        restaurarSeccionOnlineUI(); 
-        inputIdPartida.focus(); 
-    }
+        ocultarTodasLasSecciones();
+        mostrarSeccion(seccionJuego);
+        actualizarUIJuego(data);
+
+        inputIdPartida.value = "";
+        ocultarMensajeAlerta(mensajeIdPartida);
+
+    } catch (error) {
+        console.error("Error al unirse a partida online:", error);
+        mostrarMensajeAlerta(mensajeIdPartida, `Error al unirse: ${error.message}`, 'danger');
+        
+        restaurarSeccionOnlineUI();
+        inputIdPartida.focus();
+    }
 }
 
 async function manejarEnvioLetra(letra) { 
