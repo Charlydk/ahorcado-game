@@ -54,6 +54,9 @@ let currentGameId = null; // Almacenará el ID de la partida activa
 let currentMode = null;   // Almacenará el modo actual (solitario, versus, online)
 let latestGameData = null; // Almacenará los últimos datos del juego recibidos
 
+// --- Variables de conexion al backend ---
+const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
+// const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
 
 // --- Variables y Funciones para Heartbeat ---
 // Variable para almacenar el ID del intervalo del heartbeat
@@ -297,7 +300,7 @@ connection.onclose(async (error) => {
 // Manejar la reconexión automática de SignalR ***
 connection.onreconnected(async () => {
     console.log("SignalR reconectado. Verificando si la partida sigue activa...");
-    const response = await fetch(`https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/getGame/${currentGameId}`);
+    const response = await fetch(`${BACKEND_URL}juego/getGame/${currentGameId}`);
     if (response.ok) {
         const data = await response.json();
         actualizarUIJuego(data);
@@ -410,7 +413,7 @@ function resetearUIJuego() {
 
 async function iniciarJuego(modo, palabraVersus = "") {
     try {
-        const response = await fetch("https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/iniciar", {
+        const response = await fetch(`${BACKEND_URL}juego/iniciar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ Modo: modo, Palabra: palabraVersus }),
@@ -564,7 +567,7 @@ async function crearNuevaPartidaOnline() {
         ocultarSeccion(botonVolverModosOnline); 
         ocultarSeccion(contenedorGameId);
 
-        const response = await fetch("https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/crear-online", {
+        const response = await fetch(`${BACKEND_URL}juego/crear-online`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ creatorConnectionId: connectionId }),
@@ -667,7 +670,7 @@ async function unirseAPartidaOnline(gameId) {
         currentMode = "online";
 
         // 🔹 Verificar si el jugador ya está en la partida
-        const responseGame = await fetch(`https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/getGame/${gameId}`);
+        const responseGame = await fetch(`${BACKEND_URL}juego/getGame/${gameId}`);
         if (responseGame.ok) {
             const gameData = await responseGame.json();
             
@@ -682,7 +685,7 @@ async function unirseAPartidaOnline(gameId) {
         console.log(`Jugador ${connectionId} unido correctamente al grupo SignalR: ${gameId}`);
 
         // 🔹 Enviar solicitud al backend para actualizar la sesión del jugador
-        const response = await fetch("https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/unirse-online", {
+        const response = await fetch(`${BACKEND_URL}juego/unirse-online`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ gameId: gameId, playerConnectionId: connectionId }),
@@ -727,7 +730,7 @@ async function manejarEnvioLetra(letra) {
 
     try {
         if (currentMode === 'solitario' || currentMode === 'versus') {
-            const response = await fetch("https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/adivinarLetraLocal", {
+            const response = await fetch(`${BACKEND_URL}juego/adivinarLetraLocal`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -791,7 +794,7 @@ async function reiniciarJuego() {
         }
 
         // CAMBIO IMPORTANTE: Usar la URL de Cloud Run para reiniciar también
-        const response = await fetch("https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/juego/reiniciar", {
+        const response = await fetch(`${BACKEND_URL}juego/reiniciar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ GameId: currentGameId }),
@@ -825,17 +828,7 @@ async function abandonarPartidaOnline() {
             // Opción 1: Llamar a un método de SignalR (más directo para el Hub)
             await connection.invoke("LeaveGameGroup", currentGameId); 
             console.log(`Abandonado el grupo SignalR para la partida: ${currentGameId}`);
-            
-            // Opción 2 (alternativa, si prefieres un endpoint HTTP para acciones de "abandono"):
-            // const response = await fetch("http://127.0.0.1:5195/api/juego/abandonar-partida", {
-            //     method: "POST",
-            //     headers: { "Content-Type": "application/json" },
-            //     body: JSON.stringify({ gameId: currentGameId, connectionId: connection.connectionId }),
-            //     credentials: 'include'
-            // });
-            // if (!response.ok) {
-            //     console.warn("Fallo al notificar al backend que se abandonó la partida:", await response.text());
-            // }
+                     
 
         } catch (error) {
             console.error("Error al intentar abandonar la partida online:", error);
