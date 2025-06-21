@@ -255,7 +255,10 @@ function restaurarSeccionOnlineUI() {
 
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub")
+   // .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub") // Para producción
+    .withUrl("http://localhost:8080/gamehub") // Para desarrollo local
+
+
     .withAutomaticReconnect({
         nextRetryDelayInMilliseconds: retryContext => {
             // Lógica de reintento (puedes mantener la tuya si ya la tienes)
@@ -299,37 +302,64 @@ connection.onclose(async (error) => {
 
 // Manejar la reconexión automática de SignalR ***
 connection.onreconnected(async () => {
-    console.log("SignalR reconectado. Verificando si la partida sigue activa...");
-    const response = await fetch(`${BACKEND_URL}juego/getGame/${currentGameId}`);
-    if (response.ok) {
-        const data = await response.json();
-        actualizarUIJuego(data);
-    } else {
-        console.log("Partida eliminada tras desconexión. Volviendo al menú.");
-        inicializarUI();
+    console.log("Reconectado a SignalR. Intentando volver al grupo de la partida...");
+
+    if (currentGameId) {
+        try {
+            await connection.invoke("JoinGameGroup", currentGameId);
+            console.log("Reasignado al grupo de SignalR para la partida:", currentGameId);
+        } catch (err) {
+            console.error("Error al volver a unirse al grupo después de reconexión:", err);
+        }
+
+        try {
+            const response = await fetch(`${BACKEND_URL}juego/getGame/${currentGameId}`);
+            if (response.ok) {
+                const data = await response.json();
+                actualizarUIJuego(data);
+            } else {
+                console.warn("No se pudo recuperar la partida tras reconexión. Volviendo al menú.");
+                inicializarUI();
+            }
+        } catch (err) {
+            console.error("Error al recuperar el estado del juego tras reconexión:", err);
+        }
     }
 });
 
 
 
+
 // Escucha eventos del Hub de SignalR
 connection.on("ReceiveGameUpdate", (data) => {
-    console.log("ReceiveGameUpdate recibido:", data);
-    latestGameData = data; // Siempre almacena la última data recibida
-    console.log("ReceiveGameUpdate recibido. Datos:", data); // Muestra todo el objeto gameData
-    console.log("Juego terminado (juegoTerminado):", data.juegoTerminado);
-    console.log("Mensaje recibido (gameData.message):", data.message); // Muestra el mensaje específico
+    console.log("ReceiveGameUpdate recibido:", data);
+    latestGameData = data;
+    console.log("ReceiveGameUpdate recibido. Datos:", data);
+    console.log("Juego terminado (juegoTerminado):", data.juegoTerminado);
+    console.log("Mensaje recibido (gameData.message):", data.message);
 
+    // Solo actualiza la UI si la sección de juego está actualmente visible.
+    if (seccionJuego.style.display !== 'none') {
+        if (data.message?.includes("ha abandonado la partida")) {
+            mostrarMensajeAlerta(
+                mensajeJuego,
+                `${data.message} Esta partida se cerrará automáticamente.`,
+                'warning'
+            );
 
-    // Solo actualiza la UI si la sección de juego está actualmente visible.
-    // Esto evita intentar actualizar elementos que están ocultos en otras secciones.
-    if (seccionJuego.style.display !== 'none') { // Verifica si seccionJuego está visible
-        actualizarUIJuego(data);
-    } else {
-        console.log("ReceiveGameUpdate recibido, pero seccionJuego no está visible. La UI se actualizará cuando el jugador entre a la sección de juego.");
-     
-    }
+            setTimeout(() => {
+                inicializarUI();
+                mostrarMensajeAlerta(mensajeJuego, "La partida fue cerrada.", 'secondary');
+            }, 6000);
+        } else {
+            // ✅ Solo actualiza la UI si no es un mensaje de abandono
+            actualizarUIJuego(data);
+        }
+    } else {
+        console.log("ReceiveGameUpdate recibido, pero seccionJuego no está visible. La UI se actualizará cuando el jugador entre a la sección de juego.");
+    }
 });
+
 
 // --- NUEVO: Manejar la desconexión del oponente ---
 connection.on("OpponentDisconnected", (gameId) => {
@@ -669,16 +699,17 @@ async function unirseAPartidaOnline(gameId) {
         currentGameId = gameId;
         currentMode = "online";
 
-        // 🔹 Verificar si el jugador ya está en la partida
-        const responseGame = await fetch(`${BACKEND_URL}juego/getGame/${gameId}`);
-        if (responseGame.ok) {
-            const gameData = await responseGame.json();
-            
-            if (gameData.playerConnectionIds.includes(connectionId)) {
-                console.log("Jugador ya estaba en la partida, intentando reiniciar su sesión...");
-                await connection.invoke("LeaveGameGroup", gameId);
-            }
-        }
+         // 🔹 Verificar si el jugador ya está en la partida
+         const responseGame = await fetch(`${BACKEND_URL}juego/getGame/${gameId}`);
+         if (responseGame.ok) {
+             const gameData = await responseGame.json();
+         
+             if (Array.isArray(gameData?.playerConnectionIds) && gameData.playerConnectionIds.includes(connectionId)) {
+                 console.log("Jugador ya estaba en la partida, intentando reiniciar su sesión...");
+                 await connection.invoke("LeaveGameGroup", gameId);
+             }
+         }
+         
 
         // 🔹 Unirse al grupo de SignalR
         await connection.invoke("JoinGameGroup", gameId);

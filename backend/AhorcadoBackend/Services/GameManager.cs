@@ -125,6 +125,7 @@ namespace AhorcadoBackend.Services
         // Modificamos AddPlayerToGame para que devuelva un JoinGameResult y actualice el mensaje de la partida
         public JoinGameResult TryJoinGame(string gameId, string connectionId)
         {
+
             var result = new JoinGameResult();
 
             if (!_activeGames.TryGetValue(gameId, out var game))
@@ -143,6 +144,7 @@ namespace AhorcadoBackend.Services
                 return result;
             }
 
+            _logger.LogInformation($"[TryJoinGame] Estado actual al intentar unirse: GameId: {gameId}, ConnectionId entrante: {connectionId}, Jugadores actuales: {string.Join(", ", game.PlayerConnectionIds)}");
             if (game.PlayerConnectionIds.Count >= 2)
             {
                 result.Message = "La partida ya está llena.";

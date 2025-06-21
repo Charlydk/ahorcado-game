@@ -11,5 +11,8 @@
         public string? TurnoActualConnectionId { get; set; }
         public string Message { get; set; } = string.Empty;
 
+        // ✅ NUEVO: Incluimos los IDs de conexión de los jugadores para que el frontend pueda usarlos
+        public List<string>? PlayerConnectionIds { get; set; }
     }
 }
+

@@ -246,56 +246,44 @@ namespace AhorcadoBackend.Controllers
                 return BadRequest(new { message = "El formato del ID de partida es inválido. Asegúrate de ingresar un ID válido." });
             }
 
-            // --- ¡AQUÍ ESTÁ EL CAMBIO CRÍTICO QUE RESUELVE EL CS1061! ---
-            // Usamos TryJoinGame, que devuelve un JoinGameResult.
             var joinResult = _gameManager.TryJoinGame(request.GameId, request.PlayerConnectionId);
-            var game = joinResult.UpdatedGame; // Obtenemos el estado actualizado del juego del resultado
+            var game = joinResult.UpdatedGame;
 
-            if (!joinResult.Success || game == null) // Si no fue exitoso o el juego es nulo
+            if (!joinResult.Success || game == null)
             {
-                return BadRequest(new { message = joinResult.Message }); // Devolvemos el mensaje de error del GameManager
+                return BadRequest(new { message = joinResult.Message });
             }
 
-            // Si la unión fue exitosa, el cliente debe unirse al grupo de SignalR.
-            // Esto también puede hacerse desde el cliente, pero aquí aseguramos la adición.
             await _hubContext.Groups.AddToGroupAsync(request.PlayerConnectionId, game.GameId);
-            Console.WriteLine($"Cliente {request.PlayerConnectionId} se unió al grupo {request.GameId}.");
+            Console.WriteLine($"Cliente {request.PlayerConnectionId} se unió al grupo {game.GameId}.");
 
-            // Si el GameManager ya marcó la partida como "lista para empezar" o similar
-            // y si hay dos jugadores, notifica a ambos (o al grupo).
-            if (game.PlayerConnectionIds.Count == 2)
+            var estadoActual = new JuegoEstadoResponse
             {
-                // Envía una actualización a todo el grupo para que ambos jugadores se sincronicen.
-                await _hubContext.Clients.Group(game.GameId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
-                {
-                    GameId = game.GameId,
-                    Palabra = game.GuionesActuales,
-                    LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
-                    IntentosRestantes = game.IntentosRestantes,
-                    JuegoTerminado = game.JuegoTerminado,
-                    PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : "", // Revela si terminó
-                    Message = game.Message, // Mensaje del GameManager (ej. "¡El segundo jugador se ha unido!")
-                    TurnoActualConnectionId = game.TurnoActualConnectionId
-                });
-            }
-            else
+                GameId = game.GameId,
+                Palabra = game.GuionesActuales,
+                IntentosRestantes = game.IntentosRestantes,
+                LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+                JuegoTerminado = game.JuegoTerminado,
+                PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null,
+                TurnoActualConnectionId = game.TurnoActualConnectionId,
+                Message = joinResult.Message
+            };
+
+            foreach (var connectionId in game.PlayerConnectionIds)
             {
-                // Si solo se unió el primer jugador (creador), o solo se unió uno a una partida vacía
-                // se le notifica solo a él.
-                await _hubContext.Clients.Client(request.PlayerConnectionId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
-                {
-                    GameId = game.GameId,
-                    Palabra = game.GuionesActuales,
-                    LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
-                    IntentosRestantes = game.IntentosRestantes,
-                    JuegoTerminado = game.JuegoTerminado,
-                    PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : "",
-                    Message = game.Message, // Mensaje del GameManager
-                    TurnoActualConnectionId = game.TurnoActualConnectionId
-                });
+                await _hubContext.Clients.Client(connectionId).SendAsync("ReceiveGameUpdate", estadoActual);
             }
 
-            // La respuesta HTTP al cliente que intentó unirse
+            return Ok(estadoActual);
+        }
+
+
+        [HttpGet("getGame/{gameId}")]
+        public IActionResult GetGame(string gameId)
+        {
+            var game = _gameManager.GetGame(gameId);
+            if (game == null) return NotFound();
+
             return Ok(new JuegoEstadoResponse
             {
                 GameId = game.GameId,
@@ -303,10 +291,13 @@ namespace AhorcadoBackend.Controllers
                 IntentosRestantes = game.IntentosRestantes,
                 LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
                 JuegoTerminado = game.JuegoTerminado,
-                PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : "",
+                PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null,
                 TurnoActualConnectionId = game.TurnoActualConnectionId,
-                Message = joinResult.Message // Usar el mensaje que viene del resultado de la unión
+                Message = game.Message
             });
         }
+
     }
+
+
 }
