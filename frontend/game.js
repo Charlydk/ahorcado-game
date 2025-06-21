@@ -55,8 +55,8 @@ let currentMode = null;   // Almacenará el modo actual (solitario, versus, onl
 let latestGameData = null; // Almacenará los últimos datos del juego recibidos
 
 // --- Variables de conexion al backend ---
-const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
-// const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
+//const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
+const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
 
 // --- Variables y Funciones para Heartbeat ---
 // Variable para almacenar el ID del intervalo del heartbeat
