@@ -531,7 +531,7 @@ function actualizarUIJuego(data) {
                 mostrarMensajeAlerta(mensajeJuego, data.message, 'warning');
             // Si el mensaje indica que la letra es INCORRECTA (rojo)
             } else if (data.message.includes("Incorrecto") || data.message.includes("La letra no está en la palabra")) {
-                mostrarMensajeAlerta(mensajeJuego, data.message, 'danger'); // <--- ¡CAMBIO AQUÍ: 'danger' para incorrecto!
+                mostrarMensajeAlerta(mensajeJuego, data.message, 'danger');
             // Si el mensaje es una letra CORRECTA (verde)
             } else if (data.message.includes("correcta.") || data.message.includes("¡Bien!")) {
                 mostrarMensajeAlerta(mensajeJuego, data.message, 'success'); 
@@ -1086,15 +1086,26 @@ inputIngresaLetra.addEventListener("keypress", async function(event) {
     }
 });
 
-if (botonVolverAlMenu) {
-    botonVolverAlMenu.addEventListener("click", async () => { // Hacer async para await
-        console.log("Clic en 'Volver al Menú'.");
-        if (currentMode === 'online') {
-            await abandonarPartidaOnline(); // Notificar si estaba en online
-        }
-        inicializarUI(); // Reinicia la UI completamente
-    });
-}
+botonVolverAlMenu.addEventListener("click", function () {
+    Swal.fire({
+        title: '¿Abandonar partida?',
+        text: "Perderás el progreso actual.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, salir',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            if (currentGameId && currentMode === "online") {
+                await connection.invoke("LeaveGameGroup", currentGameId);
+            }
+
+            inicializarUI();
+        }
+    });
+});
+
 
 
 // Inicializar la interfaz al cargar la página
