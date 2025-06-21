@@ -102,25 +102,18 @@ namespace AhorcadoBackend.Hubs
                 return;
             }
 
-            // Si no fue el turno del jugador, el GameManager ya lo manejó y nos devolvió un mensaje específico.
-            if (result.Message == "No es tu turno. Espera al otro jugador." || result.WasLetterAlreadyGuessed) // Añadido check para letra ya adivinada
+            await Clients.Caller.SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
             {
-                // Enviar el mensaje específico solo al que intentó jugar
-                await Clients.Caller.SendAsync("ReceiveMessage", result.Message);
-                // Y si quieres, enviar el estado actual del juego (sin cambios visibles por el error)
-                await Clients.Caller.SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
-                {
-                    GameId = game.GameId,
-                    Palabra = game.GuionesActuales,
-                    IntentosRestantes = game.IntentosRestantes,
-                    LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
-                    JuegoTerminado = game.JuegoTerminado,
-                    TurnoActualConnectionId = game.TurnoActualConnectionId,
-                    PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null,
-                    Message = game.Message // El mensaje general del juego
-                });
-                return;
-            }
+                GameId = game.GameId,
+                Palabra = game.GuionesActuales,
+                IntentosRestantes = game.IntentosRestantes,
+                LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+                JuegoTerminado = game.JuegoTerminado,
+                TurnoActualConnectionId = game.TurnoActualConnectionId,
+                PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null,
+                Message = result.Message // ✅ CORREGIDO
+            });
+
 
             // Enviar el estado actualizado del juego a todos los clientes en el grupo
             await Clients.Group(gameId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse

@@ -965,6 +965,14 @@ botonEnviarPalabra.addEventListener("click", async function(event) {
     await iniciarJuego("versus", palabra);
 });
 
+inputPalabraVersus.addEventListener("keydown", function (event) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        botonEnviarPalabra.click(); // Simula clic en el botón existente
+    }
+});
+
+
 botonCancelarVersus.addEventListener("click", function(event) {
     event.preventDefault();
     ocultarTodasLasSecciones();
@@ -1055,6 +1063,7 @@ if (botonReiniciar) {
         } else if (currentMode === 'solitario') {
             await iniciarJuego('solitario');
         } else if (currentMode === 'versus') {
+            ocultarSeccion(seccionJuego);
             mostrarSeccion(seccionIngresarPalabra);
             inputPalabraVersus.value = "";
             txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo";
@@ -1116,7 +1125,7 @@ function inicializarUI() {
     inputPalabraVersus.value = ""; // Limpiar el input
     // Establecer el texto inicial para esta sección, ya que la alerta la limpiará
     txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo"; 
-    txtIngresarPalabraVersus.classList.add('d-none'); // Asegurar que el h3 esté oculto al inicio
+    //txtIngresarPalabraVersus.classList.add('d-none'); // Asegurar que el h3 esté oculto al inicio
 
     // Para la sección de juego
     resetearUIJuego(); // Esto ya reinicia muchos elementos de la UI del juego
