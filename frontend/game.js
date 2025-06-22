@@ -53,6 +53,18 @@ const contenedorBotonJuegoOnline = document.getElementById("contenedorBotonJuego
 let currentGameId = null; // Almacenará el ID de la partida activa
 let currentMode = null;   // Almacenará el modo actual (solitario, versus, online)
 let latestGameData = null; // Almacenará los últimos datos del juego recibidos
+let finalizandoJuego = false; // Indica si el juego está en proceso de finalización (para evitar múltiples reinicios)
+let juegoTerminadoManualmente = false;
+
+
+
+/*window.addEventListener("beforeunload", (e) => {
+    e.preventDefault();
+    e.returnValue = "";
+    console.log("🔒 Previniendo recarga inesperada.");
+});*/
+
+
 
 // --- Variables de conexion al backend ---
 const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
@@ -280,25 +292,17 @@ const connection = new signalR.HubConnectionBuilder()
 
 
 // --- NUEVO: Manejar la desconexión del propio cliente ---
-connection.onclose(async (error) => {
-    console.log("Conexión SignalR cerrada. ", error);
-    // Detener el heartbeat cuando la conexión se cierra
-    stopHeartbeat(); 
-
-    if (connection.state === signalR.HubConnectionState.Disconnected) {
-        // De nuevo, puedes intentar mostrarlo en la UI si estás en una sección activa
-        if (seccionJuego.classList.contains('d-flex') || seccionModosJuego.classList.contains('d-flex') || seccionOnline.classList.contains('d-flex')) {
-            mostrarMensajeAlerta(mensajeJuego, "¡Conexión con el servidor perdida! Por favor, verifica tu conexión o el estado del servidor y vuelve a intentarlo.", 'danger');
-        } else {
-            alert("¡Conexión con el servidor perdida! Por favor, verifica tu conexión o el estado del servidor y vuelve a intentarlo.");
-        }
-        
-        limpiarEstadoGlobalDeJuego();
-
-        ocultarTodasLasSecciones();
-        mostrarSeccion(seccionModosJuego); 
-    }
+connection.onclose((error) => {
+    if (!juegoTerminadoManualmente) {
+        console.warn("SignalR se desconectó inesperadamente:", error);
+        limpiarEstadoGlobalDeJuego();
+        ocultarTodasLasSecciones();
+        mostrarSeccion(seccionModosJuego);
+    } else {
+        console.log("Desconexión luego del final del juego: ignorada.");
+    }
 });
+
 
 // Manejar la reconexión automática de SignalR ***
 connection.onreconnected(async () => {
@@ -334,6 +338,10 @@ connection.onreconnected(async () => {
 connection.on("ReceiveGameUpdate", (data) => {
     console.log("ReceiveGameUpdate recibido:", data);
     latestGameData = data;
+    if (data.JuegoTerminado) {
+        juegoTerminadoManualmente = true;
+        console.log("⚠️ Flag juegoTerminadoManualmente activado.");
+    }
     console.log("ReceiveGameUpdate recibido. Datos:", data);
     console.log("Juego terminado (juegoTerminado):", data.juegoTerminado);
     console.log("Mensaje recibido (gameData.message):", data.message);
@@ -374,10 +382,11 @@ connection.on("OpponentDisconnected", (gameId) => {
             alert("¡Tu oponente se ha desconectado! La partida ha terminado.");
         }
         
-        limpiarEstadoGlobalDeJuego();
-
-        ocultarTodasLasSecciones();
-        mostrarSeccion(seccionModosJuego); 
+        if (!finalizandoJuego) {
+        limpiarEstadoGlobalDeJuego();
+        ocultarTodasLasSecciones();
+        mostrarSeccion(seccionModosJuego);
+        }
     }
 });
 
@@ -443,6 +452,7 @@ function resetearUIJuego() {
 
 async function iniciarJuego(modo, palabraVersus = "") {
     try {
+        finalizandoJuego = false;
         const response = await fetch(`${BACKEND_URL}juego/iniciar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -494,6 +504,7 @@ function actualizarUIJuego(data) {
     console.log("     cantidad de erradas:", cantidadErradasCalculada);
 
     if (data.juegoTerminado) {
+        finalizandoJuego = true;
         ocultarSeccion(botonSubirLetra);
         ocultarSeccion(inputIngresaLetra);
         ocultarMensajeAlerta(mensajeTurno); // Ocultar mensaje de turno al terminar el juego
@@ -817,6 +828,7 @@ async function manejarEnvioLetra(letra) {
 
 async function reiniciarJuego() {
     try {
+        finalizandoJuego = false;
         if (!currentGameId) {
             console.warn("No hay GameId activo para reiniciar. Volviendo al menú principal.");
             ocultarTodasLasSecciones();
@@ -852,6 +864,7 @@ async function reiniciarJuego() {
 }
 
 async function abandonarPartidaOnline() {
+    finalizandoJuego = false;
     if (currentMode === 'online' && currentGameId && connection.state === signalR.HubConnectionState.Connected) {
         try {
             console.log(`Intentando abandonar partida online ${currentGameId}...`);

@@ -1,5 +1,7 @@
 using AhorcadoBackend.Hubs;
+using AhorcadoBackend.Models;
 using AhorcadoBackend.Services;
+using Microsoft.EntityFrameworkCore;
 
 Console.WriteLine("DEBUG: Iniciando la aplicación ASP.NET Core...");
 
@@ -42,6 +44,10 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
+
+builder.Services.AddDbContextFactory<JuegoDbContext>(options =>
+    options.UseSqlite("Data Source=partidas.db"));
+
 
 // Configuraci�n de CORS (si es necesaria para tu frontend)
 builder.Services.AddCors(options =>

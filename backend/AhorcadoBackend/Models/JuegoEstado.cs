@@ -18,6 +18,8 @@ namespace AhorcadoBackend.Models
         public string? TurnoActualConnectionId { get; set; } // Opcional: Para el turno, si lo implementas
         public DateTime LastActivityTime { get; set; } = DateTime.UtcNow; // Para la limpieza de partidas
         public string Message { get; set; } = string.Empty; // Mensaje para el cliente, por ejemplo, "Letra procesada", "Juego terminado", etc.
+        public Dictionary<string, string> AliasJugadorPorConnectionId { get; set; } = new();// Para mapear ConnectionId a alias de jugador
+
 
 
     }

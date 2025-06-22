@@ -6,6 +6,7 @@ using System.Linq;
 using System.Collections.Generic;
 using AhorcadoBackend.Hubs;
 using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace AhorcadoBackend.Services
 {
@@ -23,13 +24,25 @@ namespace AhorcadoBackend.Services
 
         // Constructor que ACEPTA IHubContext<GameHub>
         public GameManager(IHubContext<GameHub> hubContext, ILogger<GameManager> logger)
+
+
         {
-            _hubContext = hubContext; // ASIGNACIÓN AQUÍ
-            _logger = logger; // <-- ASIGNACIÓN AQUÍ
+            _hubContext = hubContext;
+            _logger = logger;
             _activeGames = new ConcurrentDictionary<string, JuegoEstado>();
             _random = new Random();
-        }
 
+        }
+        // Método para obtener el estado interno del GameManager
+        public MonitorEstado ObtenerEstadoInterno()
+        {
+            return new MonitorEstado
+            {
+                CantidadPartidas = _activeGames.Count,
+                GameIds = _activeGames.Keys.ToList(),
+                InstanciaId = GetHashCode().ToString()
+            };
+        }
 
 
         private string GenerarPalabraAleatoria()
@@ -38,11 +51,26 @@ namespace AhorcadoBackend.Services
         }
 
 
+        private readonly IDbContextFactory<JuegoDbContext> _contextFactory;
+
+        public GameManager(IHubContext<GameHub> hubContext, ILogger<GameManager> logger, IDbContextFactory<JuegoDbContext> contextFactory)
+        {
+            _hubContext = hubContext;
+            _logger = logger;
+            _contextFactory = contextFactory;
+            _activeGames = new ConcurrentDictionary<string, JuegoEstado>();
+            _random = new Random();
+        }
+
+
+
         // Crea una nueva partida y la añade al diccionario
         // Agregamos un parámetro 'creatorConnectionId' para poder asociarlo desde el inicio.
         public JuegoEstado CreateNewGame(string? palabraSecreta = null, string? creatorConnectionId = null, string? gameId = null)
         {
+
             string newGameId = gameId ?? Guid.NewGuid().ToString();
+            _logger.LogInformation($"🧩 Partida {newGameId} registrada en memoria en instancia: {GetHashCode()}");
 
             if (string.IsNullOrEmpty(palabraSecreta))
             {
@@ -125,6 +153,13 @@ namespace AhorcadoBackend.Services
         // Modificamos AddPlayerToGame para que devuelva un JoinGameResult y actualice el mensaje de la partida
         public JoinGameResult TryJoinGame(string gameId, string connectionId)
         {
+            _logger.LogDebug($"🧪 J2 intentando unirse a partida: {gameId}");
+            _logger.LogDebug($"🧪 Cantidad de partidas activas: {_activeGames.Count}");
+            _logger.LogDebug($"🧪 GameIds actuales: {string.Join(" | ", _activeGames.Keys)}");
+
+            _logger.LogInformation($"🎯 J2 intentando unirse desde instancia: {GetHashCode()}");
+
+
 
             var result = new JoinGameResult();
 
@@ -218,128 +253,144 @@ namespace AhorcadoBackend.Services
         // =========================================================================================
         // MÉTODO MODIFICADO: Procesa una letra adivinada y devuelve un ProcessLetterResult
         // =========================================================================================
-        public ProcessLetterResult ProcessLetter(string gameId, char letra, string? playerConnectionId)
+       public async Task<ProcessLetterResult> ProcessLetter(string gameId, char letra, string? playerConnectionId)
+{
+    var result = new ProcessLetterResult();
+
+    if (!_activeGames.TryGetValue(gameId, out var game))
+    {
+        result.Message = "La partida no existe.";
+        _logger.LogWarning($"Intento de procesar letra '{letra}' en partida {gameId}: Partida no encontrada.");
+        return result;
+    }
+
+    if (game.JuegoTerminado)
+    {
+        result.Message = game.Message;
+        result.UpdatedGame = game;
+        result.IsGameOver = true;
+        _logger.LogInformation($"Intento de procesar letra '{letra}' en partida {gameId}: Juego ya terminado.");
+        return result;
+    }
+
+    if (game.PlayerConnectionIds.Count == 2 && game.TurnoActualConnectionId != playerConnectionId)
+    {
+        result.Message = "No es tu turno. Espera al otro jugador.";
+        result.UpdatedGame = game;
+        _logger.LogWarning($"Jugador {playerConnectionId} intentó jugar en partida {gameId} cuando no era su turno.");
+        return result;
+    }
+
+    letra = char.ToUpper(letra);
+
+    game.LetrasIngresadas ??= new List<char>();
+    game.LetrasIncorrectas ??= new List<char>();
+
+    if (game.LetrasIngresadas.Contains(letra))
+    {
+        result.Message = $"La letra '{letra}' ya fue ingresada. Intenta con otra.";
+        result.UpdatedGame = game;
+        result.WasLetterAlreadyGuessed = true;
+        _logger.LogInformation($"Letra '{letra}' ya ingresada en partida {gameId}.");
+        return result;
+    }
+
+    game.LetrasIngresadas.Add(letra);
+
+    bool letraCorrecta = false;
+    string nuevaPalabraGuiones = "";
+
+    for (int i = 0; i < game.PalabraSecreta.Length; i++)
+    {
+        if (game.PalabraSecreta[i] == letra)
         {
-            var result = new ProcessLetterResult();
-
-            if (!_activeGames.TryGetValue(gameId, out var game))
-            {
-                result.Message = "La partida no existe.";
-                _logger.LogWarning($"Intento de procesar letra '{letra}' en partida {gameId}: Partida no encontrada."); // <-- LOGGING
-
-                return result;
-            }
-
-            if (game.JuegoTerminado)
-            {
-                result.Message = game.Message;
-                result.UpdatedGame = game;
-                result.IsGameOver = true;
-                _logger.LogInformation($"Intento de procesar letra '{letra}' en partida {gameId}: Juego ya terminado."); // <-- LOGGING
-
-                return result;
-            }
-
-            // Validar que sea el turno del jugador que envía la letra (solo si es partida online de 2 jugadores)
-            if (game.PlayerConnectionIds.Count == 2 && game.TurnoActualConnectionId != playerConnectionId)
-            {
-                result.Message = "No es tu turno. Espera al otro jugador.";
-                result.UpdatedGame = game;
-                _logger.LogWarning($"Jugador {playerConnectionId} intentó jugar en partida {gameId} cuando no era su turno."); // <-- LOGGING
-
-                return result;
-            }
-
-            letra = char.ToUpper(letra);
-
-            if (game.LetrasIngresadas == null) game.LetrasIngresadas = new List<char>();
-            if (game.LetrasIncorrectas == null) game.LetrasIncorrectas = new List<char>();
-
-
-            if (game.LetrasIngresadas.Contains(letra))
-            {
-                result.Message = $"La letra '{letra}' ya fue ingresada. Intenta con otra.";
-                result.UpdatedGame = game;
-                result.WasLetterAlreadyGuessed = true;
-                _logger.LogInformation($"Letra '{letra}' ya ingresada en partida {gameId}."); // <-- LOGGING
-
-                return result;
-            }
-
-            game.LetrasIngresadas.Add(letra);
-
-            bool letraCorrecta = false;
-            string nuevaPalabraGuiones = "";
-
-            for (int i = 0; i < game.PalabraSecreta.Length; i++)
-            {
-                if (game.PalabraSecreta[i] == letra)
-                {
-                    nuevaPalabraGuiones += letra;
-                    letraCorrecta = true;
-                }
-                else
-                {
-                    nuevaPalabraGuiones += game.GuionesActuales[i];
-                }
-            }
-
-            game.GuionesActuales = nuevaPalabraGuiones;
-
-            if (!letraCorrecta)
-            {
-                game.IntentosRestantes--;
-                game.LetrasIncorrectas.Add(letra);
-                result.Message = $"¡Incorrecto! La letra '{letra}' no está en la palabra.";
-                result.WasLetterIncorrect = true;
-                _logger.LogInformation($"Letra '{letra}' incorrecta en partida {gameId}. Intentos restantes: {game.IntentosRestantes}."); // <-- LOGGING
-
-            }
-            else
-            {
-                result.Message = $"¡Bien! La letra '{letra}' es correcta.";
-                result.WasLetterCorrect = true;
-                _logger.LogInformation($"Letra '{letra}' correcta en partida {gameId}."); // <-- LOGGING
-
-            }
-
-            // Lógica de fin de juego (Victoria/Derrota)
-            if (game.IntentosRestantes <= 0)
-            {
-                game.JuegoTerminado = true;
-                game.Message = $"¡GAME OVER! La palabra era: {game.PalabraSecreta}";
-                game.TurnoActualConnectionId = null;
-                result.IsGameOver = true;
-                result.Message = game.Message;
-                _logger.LogInformation($"Partida {gameId} terminada: DERROTA. Palabra: {game.PalabraSecreta}."); // <-- LOGGING
-
-            }
-            else if (game.GuionesActuales == game.PalabraSecreta)
-            {
-                game.JuegoTerminado = true;
-                game.Message = $"¡Felicidades! Has adivinado la palabra: {game.PalabraSecreta}";
-                game.TurnoActualConnectionId = null;
-                result.IsGameWon = true;
-                result.Message = game.Message;
-                _logger.LogInformation($"Partida {gameId} terminada: VICTORIA. Palabra: {game.PalabraSecreta}."); // <-- LOGGING
-
-            }
-
-            game.LastActivityTime = DateTime.UtcNow;
-
-            // Solo cambiar el turno si el juego NO ha terminado y hay 2 jugadores
-            if (!game.JuegoTerminado && game.PlayerConnectionIds.Count == 2)
-            {
-                string oldTurnId = game.TurnoActualConnectionId;
-                game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != oldTurnId);
-                Console.WriteLine($"DEBUG: Turno cambiado en partida {game.GameId}. Anterior: {oldTurnId}, Nuevo: {game.TurnoActualConnectionId}");
-                _logger.LogDebug($"Turno cambiado en partida {game.GameId}. Anterior: {oldTurnId}, Nuevo: {game.TurnoActualConnectionId}"); // <-- LOGGING
-
-            }
-
-            result.UpdatedGame = game;
-            return result;
+            nuevaPalabraGuiones += letra;
+            letraCorrecta = true;
         }
+        else
+        {
+            nuevaPalabraGuiones += game.GuionesActuales[i];
+        }
+    }
+
+    game.GuionesActuales = nuevaPalabraGuiones;
+
+    if (!letraCorrecta)
+    {
+        game.IntentosRestantes--;
+        game.LetrasIncorrectas.Add(letra);
+        result.Message = $"¡Incorrecto! La letra '{letra}' no está en la palabra.";
+        result.WasLetterIncorrect = true;
+        _logger.LogInformation($"Letra '{letra}' incorrecta en partida {gameId}. Intentos restantes: {game.IntentosRestantes}.");
+    }
+    else
+    {
+        result.Message = $"¡Bien! La letra '{letra}' es correcta.";
+        result.WasLetterCorrect = true;
+        _logger.LogInformation($"Letra '{letra}' correcta en partida {gameId}.");
+    }
+
+    // Verifica si la partida ha terminado
+    if (game.IntentosRestantes <= 0)
+    {
+        game.JuegoTerminado = true;
+        game.Message = $"¡GAME OVER! La palabra era: {game.PalabraSecreta}";
+
+        using var db = _contextFactory.CreateDbContext();
+        db.Partidas.Add(new Partida
+        {
+            AliasJugador = game.AliasJugadorPorConnectionId.GetValueOrDefault(playerConnectionId ?? "", "Anónimo"),
+            FueVictoria = false,
+            Fecha = DateTime.UtcNow,
+            PalabraSecreta = game.PalabraSecreta,
+            EsOnline = game.PlayerConnectionIds.Count > 1
+        });
+        await db.SaveChangesAsync();
+        _logger.LogWarning("💾 Partida guardada (DERROTA)");
+
+        game.TurnoActualConnectionId = null;
+        result.IsGameOver = true;
+        result.Message = game.Message;
+
+        _logger.LogInformation($"Partida {gameId} terminada: DERROTA. Palabra: {game.PalabraSecreta}.");
+    }
+    else if (game.GuionesActuales == game.PalabraSecreta)
+    {
+        game.JuegoTerminado = true;
+        game.Message = $"¡Felicidades! Has adivinado la palabra: {game.PalabraSecreta}";
+
+        using var db = _contextFactory.CreateDbContext();
+        db.Partidas.Add(new Partida
+        {
+            AliasJugador = game.AliasJugadorPorConnectionId.GetValueOrDefault(playerConnectionId ?? "", "Anónimo"),
+            FueVictoria = true,
+            Fecha = DateTime.UtcNow,
+            PalabraSecreta = game.PalabraSecreta,
+            EsOnline = game.PlayerConnectionIds.Count > 1
+        });
+        await db.SaveChangesAsync();
+        _logger.LogWarning("💾 Partida guardada (VICTORIA)");
+
+        game.TurnoActualConnectionId = null;
+        result.IsGameWon = true;
+        result.Message = game.Message;
+
+        _logger.LogInformation($"Partida {gameId} terminada: VICTORIA. Palabra: {game.PalabraSecreta}.");
+    }
+
+    game.LastActivityTime = DateTime.UtcNow;
+
+    if (!game.JuegoTerminado && game.PlayerConnectionIds.Count == 2)
+    {
+        string oldTurnId = game.TurnoActualConnectionId;
+        game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != oldTurnId);
+        _logger.LogDebug($"Turno cambiado en partida {game.GameId}. Anterior: {oldTurnId}, Nuevo: {game.TurnoActualConnectionId}");
+    }
+
+    result.UpdatedGame = game;
+    return result;
+}
+
 
         // Reinicia una partida existente
         public JuegoEstado? RestartGame(string gameId)
@@ -501,8 +552,9 @@ namespace AhorcadoBackend.Services
 
                 Console.WriteLine($"Partida {game.GameId}: Notificado al jugador {remainingPlayerConnectionId} sobre la desconexión/abandono del oponente.");
 
-                // Remover la partida si quieres que se limpie del GameManager después de la notificación
-                _activeGames.TryRemove(game.GameId, out _);
+                // No la removemos aquí. Dejamos que el GameCleanupService se encargue luego.
+                _logger.LogInformation($"Partida {game.GameId} marcada como terminada, se limpiará más adelante.");
+
                 Console.WriteLine($"Partida {game.GameId} marcada como terminada y removida después de la desconexión.");
             }
             else if (game.PlayerConnectionIds.Count == 0)

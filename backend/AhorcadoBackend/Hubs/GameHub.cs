@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 
 namespace AhorcadoBackend.Hubs
 {
@@ -12,12 +13,14 @@ namespace AhorcadoBackend.Hubs
     {
         private readonly GameManager _gameManager;
         private readonly ILogger<GameHub> _logger;
+        private readonly JuegoDbContext _dbContext;
 
 
-        public GameHub(GameManager gameManager, ILogger<GameHub> logger)
+        public GameHub(GameManager gameManager, ILogger<GameHub> logger, JuegoDbContext dbContext)
         {
             _gameManager = gameManager;
             _logger = logger;
+            _dbContext = dbContext;
         }
         
         public async Task JoinGameGroup(string gameId)
@@ -91,43 +94,40 @@ namespace AhorcadoBackend.Hubs
         }
 
         // Método para procesar una letra ingresada por un cliente
-        public async Task ProcessLetter(string gameId, char letter)
+      public async Task ProcessLetter(string gameId, char letter)
+{
+    try
+    {
+        var connectionId = Context.ConnectionId;
+        var result = await _gameManager.ProcessLetter(gameId, letter, Context.ConnectionId);
+        var game = result.UpdatedGame;
+
+        if (game == null)
         {
-            var result = _gameManager.ProcessLetter(gameId, letter, Context.ConnectionId);
-            var game = result.UpdatedGame;
-
-            if (game == null)
-            {
-                await Clients.Caller.SendAsync("ReceiveMessage", result.Message);
-                return;
-            }
-
-            await Clients.Caller.SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
-            {
-                GameId = game.GameId,
-                Palabra = game.GuionesActuales,
-                IntentosRestantes = game.IntentosRestantes,
-                LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
-                JuegoTerminado = game.JuegoTerminado,
-                TurnoActualConnectionId = game.TurnoActualConnectionId,
-                PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null,
-                Message = result.Message // ✅ CORREGIDO
-            });
-
-
-            // Enviar el estado actualizado del juego a todos los clientes en el grupo
-            await Clients.Group(gameId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
-            {
-                GameId = game.GameId,
-                Palabra = game.GuionesActuales,
-                IntentosRestantes = game.IntentosRestantes,
-                LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
-                JuegoTerminado = game.JuegoTerminado,
-                PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null, // Solo se revelará si el juego terminó
-                TurnoActualConnectionId = game.TurnoActualConnectionId,
-                Message = result.Message // ¡Usamos el mensaje específico del resultado del GameManager!
-            });
+            await Clients.Caller.SendAsync("ReceiveMessage", result.Message ?? "Error desconocido.");
+            return;
         }
+
+        var gameUpdate = new JuegoEstadoResponse
+        {
+            GameId = game.GameId,
+            Palabra = game.GuionesActuales,
+            IntentosRestantes = game.IntentosRestantes,
+            LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+            JuegoTerminado = game.JuegoTerminado,
+            PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null,
+            TurnoActualConnectionId = game.TurnoActualConnectionId,
+            Message = result.Message
+        };
+
+        await Clients.Group(gameId).SendAsync("ReceiveGameUpdate", gameUpdate);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "❗ Error inesperado al procesar letra en GameHub");
+        await Clients.Caller.SendAsync("ReceiveMessage", "⚠️ Ocurrió un error inesperado al procesar la letra. Por favor, vuelve a intentarlo.");
+    }
+}
 
         // Nuevo método para cuando el cliente abandona un grupo (voluntariamente)
         public async Task LeaveGameGroup(string gameId)

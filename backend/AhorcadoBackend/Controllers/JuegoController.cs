@@ -3,6 +3,7 @@ using AhorcadoBackend.Models;
 using AhorcadoBackend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,11 +20,14 @@ namespace AhorcadoBackend.Controllers
     {
         private readonly GameManager _gameManager;
         private readonly IHubContext<GameHub> _hubContext;
+        private readonly JuegoDbContext _dbContext;
 
-        public JuegoController(GameManager gameManager, IHubContext<GameHub> hubContext)
+
+        public JuegoController(GameManager gameManager, IHubContext<GameHub> hubContext, JuegoDbContext dbContext)
         {
             _gameManager = gameManager;
             _hubContext = hubContext;
+            _dbContext = dbContext;
         }
 
         // --- MODELOS DE ENTRADA/SALIDA (Clases de Ayuda) ---
@@ -140,7 +144,7 @@ namespace AhorcadoBackend.Controllers
         }
 
         [HttpPost("adivinarLetraLocal")]
-        public ActionResult AdivinarLetraLocal([FromBody] AdivinarLetraEntrada entrada)
+        public async Task<IActionResult> AdivinarLetraLocal([FromBody] AdivinarLetraEntrada entrada)
         {
             if (string.IsNullOrEmpty(entrada.GameId))
             {
@@ -152,7 +156,8 @@ namespace AhorcadoBackend.Controllers
                 return BadRequest(new { message = "Por favor, ingresa solo una letra válida." });
             }
 
-            var result = _gameManager.ProcessLetter(entrada.GameId, letraMayuscula, null); // playerConnectionId es null para modo local
+            var result = await _gameManager.ProcessLetter(entrada.GameId, letraMayuscula, null);
+
 
             if (result.UpdatedGame == null)
             {
@@ -199,27 +204,16 @@ namespace AhorcadoBackend.Controllers
         [HttpPost("crear-online")]
         public async Task<IActionResult> CrearPartidaOnline([FromBody] CrearGameOnlineRequest request)
         {
-            // El GameManager ahora se encarga de asignar el creador y el primer turno.
-            // Pasa el CreatorConnectionId directamente al GameManager.
             var game = _gameManager.CreateNewGame(null, request.CreatorConnectionId);
 
             if (game == null)
             {
-                return StatusCode(500, "Error al crear la partida online."); // O un mensaje más específico
+                return StatusCode(500, "Error al crear la partida online.");
             }
 
-            // Unimos el cliente al grupo de SignalR. Esto también podría hacerse desde el cliente directamente
-            // después de recibir el gameId, pero aquí aseguramos que el creador esté en su grupo.
             await _hubContext.Groups.AddToGroupAsync(request.CreatorConnectionId, game.GameId);
             Console.WriteLine($"Partida online creada con ID: {game.GameId} por {request.CreatorConnectionId}");
-
-            // Notificamos al creador que la partida ha sido creada
-            // Considera enviar un `ReceiveGameUpdate` en lugar de `ReceiveMessage` para consistencia.
-            // El Hub ya envía un ReceiveGameUpdate inicial en su método CreateOnlineGame.
-            // Si este endpoint se usa para CREAR el juego y NO para que el Hub lo inicie,
-            // entonces esta notificación es importante.
-
-            // Puedes devolver el estado inicial para que el frontend del creador se actualice.
+                       
             return Ok(new JuegoEstadoResponse
             {
                 GameId = game.GameId,
@@ -295,6 +289,13 @@ namespace AhorcadoBackend.Controllers
                 TurnoActualConnectionId = game.TurnoActualConnectionId,
                 Message = game.Message
             });
+        }
+
+        [HttpGet("monitor")]
+        public IActionResult ObtenerEstadoDelGameManager()
+        {
+            var estado = _gameManager.ObtenerEstadoInterno();
+            return Ok(estado);
         }
 
     }
