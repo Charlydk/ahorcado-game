@@ -49,12 +49,14 @@ const botonCopiarId = document.getElementById("botonCopiarId");
 const contenedorBotonJuegoOnline = document.getElementById("contenedorBotonJuegoOnline");
 
 
+
 // --- Variables de Estado del Frontend ---
 let currentGameId = null; // Almacenará el ID de la partida activa
 let currentMode = null;   // Almacenará el modo actual (solitario, versus, online)
 let latestGameData = null; // Almacenará los últimos datos del juego recibidos
 let finalizandoJuego = false; // Indica si el juego está en proceso de finalización (para evitar múltiples reinicios)
 let juegoTerminadoManualmente = false;
+let aliasJugadorActual = "";
 
 
 
@@ -263,6 +265,15 @@ function restaurarSeccionOnlineUI() {
     mostrarSeccion(botonVolverModosOnline);
 }
 
+function capturarAliasGlobal() {
+    aliasJugadorActual = document.getElementById("aliasInput").value.trim();
+    if (!aliasJugadorActual) {
+        alert("Por favor ingresá tu alias para continuar.");
+        throw new Error("Alias vacío");
+    }
+    console.log("Alias global capturado:", aliasJugadorActual);
+}
+
 
 
 // --- Configuración de SignalR ---
@@ -451,40 +462,69 @@ function resetearUIJuego() {
 }
 
 async function iniciarJuego(modo, palabraVersus = "") {
-    try {
+    try {
         finalizandoJuego = false;
-        const response = await fetch(`${BACKEND_URL}juego/iniciar`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ Modo: modo, Palabra: palabraVersus }),
-            credentials: 'include'
-        });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Error al iniciar el juego: ${response.status} - ${errorText}`);
-        }
+        // 🔐 Captura de alias
+        const alias1 = document.getElementById("aliasInput")?.value.trim() || "";
+        const alias2 = document.getElementById("aliasInput2")?.value.trim() || "";
 
-        const data = await response.json();
-        console.log("Respuesta del backend (iniciar):", data);
+        if (modo === "solitario" && !alias1) {
+            alert("Por favor, ingresá tu alias para comenzar.");
+            return;
+        }
 
-        currentGameId = data.gameId;
-        currentMode = modo;
+        if (modo === "versus" && (!alias1 || !alias2)) {
+            alert("Por favor, completá ambos alias para comenzar.");
+            return;
+        }
 
-        resetearUIJuego(); // Primero reseteamos la UI
-        ocultarTodasLasSecciones(); // Luego ocultamos todo
-        mostrarSeccion(seccionJuego); // Y mostramos la sección de juego
-        
+        // 🎯 Armar el payload dinámico
+        const payload = {
+            Modo: modo,
+            Palabra: palabraVersus,
+            AliasJugador1: alias1,
+            AliasJugador2: modo === "versus" ? alias2 : null
+        };
 
-        actualizarUIJuego(data); // Usamos la función actualizarUIJuego para el estado inicial
-        // Con esto, se inicializa el mensajeJuego, guiones y demás.
-        inputIngresaLetra.focus();
-    } catch (error) {
-        console.error("Error CATCHED al iniciar el juego:", error);
-        // Usa la nueva función para mostrar el error
-        mostrarMensajeAlerta(mensajeJuego, `Error: ${error.message}. Por favor, reinicia o inténtalo de nuevo.`, 'danger');
-    }
+        console.log("📨 Payload enviado a /iniciar:", payload);
+
+        const response = await fetch(`${BACKEND_URL}juego/iniciar`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+            credentials: "include"
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error al iniciar el juego: ${response.status} - ${errorText}`);
+        }
+
+        const data = await response.json();
+        console.log("✅ Respuesta del backend (iniciar):", data);
+
+        // 🧠 Actualizar estado local
+        currentGameId = data.gameId;
+        currentMode = modo;
+
+        resetearUIJuego();
+        ocultarTodasLasSecciones();
+        mostrarSeccion(seccionJuego);
+        actualizarUIJuego(data);
+        inputIngresaLetra.focus();
+
+    } catch (error) {
+        console.error("❌ Error CATCHED al iniciar el juego:", error);
+        mostrarMensajeAlerta(
+            mensajeJuego,
+            `Error: ${error.message}. Por favor, reiniciá o intentá de nuevo.`,
+            "danger"
+        );
+    }
 }
+
+
 
 function actualizarUIJuego(data) {
     console.log("DEBUG: Datos recibidos en actualizarUIJuego:", data);
@@ -590,106 +630,113 @@ function actualizarUIJuego(data) {
 }
 // --- Lógica para Crear Partida Online ---
 async function crearNuevaPartidaOnline() {
-    try {
-        limpiarEstadoGlobalDeJuego(); 
+    try {
+        limpiarEstadoGlobalDeJuego(); 
 
-        const connectionId = connection.connectionId;
-        if (!connectionId) {
-            mostrarMensajeAlerta(mensajeIdPartida, "Error: Conexión SignalR no establecida. Inténtalo de nuevo.", 'danger');
-            return;
-        }
-        ocultarMensajeAlerta(mensajeJuego); // Asegurarse de que el mensaje de juego principal esté limpio.
+        const connectionId = connection.connectionId;
+        if (!connectionId) {
+            mostrarMensajeAlerta(mensajeIdPartida, "Error: Conexión SignalR no establecida. Inténtalo de nuevo.", 'danger');
+            return;
+        }
 
-        mostrarMensajeAlerta(mensajeIdPartida, "Creando partida online...", 'info');
-        
-        ocultarSeccion(botonCrearPartida);
-        ocultarSeccion(botonUnirsePartida);
-        ocultarSeccion(inputIdPartida); 
-        ocultarSeccion(botonVolverModosOnline); 
-        ocultarSeccion(contenedorGameId);
+        const alias = document.getElementById("aliasInput").value.trim();
+        if (!alias) {
+            mostrarMensajeAlerta(mensajeIdPartida, "Por favor ingresá un alias para continuar.", 'warning');
+            return;
+        }
 
-        const response = await fetch(`${BACKEND_URL}juego/crear-online`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ creatorConnectionId: connectionId }),
-            credentials: 'include'
-        });
+        ocultarMensajeAlerta(mensajeJuego);
+        mostrarMensajeAlerta(mensajeIdPartida, "Creando partida online...", 'info');
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Error al crear partida online: ${response.status} - ${errorText}`);
-        }
-        const data = await response.json();
-        const gameId = data.gameId;
+        ocultarSeccion(botonCrearPartida);
+        ocultarSeccion(botonUnirsePartida);
+        ocultarSeccion(inputIdPartida);
+        ocultarSeccion(botonVolverModosOnline);
+        ocultarSeccion(contenedorGameId);
 
-        currentGameId = gameId;
-        currentMode = "online";
+        const response = await fetch(`${BACKEND_URL}juego/crear-online`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ creatorConnectionId: connectionId, alias: alias }),
+            credentials: 'include'
+        });
 
-        console.log("J1: Partida creada. currentGameId:", currentGameId, "currentMode:", currentMode);
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Error al crear partida online: ${response.status} - ${errorText}`);
+        }
 
-        await connection.invoke("JoinGameGroup", gameId);
-        console.log(`Creador (${connection.connectionId}) unido al grupo de SignalR para la partida: ${gameId}`);
+        const data = await response.json();
+        const gameId = data.gameId;
 
-        mostrarMensajeAlerta(mensajeIdPartida, "¡Partida creada! Comparte este ID:", 'success');
-        
-        displayGameId.textContent = gameId; 
-        mostrarSeccion(contenedorGameId); 
+        currentGameId = gameId;
+        currentMode = "online";
 
-        botonCopiarId.onclick = async () => {
-            try {
-                await navigator.clipboard.writeText(gameId);
-                mostrarMensajeAlerta(mensajeIdPartida, `ID '${gameId}' copiado. ¡Compártelo!`, 'success');
-            } catch (err) {
-                console.error('Error al copiar el ID:', err);
-                mostrarMensajeAlerta(mensajeIdPartida, `No se pudo copiar. Copia manualmente: ${gameId}`, 'warning');
-            }
-        };
+        console.log("J1: Partida creada. currentGameId:", currentGameId, "currentMode:", currentMode);
 
-        let botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline"); 
-        if (!botonIrAlJuego) {
-            botonIrAlJuego = document.createElement("button");
-            botonIrAlJuego.id = "botonIrAlJuegoOnline";
-            botonIrAlJuego.textContent = "Ir al Juego (esperar)";
-            botonIrAlJuego.classList.add("btn", "btn-success", "mt-3", "w-100"); 
-            contenedorBotonJuegoOnline.appendChild(botonIrAlJuego); 
-        }
-        mostrarSeccion(botonIrAlJuego);
-        mostrarSeccion(botonVolverModosOnline); 
+        await connection.invoke("JoinGameGroup", gameId);
+        console.log(`Creador (${connection.connectionId}) unido al grupo de SignalR para la partida: ${gameId}`);
 
-        botonIrAlJuego.onclick = async () => {
-            console.log("J1: Clic en 'Ir al Juego (esperar)'. Navegando a la sección de juego.");
-            ocultarTodasLasSecciones();
-            mostrarSeccion(seccionJuego);
-            if (latestGameData && latestGameData.gameId === currentGameId) {
-                console.log("J1: Actualizando UI con latestGameData al entrar al juego (J2 ya unido).");
-                actualizarUIJuego(latestGameData);
-            } else {
-                console.log("J1: J2 aún no se ha unido. Mostrando mensaje de espera inicial.");
-                mostrarMensajeAlerta(mensajeJuego, "Esperando que otro jugador se una...", 'info');
-                inputIngresaLetra.disabled = true;
-                botonSubirLetra.disabled = true;
-            }
-            ocultarSeccion(botonIrAlJuego);
-            ocultarSeccion(contenedorGameId);
-        };
+        mostrarMensajeAlerta(mensajeIdPartida, "¡Partida creada! Comparte este ID:", 'success');
+        displayGameId.textContent = gameId;
+        mostrarSeccion(contenedorGameId);
 
-    } catch (error) {
-        console.error("Error CATCHED al crear partida online:", error);
-        mostrarMensajeAlerta(mensajeIdPartida, `Error: ${error.message}`, 'danger');
-        
-        const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
-        if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego);
-        ocultarSeccion(contenedorGameId); 
+        botonCopiarId.onclick = async () => {
+            try {
+                await navigator.clipboard.writeText(gameId);
+                mostrarMensajeAlerta(mensajeIdPartida, `ID '${gameId}' copiado. ¡Compártelo!`, 'success');
+            } catch (err) {
+                console.error('Error al copiar el ID:', err);
+                mostrarMensajeAlerta(mensajeIdPartida, `No se pudo copiar. Copia manualmente: ${gameId}`, 'warning');
+            }
+        };
 
-        ocultarTodasLasSecciones(); 
-        mostrarSeccion(seccionOnline);
-        mostrarSeccion(botonCrearPartida);
-        mostrarSeccion(botonUnirsePartida);
-        mostrarSeccion(inputIdPartida);
-        inputIdPartida.readOnly = false;
-        mostrarSeccion(botonVolverModosOnline);
-    }
+        let botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
+        if (!botonIrAlJuego) {
+            botonIrAlJuego = document.createElement("button");
+            botonIrAlJuego.id = "botonIrAlJuegoOnline";
+            botonIrAlJuego.textContent = "Ir al Juego (esperar)";
+            botonIrAlJuego.classList.add("btn", "btn-success", "mt-3", "w-100");
+            contenedorBotonJuegoOnline.appendChild(botonIrAlJuego);
+        }
+        mostrarSeccion(botonIrAlJuego);
+        mostrarSeccion(botonVolverModosOnline);
+
+        botonIrAlJuego.onclick = async () => {
+            console.log("J1: Clic en 'Ir al Juego (esperar)'. Navegando a la sección de juego.");
+            ocultarTodasLasSecciones();
+            mostrarSeccion(seccionJuego);
+            if (latestGameData && latestGameData.gameId === currentGameId) {
+                console.log("J1: Actualizando UI con latestGameData al entrar al juego (J2 ya unido).");
+                actualizarUIJuego(latestGameData);
+            } else {
+                console.log("J1: J2 aún no se ha unido. Mostrando mensaje de espera inicial.");
+                mostrarMensajeAlerta(mensajeJuego, "Esperando que otro jugador se una...", 'info');
+                inputIngresaLetra.disabled = true;
+                botonSubirLetra.disabled = true;
+            }
+            ocultarSeccion(botonIrAlJuego);
+            ocultarSeccion(contenedorGameId);
+        };
+
+    } catch (error) {
+        console.error("Error CATCHED al crear partida online:", error);
+        mostrarMensajeAlerta(mensajeIdPartida, `Error: ${error.message}`, 'danger');
+
+        const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
+        if (botonIrAlJuego) ocultarSeccion(botonIrAlJuego);
+        ocultarSeccion(contenedorGameId);
+
+        ocultarTodasLasSecciones();
+        mostrarSeccion(seccionOnline);
+        mostrarSeccion(botonCrearPartida);
+        mostrarSeccion(botonUnirsePartida);
+        mostrarSeccion(inputIdPartida);
+        inputIdPartida.readOnly = false;
+        mostrarSeccion(botonVolverModosOnline);
+    }
 }
+
 // --- Lógica para Unirse a Partida Online ---
 async function unirseAPartidaOnline(gameId) {
     try {
@@ -699,7 +746,15 @@ async function unirseAPartidaOnline(gameId) {
             return;
         }
 
-        console.log(`J2: Intentando unirse a partida ${gameId} con connectionId ${connectionId}`);
+        const alias = document.getElementById("aliasInput").value.trim();
+        if (!alias) {
+            mostrarMensajeAlerta(mensajeIdPartida, "Por favor ingresá tu alias antes de unirte.", 'warning');
+            return;
+        }
+
+        aliasJugadorActual = alias; // ✅ ¡Asignamos el alias global acá!
+
+        console.log(`J2: Intentando unirse a partidaQQQQQQQ ${gameId} comoXXXXXXXXXXXXX ${aliasJugadorActual} con connectionId ${connectionId}`);
 
         inputIdPartida.disabled = true;
         botonCrearPartida.disabled = true;
@@ -710,27 +765,26 @@ async function unirseAPartidaOnline(gameId) {
         currentGameId = gameId;
         currentMode = "online";
 
-         // 🔹 Verificar si el jugador ya está en la partida
-         const responseGame = await fetch(`${BACKEND_URL}juego/getGame/${gameId}`);
-         if (responseGame.ok) {
-             const gameData = await responseGame.json();
-         
-             if (Array.isArray(gameData?.playerConnectionIds) && gameData.playerConnectionIds.includes(connectionId)) {
-                 console.log("Jugador ya estaba en la partida, intentando reiniciar su sesión...");
-                 await connection.invoke("LeaveGameGroup", gameId);
-             }
-         }
-         
+        const responseGame = await fetch(`${BACKEND_URL}juego/getGame/${gameId}`);
+        if (responseGame.ok) {
+            const gameData = await responseGame.json();
+            if (Array.isArray(gameData?.playerConnectionIds) && gameData.playerConnectionIds.includes(connectionId)) {
+                console.log("Jugador ya estaba en la partida, intentando reiniciar su sesión...");
+                await connection.invoke("LeaveGameGroup", gameId);
+            }
+        }
 
-        // 🔹 Unirse al grupo de SignalR
         await connection.invoke("JoinGameGroup", gameId);
         console.log(`Jugador ${connectionId} unido correctamente al grupo SignalR: ${gameId}`);
 
-        // 🔹 Enviar solicitud al backend para actualizar la sesión del jugador
         const response = await fetch(`${BACKEND_URL}juego/unirse-online`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ gameId: gameId, playerConnectionId: connectionId }),
+            body: JSON.stringify({
+                gameId: gameId,
+                playerConnectionId: connectionId,
+                alias: aliasJugadorActual // 👈 ahora sí, con valor real
+            }),
             credentials: 'include'
         });
 
@@ -754,77 +808,96 @@ async function unirseAPartidaOnline(gameId) {
     } catch (error) {
         console.error("Error al unirse a partida online:", error);
         mostrarMensajeAlerta(mensajeIdPartida, `Error al unirse: ${error.message}`, 'danger');
-        
         restaurarSeccionOnlineUI();
         inputIdPartida.focus();
     }
 }
 
-async function manejarEnvioLetra(letra) { 
-    console.log("Enviando letra:", letra); 
 
-    if (!currentGameId) {
-        mostrarMensajeAlerta(mensajeJuego, "Error: No hay una partida activa.", 'danger');
-        inputIngresaLetra.disabled = false; 
-        botonSubirLetra.disabled = false;
-        return;
-    }
 
-    try {
-        if (currentMode === 'solitario' || currentMode === 'versus') {
-            const response = await fetch(`${BACKEND_URL}juego/adivinarLetraLocal`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    GameId: currentGameId,
-                    Letra: letra 
-                })
-            });
+async function manejarEnvioLetra(letra) {
+    console.log("Enviando letra:", letra);
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: "Error desconocido al procesar la letra." }));
-                mostrarMensajeAlerta(mensajeJuego, `Error: ${errorData.message || response.statusText}`, 'danger');
-                inputIngresaLetra.value = "";
-                inputIngresaLetra.focus();
-                inputIngresaLetra.disabled = false; 
-                botonSubirLetra.disabled = false; 
-                return;
-            }
+    if (!currentGameId) {
+        mostrarMensajeAlerta(mensajeJuego, "Error: No hay una partida activa.", 'danger');
+        inputIngresaLetra.disabled = false;
+        botonSubirLetra.disabled = false;
+        return;
+    }
 
-            const data = await response.json();
-            actualizarUIJuego(data); 
+    try {
+        if (currentMode === 'solitario' || currentMode === 'versus') {
+            let alias1 = "";
+            let alias2 = null;
 
-        } else if (currentMode === 'online') {
-            if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
-                mostrarMensajeAlerta(mensajeJuego, "Error: Conexión SignalR no establecida o no activa.", 'danger');
-                inputIngresaLetra.disabled = false; 
-                botonSubirLetra.disabled = false; 
-                return;
-            }
+            if (currentMode === "solitario") {
+                alias1 = document.getElementById("aliasInput")?.value.trim() || "";
+            } else if (currentMode === "versus") {
+                alias1 = document.getElementById("aliasInput")?.value.trim() || "";
+                alias2 = document.getElementById("aliasInput2")?.value.trim() || "";
+            }
 
-            const playerConnectionId = connection.connectionId;
-            if (!playerConnectionId) {
-                mostrarMensajeAlerta(mensajeJuego, "Error: No se pudo obtener el ID de conexión de SignalR.", 'danger');
-                inputIngresaLetra.disabled = false; 
-                botonSubirLetra.disabled = false; 
-                return;
-            }
+            if (!alias1 || (currentMode === "versus" && !alias2)) {
+                mostrarMensajeAlerta(mensajeJuego, "Por favor ingresá los alias antes de continuar.", 'danger');
+                inputIngresaLetra.disabled = false;
+                botonSubirLetra.disabled = false;
+                return;
+            }
 
-            await connection.invoke("ProcessLetter", currentGameId, letra); 
-        } else {
-            mostrarMensajeAlerta(mensajeJuego, "Error: Modo de juego no reconocido. No se puede enviar la letra.", 'danger');
-            inputIngresaLetra.disabled = false; 
-            botonSubirLetra.disabled = false; 
-            return;
-        }
+            const response = await fetch(`${BACKEND_URL}juego/adivinarLetraLocal`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    GameId: currentGameId,
+                    Letra: letra,
+                    AliasJugador1: alias1,
+                    AliasJugador2: alias2 // será null en modo solitario
+                })
+            });
 
-    } catch (error) {
-        console.error("Error CATCHED al enviar letra:", error);
-        mostrarMensajeAlerta(mensajeJuego, `Error: ${error.message || "Un error inesperado ocurrió."}`, 'danger');
-        inputIngresaLetra.disabled = false; 
-        botonSubirLetra.disabled = false; 
-    }
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: "Error desconocido al procesar la letra." }));
+                mostrarMensajeAlerta(mensajeJuego, `Error: ${errorData.message || response.statusText}`, 'danger');
+                inputIngresaLetra.value = "";
+                inputIngresaLetra.focus();
+                inputIngresaLetra.disabled = false;
+                botonSubirLetra.disabled = false;
+                return;
+            }
+
+            const data = await response.json();
+            actualizarUIJuego(data);
+        } else if (currentMode === 'online') {
+            if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
+                mostrarMensajeAlerta(mensajeJuego, "Error: Conexión SignalR no establecida o no activa.", 'danger');
+                inputIngresaLetra.disabled = false;
+                botonSubirLetra.disabled = false;
+                return;
+            }
+
+            const playerConnectionId = connection.connectionId;
+            if (!playerConnectionId) {
+                mostrarMensajeAlerta(mensajeJuego, "Error: No se pudo obtener el ID de conexión de SignalR.", 'danger');
+                inputIngresaLetra.disabled = false;
+                botonSubirLetra.disabled = false;
+                return;
+            }
+
+            await connection.invoke("ProcessLetter", currentGameId, letra);
+        } else {
+            mostrarMensajeAlerta(mensajeJuego, "Error: Modo de juego no reconocido. No se puede enviar la letra.", 'danger');
+            inputIngresaLetra.disabled = false;
+            botonSubirLetra.disabled = false;
+            return;
+        }
+    } catch (error) {
+        console.error("Error CATCHED al enviar letra:", error);
+        mostrarMensajeAlerta(mensajeJuego, `Error: ${error.message || "Un error inesperado ocurrió."}`, 'danger');
+        inputIngresaLetra.disabled = false;
+        botonSubirLetra.disabled = false;
+    }
 }
+
 
 async function reiniciarJuego() {
     try {
@@ -933,19 +1006,29 @@ if (botonOnline) {
 }
 
 botonCrearPartida.addEventListener("click", async () => {
-    console.log("Creando nueva partida online...");
-    await crearNuevaPartidaOnline();
+    try {
+        capturarAliasGlobal(); // 👈 Capturamos alias antes de crear
+        console.log("Creando nueva partida online...");
+        await crearNuevaPartidaOnline();
+    } catch (error) {
+        console.warn("No se pudo crear la partida: alias inválido.");
+    }
 });
 
 botonUnirsePartida.addEventListener("click", async () => {
-    currentMode = 'online';
-    const gameId = inputIdPartida.value.trim();
-    if (gameId) {
-        console.log(`Intentando unirse a la partida: ${gameId}`);
-        await unirseAPartidaOnline(gameId);
-    } else {
-        mostrarMensajeAlerta(mensajeIdPartida, "Por favor, ingresa un ID de partida.", 'warning');
-    }
+    try {
+        capturarAliasGlobal(); // 👈 Capturamos alias antes de unirse
+        currentMode = 'online';
+        const gameId = inputIdPartida.value.trim();
+        if (gameId) {
+            console.log(`Intentando unirse a la partida: ${gameId}`);
+            await unirseAPartidaOnline(gameId);
+        } else {
+            mostrarMensajeAlerta(mensajeIdPartida, "Por favor, ingresa un ID de partida.", 'warning');
+        }
+    } catch (error) {
+        console.warn("No se pudo unir a la partida: alias inválido.");
+    }
 });
 
 botonVolverModosOnline.addEventListener("click", async () => { // Hacer async para await

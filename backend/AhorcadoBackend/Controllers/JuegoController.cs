@@ -34,19 +34,23 @@ namespace AhorcadoBackend.Controllers
         // Se unifican para mayor claridad y consistencia
         public class PalabraEntrada
         {
-            public string? Palabra { get; set; }
-            public string? Modo { get; set; }
+            public string Modo { get; set; } = "";
+            public string? Palabra { get; set; } // solo para modo versus
+            public string? AliasJugador1 { get; set; }
+            public string? AliasJugador2 { get; set; }
         }
 
         public class CrearGameOnlineRequest
         {
-            public string CreatorConnectionId { get; set; } = string.Empty;
+            public string CreatorConnectionId { get; set; }
+            public string Alias { get; set; }
         }
 
         public class UnirseGameOnlineRequest
         {
             public string GameId { get; set; } = string.Empty;
             public string PlayerConnectionId { get; set; } = string.Empty;
+            public string Alias { get; set; } = string.Empty;
         }
 
         // Clase unificada para la entrada de verificar letra en todos los modos
@@ -66,6 +70,8 @@ namespace AhorcadoBackend.Controllers
         {
             public string GameId { get; set; } = string.Empty;
             public char Letra { get; set; }
+            public string? AliasJugador1 { get; set; }
+            public string? AliasJugador2 { get; set; }
         }
 
         // --- ENDPOINTS DEL CONTROLADOR ---
@@ -73,28 +79,39 @@ namespace AhorcadoBackend.Controllers
         [HttpPost("iniciar")]
         public ActionResult IniciarJuego([FromBody] PalabraEntrada entrada)
         {
-            // Nota: Para modos "solitario" y "versus" manejados por HTTP,
-            // no es necesario un `gameIdParaSesion` generado aquí si el GameManager
-            // ya lo genera internamente o si estos modos no requieren ID público.
-            // Si son puramente locales, no necesitan un gameId tan "público".
-            // Sin embargo, para mantener consistencia con `GetGame`, lo dejo como estaba.
             string gameIdParaSesion = Guid.NewGuid().ToString();
             JuegoEstado nuevoEstado;
 
             if (entrada.Modo == "versus" && !string.IsNullOrEmpty(entrada.Palabra))
             {
+
                 if (entrada.Palabra.Length < 4 || entrada.Palabra.Length > 8)
                 {
                     return BadRequest("Para el modo 'versus', la palabra debe tener entre 4 y 8 caracteres.");
                 }
-                // En este caso, no hay ConnectionId inicial, así que pasamos null
+
                 nuevoEstado = _gameManager.CreateNewGame(entrada.Palabra.ToUpper(), null, gameIdParaSesion);
+
+
+                // Seteamos los alias en el juego
+                nuevoEstado.AliasJugadorPorConnectionId = new Dictionary<string, string>
+                {
+                    { "J1", entrada.AliasJugador1 ?? "Jugador1" },
+                    { "J2", entrada.AliasJugador2 ?? "Jugador2" }
+
+                };
+
             }
             else if (entrada.Modo == "solitario")
             {
-                // En este caso, no hay ConnectionId inicial, así que pasamos null
                 nuevoEstado = _gameManager.CreateNewGame(null, null, gameIdParaSesion);
+
+                nuevoEstado.AliasJugadorPorConnectionId = new Dictionary<string, string>
+    {
+        { "LOCAL", entrada.AliasJugador1 ?? "Anónimo" }
+    };
             }
+
             else
             {
                 return BadRequest("Modo de juego no válido o palabra no proporcionada para 'versus'.");
@@ -156,7 +173,13 @@ namespace AhorcadoBackend.Controllers
                 return BadRequest(new { message = "Por favor, ingresa solo una letra válida." });
             }
 
-            var result = await _gameManager.ProcessLetter(entrada.GameId, letraMayuscula, null);
+                var result = await _gameManager.ProcessLetter(
+                entrada.GameId,
+                letraMayuscula,
+                null,
+                entrada.AliasJugador1,
+                entrada.AliasJugador2
+                );
 
 
             if (result.UpdatedGame == null)
@@ -211,9 +234,13 @@ namespace AhorcadoBackend.Controllers
                 return StatusCode(500, "Error al crear la partida online.");
             }
 
+            // 🟢 Asociar alias al connectionId del jugador que crea la partida
+            game.AliasJugadorPorConnectionId[request.CreatorConnectionId] = request.Alias;
+            Console.WriteLine($"🧾 Alias registrado para {request.CreatorConnectionId}: {request.Alias}");
+
             await _hubContext.Groups.AddToGroupAsync(request.CreatorConnectionId, game.GameId);
-            Console.WriteLine($"Partida online creada con ID: {game.GameId} por {request.CreatorConnectionId}");
-                       
+            Console.WriteLine($"Partida online creada con ID: {game.GameId} por {request.CreatorConnectionId} (alias: {request.Alias})");
+
             return Ok(new JuegoEstadoResponse
             {
                 GameId = game.GameId,
@@ -227,9 +254,12 @@ namespace AhorcadoBackend.Controllers
             });
         }
 
+
         [HttpPost("unirse-online")]
         public async Task<IActionResult> UnirseOnline([FromBody] UnirseGameOnlineRequest request)
         {
+            Console.WriteLine($"🔍 Alias recibido en el request: '{request.Alias}'");
+
             if (string.IsNullOrEmpty(request.GameId) || string.IsNullOrEmpty(request.PlayerConnectionId))
             {
                 return BadRequest(new { message = "El ID de partida y PlayerConnectionId son requeridos." });
@@ -242,6 +272,17 @@ namespace AhorcadoBackend.Controllers
 
             var joinResult = _gameManager.TryJoinGame(request.GameId, request.PlayerConnectionId);
             var game = joinResult.UpdatedGame;
+
+            if (!string.IsNullOrWhiteSpace(request.Alias))
+            {
+                game.AliasJugadorPorConnectionId[request.PlayerConnectionId] = request.Alias;
+                Console.WriteLine($"✅ Alias '{request.Alias}' registrado para {request.PlayerConnectionId} en partida {request.GameId}");
+            }
+
+            if (!joinResult.Success || game == null)
+            {
+                return BadRequest(new { message = joinResult.Message });
+            }
 
             if (!joinResult.Success || game == null)
             {

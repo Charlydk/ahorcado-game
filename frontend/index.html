@@ -15,7 +15,7 @@
 </head>
 
 <body class="d-flex flex-column h-100 bg-light"> <header class="navbar navbar-light bg-info py-2 shadow-sm"> <div class="container-fluid"> <a class="navbar-brand d-flex align-items-center" href="#">
-                <img src="" alt="logo" height="40" class="me-2"> <h2 class="h4 mb-0 text-white">Juego del Ahorcado</h2> </a>
+                <img src="./img/create a small logo .png" alt="logo" height="40" class="me-2"> <h2 class="h4 mb-0 text-white">Juego del Ahorcado</h2> </a>
             <h5 class="text-white"></h5> </div>
     </header>
 
@@ -48,7 +48,12 @@
             <use xlink:href="#s-text" class="titulo-final-con-efectos"></use>
         </svg>
 
+            <label for="aliasInput">Ingresa tu alias:</label>
+            <input type="text" id="aliasInput" placeholder="Ej: CharlyDK">
+
             <button id="botonInicio" class="btn btn-primary btn-lg mt-4">Iniciar Juego</button>
+
+          
         </section>
 
 
@@ -83,6 +88,8 @@
         </section>
 
         <section id="seccionIngresarPalabra" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
+            <label for="aliasInput2">Ingresa el alias de tu amigo:</label>
+            <input type="text" id="aliasInput2" placeholder="Ej: Ximenita">
             <h3 id="mensajeIngresarPalabraVersus" class="mb-4 text-center alert d-none" role="alert">Ingresa una palabra de 4 a 8 letras para tu amigo</h3>
             <div class="input-group mb-3 w-75 mx-auto">
                 <input type="text" id="inputPalabraVersus" class="form-control" placeholder="Palabra Secreta" maxlength="8">
