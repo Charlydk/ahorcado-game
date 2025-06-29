@@ -1,13 +1,28 @@
-﻿namespace AhorcadoBackend.Models
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+[Table("Partidas")]
+public class Partida
 {
-    public class Partida
-    {
-        public int Id { get; set; }
-        public string? AliasJugador { get; set; }
-        public string? AliasJugador2 { get; set; }
-        public bool FueVictoria { get; set; }
-        public DateTime Fecha { get; set; }
-        public string PalabraSecreta { get; set; } = string.Empty;
-        public bool EsOnline { get; set; } // si la partida fue local u online
-    }
+    [Key]
+    [Column("id")]
+    public Guid Id { get; set; }  // ← uuid en Supabase = Guid en C#
+
+    [Column("aliasjugador1")]
+    public string? AliasJugador { get; set; }
+
+    [Column("aliasjugador2")]
+    public string? AliasJugador2 { get; set; }
+
+    [Column("fuevictoria")]
+    public bool FueVictoria { get; set; }
+
+    [Column("fecha")]
+    public DateTime Fecha { get; set; }
+
+    [Column("palabrasecreta")]
+    public string PalabraSecreta { get; set; } = string.Empty;
+
+    [Column("esonline")]
+    public bool EsOnline { get; set; }
 }

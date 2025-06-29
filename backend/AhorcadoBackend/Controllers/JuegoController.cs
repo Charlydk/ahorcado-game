@@ -128,6 +128,8 @@ namespace AhorcadoBackend.Controllers
                 TurnoActualConnectionId = null, // No aplica para modos locales/versus directos HTTP
                 Message = "¡La partida ha comenzado! Adivina la palabra."
             });
+
+
         }
 
         [HttpPost("reiniciar")]

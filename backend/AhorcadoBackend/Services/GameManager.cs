@@ -364,7 +364,8 @@ namespace AhorcadoBackend.Services
                     ? $"¡Felicidades! Has adivinado la palabra: {game.PalabraSecreta}"
                     : $"¡GAME OVER! La palabra era: {game.PalabraSecreta}";
 
-                using var db = _contextFactory.CreateDbContext();
+                using var db = await _contextFactory.CreateDbContextAsync();
+
 
                 string alias1;
                 string? alias2 = null;
@@ -385,6 +386,8 @@ namespace AhorcadoBackend.Services
                     alias2 = game.AliasJugadorPorConnectionId.GetValueOrDefault(j2 ?? "", "Jugador2");
                 }
 
+                Console.WriteLine("🧪 Estoy por guardar la partida en Supabase...");
+
                 db.Partidas.Add(new Partida
                 {
                     AliasJugador = alias1,
@@ -395,7 +398,11 @@ namespace AhorcadoBackend.Services
                     EsOnline = game.PlayerConnectionIds.Count > 1
                 });
 
+                Console.WriteLine("🧪 Estoy por guardar la partida en Supabase...");
+
                 await db.SaveChangesAsync();
+                Console.WriteLine("✅ Guardado exitoso en Supabase.");
+
 
                 _logger.LogWarning($"💾 Partida guardada ({(esVictoria ? "VICTORIA" : "DERROTA")})");
                 _logger.LogInformation($"Partida {gameId} terminada: {(esVictoria ? "VICTORIA" : "DERROTA")}. Palabra: {game.PalabraSecreta}");

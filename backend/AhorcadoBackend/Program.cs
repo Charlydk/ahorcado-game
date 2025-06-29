@@ -2,6 +2,8 @@ using AhorcadoBackend.Hubs;
 using AhorcadoBackend.Models;
 using AhorcadoBackend.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+
 
 Console.WriteLine("DEBUG: Iniciando la aplicación ASP.NET Core...");
 
@@ -45,8 +47,20 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 
+//servicio con sqllite para pruebas con archivo local
+//builder.Services.AddDbContextFactory<JuegoDbContext>(options =>
+//    options.UseSqlite("Data Source=partidas.db"));
+
+Console.WriteLine("🔗 Cadena activa: " + builder.Configuration.GetConnectionString("Default"));
+
+
 builder.Services.AddDbContextFactory<JuegoDbContext>(options =>
-    options.UseSqlite("Data Source=partidas.db"));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+
+var connectionString = builder.Configuration.GetConnectionString("Default");
+Console.WriteLine("🔗 Cadena de conexión activa: " + connectionString);
+
+
 
 
 // Configuraci�n de CORS (si es necesaria para tu frontend)
