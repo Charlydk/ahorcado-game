@@ -70,6 +70,24 @@ window.addEventListener("resize", () => {
   }
 });
 
+if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", () => {
+      const vh = window.visualViewport.height;
+  
+      // Si la altura visible es menor al 70% del total, asumimos que apareció el teclado
+      if (vh < window.innerHeight * 0.7) {
+        document.querySelector("#aliasInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    });
+  }
+
+  const input = document.querySelector("#aliasInput");
+input.addEventListener("focus", () => {
+  setTimeout(() => {
+    input.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 300);
+});
+
 
 /*window.addEventListener("beforeunload", (e) => {
     e.preventDefault();
