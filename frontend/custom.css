@@ -14,7 +14,7 @@ body {
     /* Aseguramos que el body sea un contenedor flex para el sticky footer y centrado general */
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 /* Sobrescribir el color de fondo de Bootstrap en el body si se aplica */
@@ -426,22 +426,3 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     flex-shrink: 0;
 }
 
-
-html, body {
-    height: 100dvh;
-    overflow: hidden;
-  }
-  
-  #seccionJuego {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    overflow-y: auto;
-    padding: 1rem;
-  }
-  
-  body.keyboard-visible #seccionJuego {
-    justify-content: flex-start;
-    padding-bottom: 120px; /* espacio para el teclado */
-  }

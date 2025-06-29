@@ -49,6 +49,10 @@ const botonCopiarId = document.getElementById("botonCopiarId");
 const contenedorBotonJuegoOnline = document.getElementById("contenedorBotonJuegoOnline");
 
 
+function esEscritorio() {
+    return window.matchMedia("(pointer: fine)").matches;
+  }
+
 
 // --- Variables de Estado del Frontend ---
 let currentGameId = null; // Almacenará el ID de la partida activa
@@ -58,21 +62,6 @@ let finalizandoJuego = false; // Indica si el juego está en proceso de finaliza
 let juegoTerminadoManualmente = false;
 let aliasJugadorActual = "";
 
-// --- cambia de altura al desplegar el taclado en moviles ---
-
-if (window.visualViewport) {
-    window.visualViewport.addEventListener("resize", () => {
-      const vh = window.visualViewport.height;
-      const body = document.body;
-  
-      if (vh < window.innerHeight * 0.75) {
-        body.classList.add("keyboard-visible");
-      } else {
-        body.classList.remove("keyboard-visible");
-      }
-    });
-  }
-  
 
 // --- Variables de conexion al backend ---
 //const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
@@ -520,7 +509,10 @@ async function iniciarJuego(modo, palabraVersus = "") {
         ocultarTodasLasSecciones();
         mostrarSeccion(seccionJuego);
         actualizarUIJuego(data);
-        inputIngresaLetra.focus();
+        if (esEscritorio()) {
+            inputIngresaLetra.focus();
+          }
+       
 
     } catch (error) {
         console.error("❌ Error CATCHED al iniciar el juego:", error);
@@ -634,7 +626,11 @@ function actualizarUIJuego(data) {
     }
 
     inputIngresaLetra.value = "";
-    inputIngresaLetra.focus();
+    if (esEscritorio()) {
+    inputIngresaLetra.focus();
+  }
+
+
 }
 // --- Lógica para Crear Partida Online ---
 async function crearNuevaPartidaOnline() {
@@ -817,7 +813,11 @@ async function unirseAPartidaOnline(gameId) {
         console.error("Error al unirse a partida online:", error);
         mostrarMensajeAlerta(mensajeIdPartida, `Error al unirse: ${error.message}`, 'danger');
         restaurarSeccionOnlineUI();
-        inputIdPartida.focus();
+        
+        if (esEscritorio()) {
+            inputIdPartida.focus();
+          }
+
     }
 }
 
@@ -867,7 +867,11 @@ async function manejarEnvioLetra(letra) {
                 const errorData = await response.json().catch(() => ({ message: "Error desconocido al procesar la letra." }));
                 mostrarMensajeAlerta(mensajeJuego, `Error: ${errorData.message || response.statusText}`, 'danger');
                 inputIngresaLetra.value = "";
-                inputIngresaLetra.focus();
+                
+                if (esEscritorio()) {
+                    inputIngresaLetra.focus();
+                  }
+
                 inputIngresaLetra.disabled = false;
                 botonSubirLetra.disabled = false;
                 return;
@@ -1001,7 +1005,11 @@ botonVersus.addEventListener("click", function(event) {
     mostrarSeccion(seccionIngresarPalabra);
     inputPalabraVersus.value = ""; // Limpiar el input al entrar
     txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo"; // Resetear mensaje
-    inputPalabraVersus.focus();
+   
+if (esEscritorio()) {
+    inputPalabraVersus.focus();
+  }
+
 });
 
 if (botonOnline) {
@@ -1054,12 +1062,18 @@ botonEnviarPalabra.addEventListener("click", async function(event) {
 
     if (palabra.length < 4 || palabra.length > 8) {
         mostrarMensajeAlerta(txtIngresarPalabraVersus, "La palabra debe tener entre 4 y 8 letras.", 'warning');
-        inputPalabraVersus.focus();
+        
+    if (esEscritorio()) {
+        inputPalabraVersus.focus();
+    }
+
         return;
     }
     if (!/^[A-ZÑ]+$/.test(palabra)) {
         mostrarMensajeAlerta(txtIngresarPalabraVersus, "Solo se permiten letras.", 'warning');
-        inputPalabraVersus.focus();
+        if (esEscritorio()) {
+        inputPalabraVersus.focus();
+    }
         return;
     }
 
@@ -1107,6 +1121,10 @@ if (botonSubirLetra) {
             mostrarMensajeAlerta(mensajeJuego, "Ingresa una sola letra válida (A-Z, Ñ).", 'warning');
             inputIngresaLetra.value = "";
             inputIngresaLetra.focus();
+        if (esEscritorio()) {
+            inputIngresaLetra.focus();
+        }
+
             return;
         }
 
@@ -1128,7 +1146,11 @@ if (botonSubirLetra) {
             
             mostrarMensajeAlerta(mensajeJuego, `Ya enviaste la letra ${letraIngresada} anteriormente. Intenta con otra.`, 'warning'); 
             inputIngresaLetra.value = "";
-            inputIngresaLetra.focus();
+            
+        if (esEscritorio()) {
+            inputIngresaLetra.focus();
+        }
+
             return; 
         }
 
@@ -1171,7 +1193,12 @@ if (botonReiniciar) {
             mostrarSeccion(seccionIngresarPalabra);
             inputPalabraVersus.value = "";
             txtIngresarPalabraVersus.textContent = "Ingresa una palabra de 4 a 8 letras para tu amigo";
-            inputPalabraVersus.focus();
+            
+        if (esEscritorio()) {
+            inputPalabraVersus.focus();
+        }
+
+
         } else {
             console.warn("Modo de juego no definido al reiniciar. Volviendo a selección de modos.");
             mostrarSeccion(seccionModosJuego);
