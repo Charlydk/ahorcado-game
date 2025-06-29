@@ -59,43 +59,20 @@ let juegoTerminadoManualmente = false;
 let aliasJugadorActual = "";
 
 // --- cambia de altura al desplegar el taclado en moviles ---
-let initialHeight = window.innerHeight;
-
-window.addEventListener("resize", () => {
-  const currentHeight = window.innerHeight;
-
-  if (currentHeight < initialHeight) {
-    // El teclado se desplegó
-    document.querySelector("#aliasInput").scrollIntoView({ behavior: "smooth" });
-  }
-});
 
 if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", () => {
       const vh = window.visualViewport.height;
+      const body = document.body;
   
-      // Si la altura visible es menor al 70% del total, asumimos que apareció el teclado
-      if (vh < window.innerHeight * 0.7) {
-        document.querySelector("#aliasInput")?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (vh < window.innerHeight * 0.75) {
+        body.classList.add("keyboard-visible");
+      } else {
+        body.classList.remove("keyboard-visible");
       }
     });
   }
-
-  const input = document.querySelector("#aliasInput");
-input.addEventListener("focus", () => {
-  setTimeout(() => {
-    input.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, 300);
-});
-
-
-/*window.addEventListener("beforeunload", (e) => {
-    e.preventDefault();
-    e.returnValue = "";
-    console.log("🔒 Previniendo recarga inesperada.");
-});*/
-
-
+  
 
 // --- Variables de conexion al backend ---
 //const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
