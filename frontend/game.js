@@ -971,26 +971,36 @@ async function abandonarPartidaOnline() {
 
 // --- Event Listeners de Botones ---
 
-if (botonInicio) { // Siempre es buena práctica verificar si el elemento existe antes de añadir un listener
-    botonInicio.addEventListener("click", function(event) {
-        event.preventDefault(); // Previene el comportamiento por defecto del botón (si fuera un submit de formulario, por ejemplo)
-
-        console.log("Clic en Iniciar Juego - Transicionando a Modos de Juego"); // Para depuración
-
-        // 1. Ocultar la SECCIÓN COMPLETA de bienvenida
-        ocultarSeccion(seccionBienvenida);
-
-        // 2. Mostrar la SECCIÓN COMPLETA de modos de juego
-        mostrarSeccion(seccionModosJuego);
-
-    
-        ocultarSeccion(inputIdPartida);
-        ocultarSeccion(botonCrearPartida);
-        ocultarSeccion(botonUnirsePartida);
-        ocultarSeccion(mensajeIdPartida);
-        ocultarSeccion(botonVolverModosOnline);
-    });
-}
+if (botonInicio) {
+    botonInicio.addEventListener("click", function (event) {
+      event.preventDefault();
+  
+      const alias = document.getElementById("aliasInput")?.value.trim();
+      const mensajeAlias = document.getElementById("mensajeAlias");
+  
+      if (!alias) {
+        mensajeAlias.classList.remove("d-none");
+  
+        // Ocultar después de 2.5s automáticamente
+        setTimeout(() => {
+          mensajeAlias.classList.add("d-none");
+        }, 2500);
+        return;
+      }
+  
+      // Si hay alias, ocultamos mensaje por si estaba visible antes
+      mensajeAlias.classList.add("d-none");
+  
+      ocultarSeccion(seccionBienvenida);
+      mostrarSeccion(seccionModosJuego);
+  
+      ocultarSeccion(inputIdPartida);
+      ocultarSeccion(botonCrearPartida);
+      ocultarSeccion(botonUnirsePartida);
+      ocultarSeccion(mensajeIdPartida);
+      ocultarSeccion(botonVolverModosOnline);
+    });
+  }
 
 botonSolitario.addEventListener("click", async function(event) {
     event.preventDefault();
@@ -1056,32 +1066,33 @@ botonVolverModosOnline.addEventListener("click", async () => { // Hacer async pa
     inicializarUI(); // Vuelve a la pantalla de inicio limpia (secciónModosJuego)
 });
 
-botonEnviarPalabra.addEventListener("click", async function(event) {
-    event.preventDefault();
-    const palabra = inputPalabraVersus.value.toUpperCase().trim();
-
-    if (palabra.length < 4 || palabra.length > 8) {
-        mostrarMensajeAlerta(txtIngresarPalabraVersus, "La palabra debe tener entre 4 y 8 letras.", 'warning');
-        
-    if (esEscritorio()) {
-        inputPalabraVersus.focus();
+document.getElementById("botonEnviarPalabra")?.addEventListener("click", async () => {
+    const alias1 = document.getElementById("aliasInput")?.value.trim();
+    const alias2 = document.getElementById("aliasInput2")?.value.trim();
+    const palabra = document.getElementById("inputPalabraVersus")?.value.trim().toUpperCase();
+    const mensajeAliasVersus = document.getElementById("mensajeAliasVersus");
+    const mensajePalabra = document.getElementById("mensajeIngresarPalabraVersus");
+  
+    if (!alias1 || !alias2) {
+      mensajeAliasVersus.classList.remove("d-none");
+      setTimeout(() => mensajeAliasVersus.classList.add("d-none"), 2500);
+      return;
     }
-
-        return;
-    }
-    if (!/^[A-ZÑ]+$/.test(palabra)) {
-        mostrarMensajeAlerta(txtIngresarPalabraVersus, "Solo se permiten letras.", 'warning');
-        if (esEscritorio()) {
-        inputPalabraVersus.focus();
+  
+    mensajeAliasVersus.classList.add("d-none");
+  
+    if (palabra.length < 4 || palabra.length > 8 || /[^A-Z]/.test(palabra)) {
+      mensajePalabra.textContent = "La palabra debe tener entre 4 y 8 letras sin caracteres especiales.";
+      mensajePalabra.classList.remove("d-none", "alert-success");
+      mensajePalabra.classList.add("alert-danger");
+      return;
     }
-        return;
-    }
-
-    inputPalabraVersus.value = "";
-    // Ocultar el mensaje después de enviar la palabra si todo está bien
-    ocultarMensajeAlerta(txtIngresarPalabraVersus); 
-    await iniciarJuego("versus", palabra);
-});
+  
+    mensajePalabra.classList.add("d-none");
+  
+    // 🎮 Iniciar juego modo versus
+    await iniciarJuego("versus", palabra);
+  });
 
 inputPalabraVersus.addEventListener("keydown", function (event) {
     if (event.key === "Enter") {

@@ -19,39 +19,45 @@
             <h5 class="text-white"></h5> </div>
     </header>
 
-    <main class="container-fluid d-flex flex-column flex-grow-1 p-3"> <section id="seccionBienvenida" class="d-flex flex-column justify-content-center align-items-center flex-grow-1 text-center">
+    <main class="container-fluid d-flex flex-column flex-grow-1 p-3"> 
+        <section id="seccionBienvenida" class="d-flex flex-column justify-content-center align-items-center flex-grow-1 text-center">
 
-        <svg viewBox="0 0 1320 300" class="titulo-principal-svg mb-4" style="max-width: 100%; height: auto;">
-            <defs>
-                <filter id="combined-effect" x="-50%" y="-50%" width="200%" height="200%">
-                    <feOffset dx="6" dy="6" in="SourceGraphic" result="offsetShadow"></feOffset>
-                    <feGaussianBlur in="offsetShadow" stdDeviation="3" result="blurredShadow"></feGaussianBlur>
-                    <feFlood flood-color="rgba(0, 0, 0, 0.7)" result="shadowColor"></feFlood>
-                    <feComposite in="shadowColor" in2="blurredShadow" operator="in" result="shadowComposite"></feComposite>
-                    
-                    <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blurredGlow"></feGaussianBlur>
-                    <feFlood flood-color="#ff6600" flood-opacity="0.8" result="glowColor"></feFlood>
-                    <feComposite in="glowColor" in2="blurredGlow" operator="in" result="glowComposite"></feComposite>
-        
-                    <feMerge>
-                        <feMergeNode in="shadowComposite"></feMergeNode>
-                        <feMergeNode in="glowComposite"></feMergeNode>
-                        <feMergeNode in="SourceGraphic"></feMergeNode> </feMerge>
-                </filter>
-            </defs>
-        
-            <symbol id="s-text">
-                <text text-anchor="middle" x="50%" y="35%" dy=".10em" class="titulo-linea-superior">JUEGO DEL</text>
-                <text text-anchor="middle" x="50%" y="75%" dy=".25em" class="titulo-line0-inferior">AHORCADO</text>
-            </symbol>
+            <svg viewBox="0 0 1320 300" class="titulo-principal-svg mb-4" style="max-width: 100%; height: auto;">
+                <defs>
+                    <filter id="combined-effect" x="-50%" y="-50%" width="200%" height="200%">
+                        <feOffset dx="6" dy="6" in="SourceGraphic" result="offsetShadow"></feOffset>
+                        <feGaussianBlur in="offsetShadow" stdDeviation="3" result="blurredShadow"></feGaussianBlur>
+                        <feFlood flood-color="rgba(0, 0, 0, 0.7)" result="shadowColor"></feFlood>
+                        <feComposite in="shadowColor" in2="blurredShadow" operator="in" result="shadowComposite"></feComposite>
+                        
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blurredGlow"></feGaussianBlur>
+                        <feFlood flood-color="#ff6600" flood-opacity="0.8" result="glowColor"></feFlood>
+                        <feComposite in="glowColor" in2="blurredGlow" operator="in" result="glowComposite"></feComposite>
             
-            <use xlink:href="#s-text" class="titulo-final-con-efectos"></use>
-        </svg>
+                        <feMerge>
+                            <feMergeNode in="shadowComposite"></feMergeNode>
+                            <feMergeNode in="glowComposite"></feMergeNode>
+                            <feMergeNode in="SourceGraphic"></feMergeNode> </feMerge>
+                    </filter>
+                </defs>
+            
+                <symbol id="s-text">
+                    <text text-anchor="middle" x="50%" y="35%" dy=".10em" class="titulo-linea-superior">JUEGO DEL</text>
+                    <text text-anchor="middle" x="50%" y="75%" dy=".25em" class="titulo-line0-inferior">AHORCADO</text>
+                </symbol>
+                
+                <use xlink:href="#s-text" class="titulo-final-con-efectos"></use>
+            </svg>
 
-        <div class="mb-3">
-            <label for="aliasInput" class="form-label">Ingresa tu alias:</label>
-            <input type="text" id="aliasInput" class="form-control" placeholder="Ej: CharlyDK">
-          </div>
+            <div class="mb-3">
+                <label for="aliasInput" class="form-label">Ingresa tu alias:</label>
+                <input type="text" id="aliasInput" class="form-control" placeholder="Ej: CharlyDK">
+            </div>
+
+            <div id="mensajeAlias" class="alert alert-warning d-none mt-3" role="alert">
+                ⚠️ Por favor, ingresá tu alias antes de continuar.
+            </div>
+              
 
             <button id="botonInicio" class="btn btn-primary btn-lg mt-4">Iniciar Juego</button>
 
@@ -93,12 +99,16 @@
             <div class="mb-3">
                 <label for="aliasInput2" class="form-label">Ingresa el alias de tu amigo:</label>
                 <input type="text" id="aliasInput2" class="form-control" placeholder="Ej: Ximenita">
-              </div>
+            </div>
+                                      
             <h3 id="mensajeIngresarPalabraVersus" class="mb-4 text-center alert d-none" role="alert">Ingresa una palabra de 4 a 8 letras para tu amigo</h3>
             <div class="input-group mb-3 w-75 mx-auto">
                 <input type="text" id="inputPalabraVersus" class="form-control" placeholder="Palabra Secreta" maxlength="8">
                 <button id="botonEnviarPalabra" class="btn btn-primary">Enviar</button>
             </div>
+            <div id="mensajeAliasVersus" class="alert alert-warning d-none mt-2" role="alert">
+                ⚠️ Por favor, ingresá el alias tu amigo antes de continuar.
+              </div>
             <button id="botonCancelarVersus" class="btn btn-danger mt-3">Cancelar</button>
         </section>
 
@@ -110,7 +120,7 @@
                     <p id="letrasIncorrectasSpan" class="text-danger fs-6">Letras <br> incorrectas <span id="letrasIncorrectasValor" class="incorrect-letters-display"></span></p>
                     <p id="intentos-restantes" class="text-info fs-5"></p>
                     <p id="mensajeTurno" class="text-primary fw-bold"></p> <div class="input-group mb-3 w-75">
-                        <input type="text" id="inputAdivinarLetra" class="form-control text-uppercase" placeholder="Ingresa una letra" maxlength="1">
+                        <input type="text" id="inputAdivinarLetra" class="form-control text-uppercase" placeholder="una letra" maxlength="1">
                         <button id="botonSubirLetra" class="btn btn-primary">Adivinar</button>
                     </div>
                     <p id="mensajeJuego" class="alert d-none text-center" role="alert"></p>
