@@ -286,14 +286,14 @@ function capturarAliasGlobal() {
 }
 
 
-
+//.withUrl("http://localhost:8080/gamehub") // Para desarrollo local
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub") // Para producción
-    //.withUrl("http://localhost:8080/gamehub") // Para desarrollo local
-
-
-    .withAutomaticReconnect({
+    .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub", {
+    transport: signalR.HttpTransportType.WebSockets, // O cambiar a LongPolling si querés testear
+    withCredentials: true
+  })
+    .withAutomaticReconnect({
         nextRetryDelayInMilliseconds: retryContext => {
             // Lógica de reintento (puedes mantener la tuya si ya la tienes)
             // Ejemplo simple: 0, 2, 10, 30 segundos
