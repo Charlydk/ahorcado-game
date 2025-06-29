@@ -426,3 +426,20 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     flex-shrink: 0;
 }
 
+
+/* -------------estilizar imagen del ahorcado en moviles------------- */
+#imagenAhorcado {
+    width: 100%;
+    max-width: 300px; /* Valor para escritorio */
+    height: auto;
+    margin-bottom: 15px;
+    transition: transform 0.3s ease;
+  }
+  
+  /* Cuando el ancho de la pantalla es menor a 768px (tablets y móviles) */
+  @media (max-width: 767px) {
+    #imagenAhorcado {
+      max-width: 200px; /* Más pequeño en móviles */
+      transform: scale(0.9);
+    }
+  }
