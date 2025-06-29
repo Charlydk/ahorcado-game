@@ -82,6 +82,14 @@ builder.Services.AddCors(options =>
         .AllowCredentials()); // Esencial para sesiones con CORS
 });
 
+// asignamos puerto para produccion de db supabase
+var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(Int32.Parse(port));
+});
+
 
 
 // =========================================================
