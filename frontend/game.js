@@ -58,6 +58,17 @@ let finalizandoJuego = false; // Indica si el juego está en proceso de finaliza
 let juegoTerminadoManualmente = false;
 let aliasJugadorActual = "";
 
+// --- cambia de altura al desplegar el taclado en moviles ---
+let initialHeight = window.innerHeight;
+
+window.addEventListener("resize", () => {
+  const currentHeight = window.innerHeight;
+
+  if (currentHeight < initialHeight) {
+    // El teclado se desplegó
+    document.querySelector("#aliasInput").scrollIntoView({ behavior: "smooth" });
+  }
+});
 
 
 /*window.addEventListener("beforeunload", (e) => {
