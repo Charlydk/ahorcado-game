@@ -21,13 +21,14 @@ namespace AhorcadoBackend.Controllers
         private readonly GameManager _gameManager;
         private readonly IHubContext<GameHub> _hubContext;
         private readonly JuegoDbContext _dbContext;
+        private readonly ILogger<JuegoController> _logger;
 
-
-        public JuegoController(GameManager gameManager, IHubContext<GameHub> hubContext, JuegoDbContext dbContext)
+        public JuegoController(GameManager gameManager, IHubContext<GameHub> hubContext, JuegoDbContext dbContext, ILogger<JuegoController> Logger)
         {
             _gameManager = gameManager;
             _hubContext = hubContext;
             _dbContext = dbContext;
+            _logger = Logger;
         }
 
         // --- MODELOS DE ENTRADA/SALIDA (Clases de Ayuda) ---
@@ -107,9 +108,9 @@ namespace AhorcadoBackend.Controllers
                 nuevoEstado = _gameManager.CreateNewGame(null, null, gameIdParaSesion);
 
                 nuevoEstado.AliasJugadorPorConnectionId = new Dictionary<string, string>
-    {
-        { "LOCAL", entrada.AliasJugador1 ?? "Anónimo" }
-    };
+            {
+            { "LOCAL", entrada.AliasJugador1 ?? "Anónimo" }
+            };
             }
 
             else
@@ -175,13 +176,13 @@ namespace AhorcadoBackend.Controllers
                 return BadRequest(new { message = "Por favor, ingresa solo una letra válida." });
             }
 
-                var result = await _gameManager.ProcessLetter(
-                entrada.GameId,
-                letraMayuscula,
-                null,
-                entrada.AliasJugador1,
-                entrada.AliasJugador2
-                );
+            var result = await _gameManager.ProcessLetter(
+            entrada.GameId,
+            letraMayuscula,
+            null,
+            entrada.AliasJugador1,
+            entrada.AliasJugador2
+            );
 
 
             if (result.UpdatedGame == null)
@@ -273,6 +274,12 @@ namespace AhorcadoBackend.Controllers
             }
 
             var joinResult = _gameManager.TryJoinGame(request.GameId, request.PlayerConnectionId);
+
+            if (!joinResult.Success || joinResult.UpdatedGame == null)
+            {
+                return BadRequest(new { message = joinResult.Message });
+            }
+
             var game = joinResult.UpdatedGame;
 
             if (!string.IsNullOrWhiteSpace(request.Alias))
@@ -340,6 +347,90 @@ namespace AhorcadoBackend.Controllers
             var estado = _gameManager.ObtenerEstadoInterno();
             return Ok(estado);
         }
+
+
+        [HttpPost("entrada-inteligente")]
+        public async Task<IActionResult> EntradaInteligente([FromBody] UnirseGameOnlineRequest request)
+        {
+            if (!_gameManager.TryGetGame(request.GameId, out var game))
+                return NotFound(new { message = "Partida no encontrada." });
+
+            _logger.LogWarning($"🚦 Alias recibido: '{request.Alias}', ya en juego: {string.Join(", ", game.AliasJugadorPorConnectionId.Values)}");
+
+            // 🔍 Buscar coincidencia exacta del alias ya registrado
+            var entry = game.AliasJugadorPorConnectionId
+                .FirstOrDefault(kvp => kvp.Value.Equals(request.Alias, StringComparison.OrdinalIgnoreCase));
+
+            if (!string.IsNullOrEmpty(entry.Key)) // ↩️ ¡Alias ya existe!
+            {
+                var oldConnectionId = entry.Key;
+                var newConnectionId = request.PlayerConnectionId;
+
+                // 🔁 Actualizamos IDs
+                game.PlayerConnectionIds.Remove(oldConnectionId);
+                game.PlayerConnectionIds.Add(newConnectionId);
+                game.AliasJugadorPorConnectionId.Remove(oldConnectionId);
+                game.AliasJugadorPorConnectionId[newConnectionId] = request.Alias;
+
+                if (game.TurnoActualConnectionId == oldConnectionId)
+                    game.TurnoActualConnectionId = newConnectionId;
+
+                game.DesconexionDetectada = false;
+                game.JugadorDesconectadoConnectionId = null;
+                game.DesconexionTimestamp = null;
+
+                await _hubContext.Groups.AddToGroupAsync(newConnectionId, game.GameId);
+                _logger.LogInformation($"♻️ Alias '{request.Alias}' reconectado con nuevo ConnectionId: {newConnectionId}");
+
+                var respuesta = new JuegoEstadoResponse
+                {
+                    GameId = game.GameId,
+                    Palabra = game.GuionesActuales,
+                    IntentosRestantes = game.IntentosRestantes,
+                    LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+                    JuegoTerminado = game.JuegoTerminado,
+                    PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null,
+                    TurnoActualConnectionId = game.TurnoActualConnectionId,
+                    Message = $"🔄 Reconexión exitosa para {request.Alias}"
+                };
+
+                // Reenviar estado a todos (opcional)
+                foreach (var id in game.PlayerConnectionIds)
+                    await _hubContext.Clients.Client(id).SendAsync("ReceiveGameUpdate", respuesta);
+
+                return Ok(respuesta);
+            }
+
+            // Si no es reconexión, intento de ingreso normal
+            var joinResult = _gameManager.TryJoinGame(request.GameId, request.PlayerConnectionId);
+            var nuevoGame = joinResult.UpdatedGame;
+
+            if (!joinResult.Success || nuevoGame == null)
+                return BadRequest(new { message = joinResult.Message });
+
+            nuevoGame.AliasJugadorPorConnectionId[request.PlayerConnectionId] = request.Alias;
+            await _hubContext.Groups.AddToGroupAsync(request.PlayerConnectionId, nuevoGame.GameId);
+
+            var estadoNuevo = new JuegoEstadoResponse
+            {
+                GameId = nuevoGame.GameId,
+                Palabra = nuevoGame.GuionesActuales,
+                IntentosRestantes = nuevoGame.IntentosRestantes,
+                LetrasIncorrectas = string.Join(", ", nuevoGame.LetrasIncorrectas),
+                JuegoTerminado = nuevoGame.JuegoTerminado,
+                PalabraSecreta = nuevoGame.JuegoTerminado ? nuevoGame.PalabraSecreta : null,
+                TurnoActualConnectionId = nuevoGame.TurnoActualConnectionId,
+                Message = $"🎉 ¡Bienvenido/a {request.Alias}!"
+            };
+
+            foreach (var id in nuevoGame.PlayerConnectionIds)
+                await _hubContext.Clients.Client(id).SendAsync("ReceiveGameUpdate", estadoNuevo);
+
+            return Ok(estadoNuevo);
+        }
+
+
+
 
     }
 

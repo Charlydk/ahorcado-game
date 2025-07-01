@@ -35,11 +35,6 @@ namespace AhorcadoBackend.Hubs
             // Pasa el ConnectionId del creador al GameManager para que lo asocie a la partida.
             var game = _gameManager.CreateNewGame(null, Context.ConnectionId); // Nuevo overload para creador connectionId
 
-            // Si el GameManager ya maneja PlayerConnectionIds, quizás no necesites esta línea aquí:
-            // game.PlayerConnectionIds.Add(Context.ConnectionId); 
-
-            // Asegúrate de que tu GameManager establezca estas propiedades al crear la partida
-            // (o actualízalas si tu CreateNewGame solo crea un estado base)
             game.CreadorConnectionId = Context.ConnectionId;
             game.TurnoActualConnectionId = Context.ConnectionId;
             game.Message = $"Partida creada. ID: {game.GameId}. Esperando a otro jugador...";
@@ -141,12 +136,76 @@ namespace AhorcadoBackend.Hubs
         }
 
 
- // Método para recibir mensajes de heartbeat del cliente. No necesita hacer nada.
-    public Task SendHeartbeat()
+// Método para reingresar a una partida después de una desconexión
+public async Task ReingresarPartida(string gameId, string alias)
+{
+    if (!_gameManager.TryGetGame(gameId, out var game))
     {
-        _logger.LogDebug($"Heartbeat recibido de {Context.ConnectionId}");
-        return Task.CompletedTask;
+        _logger.LogWarning($"🔁 Reingreso fallido: partida {gameId} no existe.");
+        await Clients.Caller.SendAsync("ReceiveError", "No se encontró la partida.");
+        return;
     }
+
+    // Buscar connectionId del jugador reconectado
+    var nuevoConnectionId = Context.ConnectionId;
+
+    // Mapear alias → connectionId nuevamente
+    var match = game.AliasJugadorPorConnectionId
+        .FirstOrDefault(kvp => kvp.Value.Equals(alias, StringComparison.OrdinalIgnoreCase));
+
+    if (match.Key != null)
+    {
+        // Actualizar ConnectionId si cambió
+        if (match.Key != nuevoConnectionId)
+        {
+            game.PlayerConnectionIds.Remove(match.Key);
+            game.PlayerConnectionIds.Add(nuevoConnectionId);
+            game.AliasJugadorPorConnectionId.Remove(match.Key);
+            game.AliasJugadorPorConnectionId[nuevoConnectionId] = alias;
+
+            // Restaurar turno si era suyo
+            if (game.TurnoActualConnectionId == match.Key)
+                game.TurnoActualConnectionId = nuevoConnectionId;
+
+            _logger.LogInformation($"🔁 Jugador '{alias}' reconectado exitosamente a la partida {gameId}.");
+        }
+
+        game.DesconexionDetectada = false;
+        game.JugadorDesconectadoConnectionId = null;
+        game.DesconexionTimestamp = null;
+
+        // Volver a agregar al grupo SignalR
+        await Groups.AddToGroupAsync(nuevoConnectionId, gameId);
+
+        // Enviar estado actualizado al jugador que vuelve
+        await Clients.Client(nuevoConnectionId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
+        {
+            GameId = game.GameId,
+            Palabra = game.GuionesActuales,
+            IntentosRestantes = game.IntentosRestantes,
+            LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+            JuegoTerminado = game.JuegoTerminado,
+            PalabraSecreta = game.PalabraSecreta,
+            TurnoActualConnectionId = game.TurnoActualConnectionId,
+            Message = $"🎉 ¡Bienvenido de nuevo, {alias}!"
+        });
+    }
+    else
+    {
+        _logger.LogWarning($"🔁 Alias '{alias}' no encontrado en la partida {gameId}.");
+        await Clients.Caller.SendAsync("ReceiveError", "Tu alias no coincide con ningún jugador de la partida.");
+    }
+}
+
+
+
+
+        // Método para recibir mensajes de heartbeat del cliente. No necesita hacer nada.
+        public Task SendHeartbeat()
+        {
+            _logger.LogDebug($"Heartbeat recibido de {Context.ConnectionId}");
+            return Task.CompletedTask;
+        }
 
 
 

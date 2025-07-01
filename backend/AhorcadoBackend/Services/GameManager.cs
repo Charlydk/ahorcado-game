@@ -510,20 +510,25 @@ return result;
                     inactivePlayersToDisconnect.Add((game.GameId, connectionIdOfInactivePlayer));
                     // NO AÑADIMOS game.GameId a gamesToCleanDirectly aquí, porque PlayerDisconnected la removerá si es necesario.
                 }
-                // Opcional: Para partidas con 2 jugadores, podríamos querer una lógica de timeout diferente o no limpiarlas así.
-                // else if (game.PlayerConnectionIds.Count == 2 && (now - game.LastActivityTime) > inactivityThreshold)
-                // {
-                //     _logger.LogWarning($"Partida {game.GameId} con 2 jugadores inactivos. Considerar opciones.");
-                //     // Podrías decidir terminar la partida para ambos, o no hacer nada aquí y esperar a la desconexión del hub.
-                // }
-            }
+
+                // Si un jugador se desconectó temporalmente pero no volvió en X segundos
+                else if (game.DesconexionDetectada && game.DesconexionTimestamp.HasValue &&
+                        (now - game.DesconexionTimestamp.Value) > TimeSpan.FromSeconds(40))
+                {
+                    _logger.LogWarning($"🧹 Partida {game.GameId} finalizada por desconexión prolongada.");
+
+                    game.JuegoTerminado = true;
+                    game.Message = "La partida terminó porque un jugador se desconectó durante mucho tiempo.";
+
+                    gamesToCleanDirectly.Add(game.GameId);
+                }
+
+           }
 
             // Primero, manejar las "desconexiones" de jugadores inactivos
             foreach (var (gameId, connectionId) in inactivePlayersToDisconnect)
             {
-                // Llama directamente a PlayerDisconnected. Esta función ya usa _hubContext
-                // para notificar al otro jugador si existe y limpia la partida si es necesario.
-                // No necesitas pasar el gameId, ya que PlayerDisconnected lo encuentra.
+              
                 PlayerDisconnected(connectionId);
             }
 
@@ -538,6 +543,8 @@ return result;
         // --- Nuevo método para cuando un jugador abandona voluntariamente ---
         public void PlayerLeftGame(string gameId, string connectionId)
         {
+            _logger.LogWarning($"⚠️ [PlayerLeftGame] llamado desde LeaveGameGroup() → {connectionId}");
+
             if (_activeGames.TryGetValue(gameId, out var game))
             {
                 _logger.LogInformation($"Cliente {connectionId} abandonó voluntariamente la partida {gameId}."); // <-- LOGGING
@@ -559,18 +566,20 @@ return result;
             if (gameEntry.Value != null)
             {
                 var game = gameEntry.Value;
-                _logger.LogWarning($"Cliente {connectionId} se desconectó de la partida {game.GameId}. Terminando la partida inmediatamente.");
+                _logger.LogWarning($"⛔ Cliente {connectionId} se desconectó de la partida {game.GameId}. Marcando como desconectado temporalmente.");
 
-                // 🔹 Ejecutar lógica de abandono y cierre inmediato
-                RemovePlayerFromGameAndHandleConsequences(
-                    game,
-                    connectionId,
-                    "Tu oponente ha abandonado la partida."
-                );
+                // 🧠 Marcar como desconectado sin finalizar aún
+                game.JugadorDesconectadoConnectionId = connectionId;
+                game.DesconexionDetectada = true;
+                game.DesconexionTimestamp = DateTime.UtcNow;
             }
         }
 
 
+        public bool TryGetGame(string gameId, out JuegoEstado game)
+        {
+            return _activeGames.TryGetValue(gameId, out game);
+        }
 
 
         // --- Método auxiliar para manejar las consecuencias de remover un jugador ---
@@ -604,7 +613,7 @@ return result;
                     TurnoActualConnectionId = game.TurnoActualConnectionId,
                     Message = game.Message
                 });
-                                // _logger.LogInformation($"Partida {game.GameId} removida después de la desconexión del oponente y notificación."); // <-- LOGGING
+                // _logger.LogInformation($"Partida {game.GameId} removida después de la desconexión del oponente y notificación."); // <-- LOGGING
 
                 Console.WriteLine($"Partida {game.GameId}: Notificado al jugador {remainingPlayerConnectionId} sobre la desconexión/abandono del oponente.");
 

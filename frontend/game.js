@@ -64,8 +64,8 @@ let aliasJugadorActual = "";
 
 
 // --- Variables de conexion al backend ---
-//const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
-const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
+const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
+//const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
 
 // --- Variables y Funciones para Heartbeat ---
 // Variable para almacenar el ID del intervalo del heartbeat
@@ -273,8 +273,8 @@ function capturarAliasGlobal() {
 //.withUrl("http://localhost:8080/gamehub") // Para desarrollo local
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",
-    //.withUrl("http://localhost:8080/gamehub",
+    //.withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",
+    .withUrl("http://localhost:8080/gamehub",
     {
     transport: signalR.HttpTransportType.WebSockets, // O cambiar a LongPolling si querés testear
     withCredentials: true
@@ -314,32 +314,22 @@ connection.onclose((error) => {
 
 // Manejar la reconexión automática de SignalR ***
 connection.onreconnected(async () => {
-    console.log("Reconectado a SignalR. Intentando volver al grupo de la partida...");
-
-    if (currentGameId) {
-        try {
-            await connection.invoke("JoinGameGroup", currentGameId);
-            console.log("Reasignado al grupo de SignalR para la partida:", currentGameId);
-        } catch (err) {
-            console.error("Error al volver a unirse al grupo después de reconexión:", err);
-        }
-
-        try {
-            const response = await fetch(`${BACKEND_URL}juego/getGame/${currentGameId}`);
-            if (response.ok) {
-                const data = await response.json();
-                actualizarUIJuego(data);
-            } else {
-                console.warn("No se pudo recuperar la partida tras reconexión. Volviendo al menú.");
-                inicializarUI();
-            }
-        } catch (err) {
-            console.error("Error al recuperar el estado del juego tras reconexión:", err);
-        }
+    console.log("🌀 Nuevo connectionId tras reconexión:", connection.connectionId);
+    console.log("🔁 Reconectado a SignalR. Intentando restaurar sesión de juego...");
+  
+    if (currentGameId && alias) {
+      try {
+        await connection.invoke("ReingresarPartida", currentGameId, alias);
+        console.log("✅ Reconexión lógica completada. Estado solicitado desde el servidor.");
+      } catch (err) {
+        console.error("❌ Error al reingresar a la partida tras reconexión:", err);
+        inicializarUI(); // fallback si no se pudo restaurar
+      }
+    } else {
+      console.warn("⚠️ No hay alias o currentGameId definidos al reconectar.");
     }
-});
-
-
+  });
+  
 
 
 // Escucha eventos del Hub de SignalR
@@ -742,84 +732,69 @@ async function crearNuevaPartidaOnline() {
 }
 
 // --- Lógica para Unirse a Partida Online ---
+
 async function unirseAPartidaOnline(gameId) {
     try {
-        const connectionId = connection.connectionId;
-        if (!connectionId) {
-            mostrarMensajeAlerta(mensajeIdPartida, "Error: No tienes una conexión activa.", 'danger');
-            return;
-        }
-
-        const alias = document.getElementById("aliasInput").value.trim();
-        if (!alias) {
-            mostrarMensajeAlerta(mensajeIdPartida, "Por favor ingresá tu alias antes de unirte.", 'warning');
-            return;
-        }
-
-        aliasJugadorActual = alias; // ✅ ¡Asignamos el alias global acá!
-
-        console.log(`J2: Intentando unirse a partidaQQQQQQQ ${gameId} comoXXXXXXXXXXXXX ${aliasJugadorActual} con connectionId ${connectionId}`);
-
-        inputIdPartida.disabled = true;
-        botonCrearPartida.disabled = true;
-        botonUnirsePartida.disabled = true;
-        mostrarMensajeAlerta(mensajeIdPartida, "Uniéndose a la partida...", 'info');
-        inputIdPartida.readOnly = true;
-
-        currentGameId = gameId;
-        currentMode = "online";
-
-        const responseGame = await fetch(`${BACKEND_URL}juego/getGame/${gameId}`);
-        if (responseGame.ok) {
-            const gameData = await responseGame.json();
-            if (Array.isArray(gameData?.playerConnectionIds) && gameData.playerConnectionIds.includes(connectionId)) {
-                console.log("Jugador ya estaba en la partida, intentando reiniciar su sesión...");
-                await connection.invoke("LeaveGameGroup", gameId);
-            }
-        }
-
-        await connection.invoke("JoinGameGroup", gameId);
-        console.log(`Jugador ${connectionId} unido correctamente al grupo SignalR: ${gameId}`);
-
-        const response = await fetch(`${BACKEND_URL}juego/unirse-online`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                gameId: gameId,
-                playerConnectionId: connectionId,
-                alias: aliasJugadorActual // 👈 ahora sí, con valor real
-            }),
-            credentials: 'include'
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ message: "Error desconocido del servidor." }));
-            throw new Error(errorData.message || `Error desconocido: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log("J2: Respuesta de unirse-online (HTTP):", data);
-
-        mostrarMensajeAlerta(mensajeIdPartida, `¡Te has unido a la partida ${gameId} exitosamente!`, 'success', true);
-
-        ocultarTodasLasSecciones();
-        mostrarSeccion(seccionJuego);
-        actualizarUIJuego(data);
-
-        inputIdPartida.value = "";
-        ocultarMensajeAlerta(mensajeIdPartida);
-
+      const connectionId = connection.connectionId;
+      const alias = document.getElementById("aliasInput").value.trim();
+  
+      if (!connectionId) {
+        mostrarMensajeAlerta(mensajeIdPartida, "Error: No tienes una conexión activa.", 'danger');
+        return;
+      }
+  
+      if (!alias) {
+        mostrarMensajeAlerta(mensajeIdPartida, "Por favor ingresá tu alias antes de unirte.", 'warning');
+        return;
+      }
+  
+      aliasJugadorActual = alias;
+      currentGameId = gameId;
+      currentMode = "online";
+  
+      inputIdPartida.disabled = true;
+      botonCrearPartida.disabled = true;
+      botonUnirsePartida.disabled = true;
+      inputIdPartida.readOnly = true;
+      mostrarMensajeAlerta(mensajeIdPartida, "Uniéndose a la partida...", 'info');
+  
+      console.log(`🔑 Enviando solicitud de entrada inteligente: ${alias} → ${connectionId}`);
+  
+      const response = await fetch(`${BACKEND_URL}juego/entrada-inteligente`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gameId: gameId,
+          playerConnectionId: connectionId,
+          alias: aliasJugadorActual
+        }),
+        credentials: 'include'
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ message: "Error desconocido del servidor." }));
+        throw new Error(errorData.message || `Error desconocido: ${response.status} ${response.statusText}`);
+      }
+  
+      const data = await response.json();
+      console.log("🟢 Respuesta del backend:", data);
+  
+      mostrarMensajeAlerta(mensajeIdPartida, data.message || "Ingreso exitoso a la partida", 'success', true);
+      ocultarTodasLasSecciones();
+      mostrarSeccion(seccionJuego);
+      actualizarUIJuego(data);
+  
+      inputIdPartida.value = "";
+      ocultarMensajeAlerta(mensajeIdPartida);
+  
     } catch (error) {
-        console.error("Error al unirse a partida online:", error);
-        mostrarMensajeAlerta(mensajeIdPartida, `Error al unirse: ${error.message}`, 'danger');
-        restaurarSeccionOnlineUI();
-        
-        if (esEscritorio()) {
-            inputIdPartida.focus();
-          }
-
+      console.error("⛔ Error en entrada inteligente:", error);
+      mostrarMensajeAlerta(mensajeIdPartida, `Error: ${error.message}`, 'danger');
+      restaurarSeccionOnlineUI();
+      if (esEscritorio()) inputIdPartida.focus();
     }
-}
+  }
+  
 
 
 
@@ -955,6 +930,7 @@ async function abandonarPartidaOnline() {
             console.log(`Intentando abandonar partida online ${currentGameId}...`);
             // Llama a un endpoint de tu backend o a un método de SignalR para notificar
             // Opción 1: Llamar a un método de SignalR (más directo para el Hub)
+console.trace("🧃 LeaveGameGroup invocado");
             await connection.invoke("LeaveGameGroup", currentGameId); 
             console.log(`Abandonado el grupo SignalR para la partida: ${currentGameId}`);
                      
@@ -1240,6 +1216,7 @@ botonVolverAlMenu.addEventListener("click", function () {
     }).then(async (result) => {
         if (result.isConfirmed) {
             if (currentGameId && currentMode === "online") {
+                console.trace("🧃 LeaveGameGroup invocado");
                 await connection.invoke("LeaveGameGroup", currentGameId);
             }
 

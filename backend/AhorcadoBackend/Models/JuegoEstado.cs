@@ -19,6 +19,9 @@ namespace AhorcadoBackend.Models
         public DateTime LastActivityTime { get; set; } = DateTime.UtcNow; // Para la limpieza de partidas
         public string Message { get; set; } = string.Empty; // Mensaje para el cliente, por ejemplo, "Letra procesada", "Juego terminado", etc.
         public Dictionary<string, string> AliasJugadorPorConnectionId { get; set; } = new();// Para mapear ConnectionId a alias de jugador
+        public string? JugadorDesconectadoConnectionId { get; set; }
+        public bool DesconexionDetectada { get; set; } = false;
+        public DateTime? DesconexionTimestamp { get; set; }
 
 
 
