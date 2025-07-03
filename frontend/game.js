@@ -986,26 +986,32 @@ async function reiniciarJuego() {
     }
 
 
-    const modalRanking = document.getElementById("modalRanking");
-    modalRanking.addEventListener("shown.bs.modal", cargarRankingEnTabla);
 
-    async function cargarRankingEnTabla() {
-        const response = await fetch(`${BACKEND_URL}juego/ranking`);
-        const data = await response.json();
+    
+        const modalRanking = document.getElementById("modalRanking");
+        modalRanking.addEventListener("shown.bs.modal", cargarRankingEnTabla);
 
-        const tbody = document.getElementById("tablaRankingBody");
-        tbody.innerHTML = "";
+        async function cargarRankingEnTabla() {
+            const response = await fetch(`${BACKEND_URL}juego/ranking`);
+            const data = await response.json();
 
-        data.forEach((jugador, i) => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-            <td>${i + 1} ${i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : ""}</td>
-            <td>${jugador.alias}</td>
-            <td>${jugador.victorias}</td>
-            `;
+            const tbody = document.getElementById("tablaRankingBody");
+            tbody.innerHTML = "";
+
+            const medallas = ["🥇", "🥈", "🥉"];
+
+            data.forEach((jugador, i) => {
+                const icono = medallas[i] || `${i + 1}°`;
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                <td>${icono}</td>
+                <td>${jugador.alias}</td>
+                <td>${jugador.victorias}</td>
+                `;
             tbody.appendChild(tr);
         });
     }
+
 
     async function mostrarRankingHorizontal() {
         try {
@@ -1019,7 +1025,8 @@ async function reiniciarJuego() {
             .join(" • ");
       
           const scrollContainer = document.getElementById("scrollRanking");
-          scrollContainer.textContent = `🏆 RANKING: ${rankingTexto} 🏆`;
+          const frase = `🏆 RANKING: ${rankingTexto} 🏆`;
+          scrollContainer.innerHTML = `${frase}&nbsp;&nbsp;&nbsp;&nbsp;${frase}`;
       
           document.getElementById("rankingHorizontal").classList.remove("d-none");
         } catch (err) {

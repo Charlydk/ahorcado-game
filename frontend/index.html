@@ -65,11 +65,16 @@
                 <i class="bi bi-trophy-fill"></i> Ver Ranking
               </button>
               
-              <div class="container" >
-                <div id="rankingHorizontal" class="ranking-marquesina bg-dark text-warning fw-bold py-2 px-4 d-none">
+              <div class="container">
+                <div id="rankingHorizontal" class="ranking-marquesina position-relative">
+                  <div class="scroll-wrapper">
                     <div id="scrollRanking" class="scroll-text"></div>
+                  </div>
+                </div>
+                <div id="rankingTicker" class="text-center pulse-text mt-2">🔥 ACTUALIZADO EN TIEMPO REAL</div>
               </div>
-            </div>
+              
+              
           
         </section>
 
@@ -146,7 +151,9 @@
             <div class="modal-dialog modal-lg modal-dialog-centered">
               <div class="modal-content">
                 <div class="modal-header">
-                  <h5 class="modal-title" id="rankingLabel">🏆 Ranking de Jugadores</h5>
+                    <h5 class="modal-title w-100 text-center text-uppercase fw-bold">
+                        🏆 Ranking Oficial de Jugadores 🏆
+                      </h5>
                   <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
