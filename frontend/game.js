@@ -1021,7 +1021,7 @@ async function reiniciarJuego() {
           if (data.length === 0) return;
       
           const rankingTexto = data
-            .map((j, i) => `${i + 1}° ${j.alias} (${j.victorias})`)
+            .map((j, i) => `${i + 1}° ${j.alias}`)
             .join(" • ");
       
           const scrollContainer = document.getElementById("scrollRanking");
