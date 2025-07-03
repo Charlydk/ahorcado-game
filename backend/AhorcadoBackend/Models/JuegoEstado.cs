@@ -22,6 +22,7 @@ namespace AhorcadoBackend.Models
         public string? JugadorDesconectadoConnectionId { get; set; }
         public bool DesconexionDetectada { get; set; } = false;
         public DateTime? DesconexionTimestamp { get; set; }
+        public string CodigoSala { get; set; } = string.Empty;
 
 
 

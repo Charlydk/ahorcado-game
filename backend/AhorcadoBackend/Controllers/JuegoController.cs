@@ -247,6 +247,7 @@ namespace AhorcadoBackend.Controllers
             return Ok(new JuegoEstadoResponse
             {
                 GameId = game.GameId,
+                CodigoSala = game.CodigoSala,
                 Palabra = game.GuionesActuales,
                 IntentosRestantes = game.IntentosRestantes,
                 LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
@@ -429,7 +430,25 @@ namespace AhorcadoBackend.Controllers
             return Ok(estadoNuevo);
         }
 
+        [HttpGet("buscar-por-codigo/{codigoSala}")]
+            public IActionResult BuscarPorCodigoSala(string codigoSala)
+            {
+                if (string.IsNullOrWhiteSpace(codigoSala))
+                    return BadRequest(new { message = "El código de sala no puede estar vacío." });
 
+                var game = _gameManager.GetAllGames()
+                    .FirstOrDefault(g => g.CodigoSala.Equals(codigoSala, StringComparison.OrdinalIgnoreCase));
+
+                if (game == null)
+                    return NotFound(new { message = $"No se encontró ninguna partida con el código '{codigoSala}'." });
+
+                return Ok(new JuegoEstadoResponse
+                {
+                    GameId = game.GameId,
+                    CodigoSala = game.CodigoSala,
+                    Jugadores = game.AliasJugadorPorConnectionId.Values.ToList()
+                });
+            }
 
 
     }

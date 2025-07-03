@@ -44,6 +44,10 @@ namespace AhorcadoBackend.Services
             };
         }
 
+        public IEnumerable<JuegoEstado> GetAllGames()
+        {
+            return _activeGames.Values;
+        }
 
         private string GenerarPalabraAleatoria()
         {
@@ -62,6 +66,13 @@ namespace AhorcadoBackend.Services
             _random = new Random();
         }
 
+        private static string GenerarCodigoSala(int longitud = 4)
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, longitud)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
 
 
         // Crea una nueva partida y la añade al diccionario
@@ -69,6 +80,7 @@ namespace AhorcadoBackend.Services
         public JuegoEstado CreateNewGame(string? palabraSecreta = null, string? creatorConnectionId = null, string? gameId = null, string? aliasCreador = null)
         {
 
+            
             string newGameId = gameId ?? Guid.NewGuid().ToString();
             _logger.LogInformation($"🧩 Partida {newGameId} registrada en memoria en instancia: {GetHashCode()}");
 
@@ -89,7 +101,8 @@ namespace AhorcadoBackend.Services
                 IntentosRestantes = 6,
                 JuegoTerminado = false,
                 PlayerConnectionIds = new List<string>(), // Asegúrate de inicializar la lista
-                LastActivityTime = DateTime.UtcNow // Establece la hora de creación como última actividad
+                LastActivityTime = DateTime.UtcNow,
+                CodigoSala = GenerarCodigoSala(4)
             };
 
             // Si se proporciona un ConnectionId al crear, añádelo
@@ -605,6 +618,7 @@ return result;
                 _hubContext.Clients.Client(remainingPlayerConnectionId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
                 {
                     GameId = game.GameId,
+                    CodigoSala = game.CodigoSala,
                     Palabra = game.GuionesActuales, // Mostrar el estado actual de la palabra
                     IntentosRestantes = game.IntentosRestantes,
                     LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),

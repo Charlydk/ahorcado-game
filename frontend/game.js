@@ -64,8 +64,8 @@ let aliasJugadorActual = "";
 
 
 // --- Variables de conexion al backend ---
-//const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
-const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
+const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
+//const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
 
 // --- Variables y Funciones para Heartbeat ---
 // Variable para almacenar el ID del intervalo del heartbeat
@@ -273,8 +273,8 @@ function capturarAliasGlobal() {
 //.withUrl("http://localhost:8080/gamehub") // Para desarrollo local
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",
-    //.withUrl("http://localhost:8080/gamehub",
+    //.withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",
+    .withUrl("http://localhost:8080/gamehub",
     {
     transport: signalR.HttpTransportType.WebSockets, // O cambiar a LongPolling si querés testear
     withCredentials: true
@@ -662,28 +662,36 @@ async function crearNuevaPartidaOnline() {
 
         const data = await response.json();
         const gameId = data.gameId;
+        const codigoSala = data.codigoSala;
 
         currentGameId = gameId;
         currentMode = "online";
 
         console.log("J1: Partida creada. currentGameId:", currentGameId, "currentMode:", currentMode);
 
+        console.log("🧪 Respuesta completa del backend:", data);
+
         await connection.invoke("JoinGameGroup", gameId);
-        console.log(`Creador (${connection.connectionId}) unido al grupo de SignalR para la partida: ${gameId}`);
+            console.log(`Creador (${connection.connectionId}) unido al grupo SignalR de la partida: ${gameId}`);
+            console.log(`Creador (${alias}) ha creado la partida con ID: ${gameId} y código de sala: ${codigoSala}`);
+            
 
-        mostrarMensajeAlerta(mensajeIdPartida, "¡Partida creada! Comparte este ID:", 'success');
-        displayGameId.textContent = gameId;
-        mostrarSeccion(contenedorGameId);
+            // Mostramos el código legible en pantalla
+            mostrarMensajeAlerta(mensajeIdPartida, `¡Partida creada! Comparte este código: <strong>${codigoSala}</strong>`, 'success');
+            displayGameId.textContent = `🔡 Código: ${codigoSala}`;
+            mostrarSeccion(contenedorGameId);
 
-        botonCopiarId.onclick = async () => {
+            // Botón "Copiar ID" ahora copia el código de sala, no el GUID
+            botonCopiarId.onclick = async () => {
             try {
-                await navigator.clipboard.writeText(gameId);
-                mostrarMensajeAlerta(mensajeIdPartida, `ID '${gameId}' copiado. ¡Compártelo!`, 'success');
+                await navigator.clipboard.writeText(codigoSala);
+                mostrarMensajeAlerta(mensajeIdPartida, `📋 Código '${codigoSala}' copiado. ¡Compártelo!`, 'success');
             } catch (err) {
-                console.error('Error al copiar el ID:', err);
-                mostrarMensajeAlerta(mensajeIdPartida, `No se pudo copiar. Copia manualmente: ${gameId}`, 'warning');
+                console.error('Error al copiar el código:', err);
+                mostrarMensajeAlerta(mensajeIdPartida, `No se pudo copiar. Copia manualmente: ${codigoSala}`, 'warning');
             }
         };
+        
 
         let botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
         if (!botonIrAlJuego) {
@@ -732,6 +740,35 @@ async function crearNuevaPartidaOnline() {
 }
 
 // --- Lógica para Unirse a Partida Online ---
+
+document.getElementById("unirsePartida").addEventListener("click", async () => {
+    const input = document.getElementById("inputIdPartida").value.trim().toUpperCase();
+  
+    if (!input) {
+      mostrarMensajeAlerta(mensajeIdPartida, "Por favor ingresá un código o ID de partida.", "warning");
+      return;
+    }
+  
+    // 🔤 Si parece código corto (ej: 4 letras/números)
+    if (input.length === 4 && /^[A-Z0-9]+$/.test(input)) {
+      try {
+        mostrarMensajeAlerta(mensajeIdPartida, "🔍 Buscando partida...", "info");
+  
+        const response = await fetch(`${BACKEND_URL}juego/buscar-por-codigo/${input}`);
+        if (!response.ok) throw new Error("No se encontró ninguna partida con ese código.");
+  
+        const data = await response.json();
+        await unirseAPartidaOnline(data.gameId);
+      } catch (error) {
+        mostrarMensajeAlerta(mensajeIdPartida, `⚠️ ${error.message}`, "danger");
+      }
+      return;
+    }
+  
+    // 🔑 Si es un GameId largo, lo usamos directamente
+    await unirseAPartidaOnline(input);
+  });
+  
 
 async function unirseAPartidaOnline(gameId) {
     try {

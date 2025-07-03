@@ -13,6 +13,9 @@
 
         // ✅ NUEVO: Incluimos los IDs de conexión de los jugadores para que el frontend pueda usarlos
         public List<string>? PlayerConnectionIds { get; set; }
+        public string CodigoSala { get; set; }
+        public List<string> Jugadores { get; set; }
+
     }
 }
 
