@@ -431,24 +431,112 @@ namespace AhorcadoBackend.Controllers
         }
 
         [HttpGet("buscar-por-codigo/{codigoSala}")]
-            public IActionResult BuscarPorCodigoSala(string codigoSala)
+        public IActionResult BuscarPorCodigoSala(string codigoSala)
+        {
+            if (string.IsNullOrWhiteSpace(codigoSala))
+                return BadRequest(new { message = "El código de sala no puede estar vacío." });
+
+            var game = _gameManager.GetAllGames()
+                .FirstOrDefault(g => g.CodigoSala.Equals(codigoSala, StringComparison.OrdinalIgnoreCase));
+
+            if (game == null)
+                return NotFound(new { message = $"No se encontró ninguna partida con el código '{codigoSala}'." });
+
+            return Ok(new JuegoEstadoResponse
             {
-                if (string.IsNullOrWhiteSpace(codigoSala))
-                    return BadRequest(new { message = "El código de sala no puede estar vacío." });
+                GameId = game.GameId,
+                CodigoSala = game.CodigoSala,
+                Jugadores = game.AliasJugadorPorConnectionId.Values.ToList()
+            });
+        }
 
-                var game = _gameManager.GetAllGames()
-                    .FirstOrDefault(g => g.CodigoSala.Equals(codigoSala, StringComparison.OrdinalIgnoreCase));
 
-                if (game == null)
-                    return NotFound(new { message = $"No se encontró ninguna partida con el código '{codigoSala}'." });
+        [HttpGet("ranking")]
+        public async Task<IActionResult> ObtenerRanking()
+        {
+            var partidasGanadas = await _dbContext.Partidas
+                .Where(p => p.FueVictoria)
+                .ToListAsync();
 
-                return Ok(new JuegoEstadoResponse
+            var registros = new List<(string Alias, int Puntos)>();
+
+            foreach (var p in partidasGanadas)
+            {
+                if (p.EsOnline)
                 {
-                    GameId = game.GameId,
-                    CodigoSala = game.CodigoSala,
-                    Jugadores = game.AliasJugadorPorConnectionId.Values.ToList()
-                });
+                    if (!string.IsNullOrWhiteSpace(p.AliasJugador))
+                        registros.Add((p.AliasJugador, 1));
+                    if (!string.IsNullOrWhiteSpace(p.AliasJugador2))
+                        registros.Add((p.AliasJugador2, 1));
+                }
+                else if (!string.IsNullOrWhiteSpace(p.AliasJugador2)) // Versus
+                {
+                    registros.Add((p.AliasJugador2, 1));
+                }
+                else if (!string.IsNullOrWhiteSpace(p.AliasJugador)) // Solitario
+                {
+                    registros.Add((p.AliasJugador, 1));
+                }
             }
+
+            var ranking = registros
+                .GroupBy(r => r.Alias)
+                .Select(g => new
+                {
+                    Alias = g.Key,
+                    Victorias = g.Count()
+                })
+                .OrderByDescending(r => r.Victorias)
+                .ToList();
+
+            return Ok(ranking);
+        }
+
+        [HttpGet("estadisticas/{alias}")]
+        public async Task<IActionResult> ObtenerEstadisticas(string alias)
+        {
+            var partidas = await _dbContext.Partidas
+                .Where(p => p.AliasJugador == alias || p.AliasJugador2 == alias)
+                .ToListAsync();
+
+            int total = partidas.Count;
+            int victorias = 0;
+
+            foreach (var p in partidas)
+            {
+                if (!p.FueVictoria) continue;
+
+                if (p.EsOnline)
+                {
+                    if (p.AliasJugador == alias || p.AliasJugador2 == alias)
+                        victorias++;
+                }
+                else if (p.AliasJugador == alias && p.AliasJugador2 == null)
+                {
+                    victorias++; // solitario
+                }
+                else if (p.AliasJugador2 == alias)
+                {
+                    victorias++; // versus
+                }
+            }
+
+            int derrotas = total - victorias;
+            double winrate = total > 0 ? Math.Round((double)victorias / total * 100, 1) : 0;
+
+            var ultima = partidas.OrderByDescending(p => p.Fecha).FirstOrDefault()?.Fecha;
+
+            return Ok(new
+            {
+                Alias = alias,
+                TotalJugadas = total,
+                Victorias = victorias,
+                Derrotas = derrotas,
+                Winrate = winrate,
+                UltimaPartida = ultima
+            });
+        }
+
 
 
     }
