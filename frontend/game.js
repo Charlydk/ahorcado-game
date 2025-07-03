@@ -63,9 +63,10 @@ let juegoTerminadoManualmente = false;
 let aliasJugadorActual = "";
 
 
+
 // --- Variables de conexion al backend ---
-//const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
-const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
+const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
+//const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
 
 // --- Variables y Funciones para Heartbeat ---
 // Variable para almacenar el ID del intervalo del heartbeat
@@ -103,6 +104,7 @@ function stopHeartbeat() {
     console.log("Heartbeat detenido.");
 }
 
+mostrarRankingHorizontal();
 
 // --- Funcionalidades de utilidad ---
 
@@ -273,8 +275,8 @@ function capturarAliasGlobal() {
 //.withUrl("http://localhost:8080/gamehub") // Para desarrollo local
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",
-    //.withUrl("http://localhost:8080/gamehub",
+    //.withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",
+    .withUrl("http://localhost:8080/gamehub",
     {
     transport: signalR.HttpTransportType.WebSockets, // O cambiar a LongPolling si querés testear
     withCredentials: true
@@ -960,26 +962,71 @@ async function reiniciarJuego() {
     }
 }
 
-async function abandonarPartidaOnline() {
-    finalizandoJuego = false;
-    if (currentMode === 'online' && currentGameId && connection.state === signalR.HubConnectionState.Connected) {
-        try {
-            console.log(`Intentando abandonar partida online ${currentGameId}...`);
-            // Llama a un endpoint de tu backend o a un método de SignalR para notificar
-            // Opción 1: Llamar a un método de SignalR (más directo para el Hub)
-console.trace("🧃 LeaveGameGroup invocado");
-            await connection.invoke("LeaveGameGroup", currentGameId); 
-            console.log(`Abandonado el grupo SignalR para la partida: ${currentGameId}`);
-                     
+    async function abandonarPartidaOnline() 
+    {
+        finalizandoJuego = false;
+        if (currentMode === 'online' && currentGameId && connection.state === signalR.HubConnectionState.Connected) 
+    {
+            try {
+                console.log(`Intentando abandonar partida online ${currentGameId}...`);
+                // Llama a un endpoint de tu backend o a un método de SignalR para notificar
+                // Opción 1: Llamar a un método de SignalR (más directo para el Hub)
+                console.trace("🧃 LeaveGameGroup invocado");
+                await connection.invoke("LeaveGameGroup", currentGameId); 
+                console.log(`Abandonado el grupo SignalR para la partida: ${currentGameId}`);
+                         
 
-        } catch (error) {
-            console.error("Error al intentar abandonar la partida online:", error);
-            // No bloqueamos al usuario por este error, ya que lo importante es que abandone localmente.
-        }
-    }
-    // Siempre limpiar el estado local después de intentar notificar al backend
-    limpiarEstadoGlobalDeJuego();
-}
+            } catch (error) {
+                console.error("Error al intentar abandonar la partida online:", error);
+                // No bloqueamos al usuario por este error, ya que lo importante es que abandone localmente.
+            }
+        }
+        // Siempre limpiar el estado local después de intentar notificar al backend
+        limpiarEstadoGlobalDeJuego();
+    }
+
+
+    const modalRanking = document.getElementById("modalRanking");
+    modalRanking.addEventListener("shown.bs.modal", cargarRankingEnTabla);
+
+    async function cargarRankingEnTabla() {
+        const response = await fetch(`${BACKEND_URL}juego/ranking`);
+        const data = await response.json();
+
+        const tbody = document.getElementById("tablaRankingBody");
+        tbody.innerHTML = "";
+
+        data.forEach((jugador, i) => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+            <td>${i + 1} ${i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : ""}</td>
+            <td>${jugador.alias}</td>
+            <td>${jugador.victorias}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    async function mostrarRankingHorizontal() {
+        try {
+          const response = await fetch(`${BACKEND_URL}juego/ranking`);
+          const data = await response.json();
+      
+          if (data.length === 0) return;
+      
+          const rankingTexto = data
+            .map((j, i) => `${i + 1}° ${j.alias} (${j.victorias})`)
+            .join(" • ");
+      
+          const scrollContainer = document.getElementById("scrollRanking");
+          scrollContainer.textContent = `🏆 RANKING: ${rankingTexto} 🏆`;
+      
+          document.getElementById("rankingHorizontal").classList.remove("d-none");
+        } catch (err) {
+          console.error("⛔ Error al mostrar ranking horizontal:", err);
+        }
+      }
+
 
 
 // --- Event Listeners de Botones ---
