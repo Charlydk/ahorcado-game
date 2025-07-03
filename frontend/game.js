@@ -65,8 +65,8 @@ let aliasJugadorActual = "";
 
 
 // --- Variables de conexion al backend ---
-const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
-//const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
+//const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
+const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
 
 // --- Variables y Funciones para Heartbeat ---
 // Variable para almacenar el ID del intervalo del heartbeat
@@ -275,8 +275,8 @@ function capturarAliasGlobal() {
 //.withUrl("http://localhost:8080/gamehub") // Para desarrollo local
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-    //.withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",
-    .withUrl("http://localhost:8080/gamehub",
+    .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",
+    //.withUrl("http://localhost:8080/gamehub",
     {
     transport: signalR.HttpTransportType.WebSockets, // O cambiar a LongPolling si querés testear
     withCredentials: true
