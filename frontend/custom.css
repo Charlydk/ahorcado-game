@@ -469,6 +469,16 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     font-weight: bold;
     font-size: 1.1rem;
   }
+
+  #modalRanking td:nth-child(5) {
+    font-weight: bold;
+    color: #28a745;
+  }
+  
+  #modalRanking td:nth-child(6) {
+    opacity: 0.8;
+    font-size: 0.95rem;
+  }
   
 
 .ranking-marquesina {

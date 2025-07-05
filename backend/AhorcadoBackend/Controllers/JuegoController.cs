@@ -451,46 +451,52 @@ namespace AhorcadoBackend.Controllers
         }
 
 
-        [HttpGet("ranking")]
+       [HttpGet("ranking")]
         public async Task<IActionResult> ObtenerRanking()
         {
-            var partidasGanadas = await _dbContext.Partidas
-                .Where(p => p.FueVictoria)
-                .ToListAsync();
+            var partidas = await _dbContext.Partidas.ToListAsync();
 
-            var registros = new List<(string Alias, int Puntos)>();
+            var eventos = new List<(string Alias, bool Gano)>();
 
-            foreach (var p in partidasGanadas)
+            foreach (var p in partidas)
             {
-                if (p.EsOnline)
+                // Solitario
+                if (p.AliasJugador2 == null && !string.IsNullOrWhiteSpace(p.AliasJugador))
+                {
+                    eventos.Add((p.AliasJugador, p.FueVictoria));
+                }
+                // Versus
+                else if (!string.IsNullOrWhiteSpace(p.AliasJugador) && !string.IsNullOrWhiteSpace(p.AliasJugador2))
+                {
+                    eventos.Add((p.AliasJugador, false)); // siempre pierde jugador 1 en versus
+                    eventos.Add((p.AliasJugador2, p.FueVictoria)); // jugador 2 gana si fue victoria
+                }
+                // Online cooperativo
+                else if (p.EsOnline)
                 {
                     if (!string.IsNullOrWhiteSpace(p.AliasJugador))
-                        registros.Add((p.AliasJugador, 1));
+                        eventos.Add((p.AliasJugador, p.FueVictoria));
                     if (!string.IsNullOrWhiteSpace(p.AliasJugador2))
-                        registros.Add((p.AliasJugador2, 1));
-                }
-                else if (!string.IsNullOrWhiteSpace(p.AliasJugador2)) // Versus
-                {
-                    registros.Add((p.AliasJugador2, 1));
-                }
-                else if (!string.IsNullOrWhiteSpace(p.AliasJugador)) // Solitario
-                {
-                    registros.Add((p.AliasJugador, 1));
+                        eventos.Add((p.AliasJugador2, p.FueVictoria));
                 }
             }
 
-            var ranking = registros
-                .GroupBy(r => r.Alias)
+            var ranking = eventos
+                .GroupBy(e => e.Alias)
                 .Select(g => new
                 {
                     Alias = g.Key,
-                    Victorias = g.Count()
+                    Total = g.Count(),
+                    Victorias = g.Count(x => x.Gano),
+                    Derrotas = g.Count(x => !x.Gano),
+                    Winrate = g.Any() ? Math.Round(g.Count(x => x.Gano) * 100.0 / g.Count(), 1) : 0
                 })
-                .OrderByDescending(r => r.Victorias)
+                .OrderByDescending(g => g.Victorias)
                 .ToList();
 
             return Ok(ranking);
-        }
+}
+
 
         [HttpGet("estadisticas/{alias}")]
         public async Task<IActionResult> ObtenerEstadisticas(string alias)

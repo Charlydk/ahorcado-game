@@ -65,8 +65,8 @@ let aliasJugadorActual = "";
 
 
 // --- Variables de conexion al backend ---
-//const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
-const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
+const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
+//const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
 
 // --- Variables y Funciones para Heartbeat ---
 // Variable para almacenar el ID del intervalo del heartbeat
@@ -272,13 +272,13 @@ function capturarAliasGlobal() {
 }
 
 
-//.withUrl("http://localhost:8080/gamehub") // Para desarrollo local
+
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",
-    //.withUrl("http://localhost:8080/gamehub",
+    //.withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",  // URL de producción
+    .withUrl("http://localhost:8080/gamehub",  // URL de desarrollo
     {
-    transport: signalR.HttpTransportType.WebSockets, // O cambiar a LongPolling si querés testear
+    transport: signalR.HttpTransportType.WebSockets,
     withCredentials: true
   })
     .withAutomaticReconnect({
@@ -992,47 +992,55 @@ async function reiniciarJuego() {
         modalRanking.addEventListener("shown.bs.modal", cargarRankingEnTabla);
 
         async function cargarRankingEnTabla() {
-            const response = await fetch(`${BACKEND_URL}juego/ranking`);
-            const data = await response.json();
-
-            const tbody = document.getElementById("tablaRankingBody");
-            tbody.innerHTML = "";
-
-            const medallas = ["🥇", "🥈", "🥉"];
-
-            data.forEach((jugador, i) => {
+            try {
+              const response = await fetch(`${BACKEND_URL}juego/ranking`);
+              const data = await response.json();
+          
+              const tbody = document.getElementById("tablaRankingBody");
+              tbody.innerHTML = "";
+          
+              const medallas = ["🥇", "🥈", "🥉"];
+          
+              data.forEach((jugador, i) => {
                 const icono = medallas[i] || `${i + 1}°`;
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                <td>${icono}</td>
-                <td>${jugador.alias}</td>
-                <td>${jugador.victorias}</td>
+                  <td>${icono}</td>
+                  <td>${jugador.alias}</td>
+                  <td>${jugador.victorias}</td>
+                  <td>${jugador.derrotas}</td>
+                  <td>${jugador.winrate}%</td>
+                  <td>${jugador.total}</td>
                 `;
-            tbody.appendChild(tr);
-        });
-    }
-
-
-    async function mostrarRankingHorizontal() {
-        try {
-          const response = await fetch(`${BACKEND_URL}juego/ranking`);
-          const data = await response.json();
-      
-          if (data.length === 0) return;
-      
-          const rankingTexto = data
-            .map((j, i) => `${i + 1}° ${j.alias}`)
-            .join(" • ");
-      
-          const scrollContainer = document.getElementById("scrollRanking");
-          const frase = `🏆 RANKING: ${rankingTexto} 🏆`;
-          scrollContainer.innerHTML = `${frase}&nbsp;&nbsp;&nbsp;&nbsp;${frase}`;
-      
-          document.getElementById("rankingHorizontal").classList.remove("d-none");
-        } catch (err) {
-          console.error("⛔ Error al mostrar ranking horizontal:", err);
+                tbody.appendChild(tr);
+              });
+            } catch (err) {
+              console.error("⛔ Error al cargar el ranking:", err);
+              alert("No se pudo cargar el ranking. Intentalo más tarde.");
+            }
         }
-      }
+          
+
+        async function mostrarRankingHorizontal() {
+            try {
+            const response = await fetch(`${BACKEND_URL}juego/ranking`);
+            const data = await response.json();
+        
+            if (data.length === 0) return;
+        
+            const rankingTexto = data
+                .map((j, i) => `${i + 1}° ${j.alias}`)
+                .join(" • ");
+        
+            const scrollContainer = document.getElementById("scrollRanking");
+            const frase = `🏆 RANKING: ${rankingTexto} 🏆`;
+            scrollContainer.innerHTML = `${frase}&nbsp;&nbsp;&nbsp;&nbsp;${frase}`;
+        
+            document.getElementById("rankingHorizontal").classList.remove("d-none");
+            } catch (err) {
+            console.error("⛔ Error al mostrar ranking horizontal:", err);
+            }
+        }
 
 
 
