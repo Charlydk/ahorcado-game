@@ -106,23 +106,25 @@
                 <use xlink:href="#s-text" class="titulo-final-con-efectos"></use>
             </svg>
 
-            <div class="mb-3">
-                <label for="aliasInput" class="form-label">Ingresa tu alias:</label>
-                <input type="text" id="aliasInput" class="form-control" placeholder="Ej: CharlyDK">
-            </div>
-
-            <div id="mensajeAlias" class="alert alert-warning d-none mt-3" role="alert">
+            <div class="mb-4 w-75 mx-auto">
+              <label for="aliasInput" class="form-label text-warning fw-bold">Ingresa tu alias:</label>
+              <input type="text" id="aliasInput" class="form-control alias-estilizado" placeholder="Ej: CharlyDK">
+              <div id="mensajeAlias" class="alert alert-warning d-none mt-3" role="alert">
                 ⚠️ Por favor, ingresá tu alias antes de continuar.
-            </div>
+              </div>
               
-            <div class="mb-3">
-              <label for="selectorDificultad" class="form-label">Dificultad:</label>
-              <select id="selectorDificultad" class="form-select w-auto">
+
+            </div>
+            
+            <div class="mb-4 w-75 mx-auto">
+              <label for="selectorDificultad" class="form-label text-info fw-bold">Dificultad:</label>
+              <select id="selectorDificultad" class="form-select w-100">
                 <option value="6">Normal (6 intentos)</option>
                 <option value="8">Fácil (8 intentos)</option>
                 <option value="4">Difícil (4 intentos)</option>
               </select>
             </div>
+            
 
             <button id="botonInicio" class="btn btn-primary btn-lg mt-4">Iniciar Juego</button>
 

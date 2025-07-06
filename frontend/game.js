@@ -1067,7 +1067,20 @@ if (botonInicio) {
       }
   
       // Si hay alias, ocultamos mensaje por si estaba visible antes
-      mensajeAlias.classList.add("d-none");
+      if (!alias) {
+        if (mensajeAlias) {
+          mensajeAlias.classList.remove("d-none");
+          setTimeout(() => {
+            mensajeAlias.classList.add("d-none");
+          }, 2500);
+        }
+        return;
+      }
+      
+      // Ocultamos mensaje si estaba visible
+      if (mensajeAlias) {
+        mensajeAlias.classList.add("d-none");
+      }
   
       ocultarSeccion(seccionBienvenida);
       mostrarSeccion(seccionModosJuego);

@@ -156,6 +156,39 @@ main.container-fluid { /* Seleccionamos el main por su clase container-fluid */
        porque el align-items: center del main se encarga de centrar estas secciones. */
 }
 
+/* Alias Input Estilo */
+#aliasInput.form-control {
+    background-color: #2a2a2a !important;
+    border: 2px solid #ffc107 !important;
+    color: #ffc107 !important;
+    font-weight: bold;
+    border-radius: 6px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+  }
+  
+  #aliasInput::placeholder {
+    color: #ffa500 !important;
+    font-style: italic;
+    opacity: 0.8;
+  }
+  
+  #selectorDificultad.form-select {
+    background-color: #2a2a2a !important;
+    border: 2px solid #17a2b8 !important;
+    color: #17a2b8 !important;
+    font-weight: bold;
+    border-radius: 6px;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(23, 162, 184, 0.3);
+  }
+  
+  #selectorDificultad.form-select option {
+    background-color: #111 !important;
+    color: #ffc107;
+  }
+  
+  
 
 /* ------------------------------------------- */
 /* ESTILOS PARA FOOTER */
@@ -571,3 +604,51 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     to   { opacity: 1; transform: scale(1); }
   }
   
+
+  #aliasInput.form-control {
+    background-color: #1b1b1b !important;
+    border: 2px solid #ffc107 !important;
+    color: #ffc107 !important;
+    font-weight: bold;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 0 12px rgba(255, 193, 7, 0.4);
+  }
+  
+  #aliasInput::placeholder {
+    color: #ffae00 !important;
+    font-style: italic;
+    opacity: 0.7;
+  }
+  
+  /* Selector: Dificultad */
+  #selectorDificultad.form-select {
+    background-color: #1b1b1b !important;
+    border: 2px solid #17a2b8 !important;
+    color: #17a2b8 !important;
+    font-weight: bold;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 0 12px rgba(23, 162, 184, 0.4);
+  }
+  
+  #selectorDificultad option {
+    background-color: #000 !important;
+    color: #ffc107 !important;
+  }
+  
+  .alias-estilizado {
+  background-color: #1b1b1b !important;
+  border: 2px solid #ffc107 !important;
+  color: #ffc107 !important;
+  font-weight: bold;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 0 12px rgba(255, 193, 7, 0.4);
+}
+
+.alias-estilizado::placeholder {
+  color: #ffae00 !important;
+  font-style: italic;
+  opacity: 0.7;
+}
