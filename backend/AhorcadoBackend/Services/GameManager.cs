@@ -89,7 +89,7 @@ namespace AhorcadoBackend.Services
 
         // Crea una nueva partida y la añade al diccionario
         // Agregamos un parámetro 'creatorConnectionId' para poder asociarlo desde el inicio.
-        public async Task<JuegoEstado> CreateNewGame(string? palabraSecreta = null, string? creatorConnectionId = null, string? gameId = null, string? aliasCreador = null)
+        public async Task<JuegoEstado> CreateNewGame(string? palabraSecreta = null, string? creatorConnectionId = null, string? gameId = null, string? aliasCreador = null, int intentosPermitidos = 6)
         {
 
             
@@ -113,7 +113,7 @@ namespace AhorcadoBackend.Services
                 GameId = newGameId,
                 PalabraSecreta = palabraSecreta,
                 GuionesActuales = new string('_', palabraSecreta.Length),
-                IntentosRestantes = 6,
+                IntentosRestantes = intentosPermitidos,
                 JuegoTerminado = false,
                 PlayerConnectionIds = new List<string>(), // Asegúrate de inicializar la lista
                 LastActivityTime = DateTime.UtcNow,

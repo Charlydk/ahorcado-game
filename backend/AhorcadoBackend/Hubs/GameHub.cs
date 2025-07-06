@@ -30,10 +30,17 @@ namespace AhorcadoBackend.Hubs
         }
 
         // Método para crear una partida online
-        public async Task<string> CreateOnlineGame()
+        public async Task<object> CreateOnlineGame(int? intentosPermitidos)
         {
-            // Pasa el ConnectionId del creador al GameManager para que lo asocie a la partida.
-            var game = await _gameManager.CreateNewGame(null, Context.ConnectionId);
+            int intentos = intentosPermitidos ?? 6;
+
+            var game = await _gameManager.CreateNewGame(
+                null,
+                Context.ConnectionId,
+                null,
+                null,
+                intentos
+            );
 
             game.CreadorConnectionId = Context.ConnectionId;
             game.TurnoActualConnectionId = Context.ConnectionId;
@@ -53,8 +60,14 @@ namespace AhorcadoBackend.Hubs
                 Message = game.Message
             });
 
-            return game.GameId;
+            // 🔥 Devolvemos ambos valores al frontend
+            return new
+            {
+                GameId = game.GameId,
+                CodigoSala = game.CodigoSala
+            };
         }
+
 
         // Método para que un cliente se una a una partida online existente
         public async Task JoinOnlineGame(string gameId)

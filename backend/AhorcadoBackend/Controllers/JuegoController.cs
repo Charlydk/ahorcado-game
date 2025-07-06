@@ -39,12 +39,14 @@ namespace AhorcadoBackend.Controllers
             public string? Palabra { get; set; } // solo para modo versus
             public string? AliasJugador1 { get; set; }
             public string? AliasJugador2 { get; set; }
+            public int? IntentosPermitidos { get; set; }
         }
 
         public class CrearGameOnlineRequest
         {
             public string CreatorConnectionId { get; set; }
             public string Alias { get; set; }
+            public int? IntentosPermitidos { get; set; }
         }
 
         public class UnirseGameOnlineRequest
@@ -91,7 +93,14 @@ namespace AhorcadoBackend.Controllers
                     return BadRequest("Para el modo 'versus', la palabra debe tener entre 4 y 8 caracteres.");
                 }
 
-                nuevoEstado = await _gameManager.CreateNewGame(entrada.Palabra.ToUpper(), null, gameIdParaSesion);
+                int intentos = entrada.IntentosPermitidos ?? 6;
+                nuevoEstado = await _gameManager.CreateNewGame(
+                    entrada.Palabra.ToUpper(),
+                    null,
+                    gameIdParaSesion,
+                    null,         // aliasCreador (no usado acá)
+                    intentos      // ahora sí va al quinto lugar
+);
 
 
                 // Seteamos los alias en el juego
@@ -105,7 +114,10 @@ namespace AhorcadoBackend.Controllers
             }
             else if (entrada.Modo == "solitario")
             {
-                nuevoEstado = await _gameManager.CreateNewGame(null, null, gameIdParaSesion);
+                int intentos = entrada.IntentosPermitidos ?? 6;
+                nuevoEstado = await _gameManager.CreateNewGame(null, null, gameIdParaSesion, null, intentos);
+
+
 
                 nuevoEstado.AliasJugadorPorConnectionId = new Dictionary<string, string>
             {

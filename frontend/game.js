@@ -12,6 +12,8 @@ const seccionModosJuego = document.getElementById("seccionModosJuego"); // Cambi
 const seccionIngresarPalabra = document.getElementById("seccionIngresarPalabra"); // Cambiado de clase a ID
 const seccionJuego = document.getElementById("seccionJuego"); // Cambiado de clase a ID
 
+
+
 // --- Botones de la Pantalla de Inicio y Selección de Modo ---
 const botonInicio = document.getElementById("botonInicio"); // Cambiado de clase a ID
 const botonSolitario = document.getElementById("botonSolitario"); // Cambiado de clase a ID
@@ -477,16 +479,20 @@ async function iniciarJuego(modo, palabraVersus = "") {
             return;
         }
 
+
+        const selectorDificultad = document.getElementById("selectorDificultad");
+        const intentosIniciales = parseInt(selectorDificultad?.value || "6");
         // 🎯 Armar el payload dinámico
         const payload = {
             Modo: modo,
             Palabra: palabraVersus,
             AliasJugador1: alias1,
-            AliasJugador2: modo === "versus" ? alias2 : null
+            AliasJugador2: modo === "versus" ? alias2 : null,
+            IntentosPermitidos: intentosIniciales
         };
 
         console.log("📨 Payload enviado a /iniciar:", payload);
-
+        console.log("🎚️ Dificultad seleccionada:", intentosIniciales);
         const response = await fetch(`${BACKEND_URL}juego/iniciar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -532,6 +538,8 @@ function actualizarUIJuego(data) {
     console.log("     Dentro de actualizarUIJuego. currentMode:", currentMode);
     console.log("     Datos recibidos para actualizar UI:", data);
     console.log("     [DEBUG] Mensaje recibido del backend (data.message):", data.message);
+    console.log("Intentos iniciales:", data.IntentosRestantes);
+
 
     const intentosRestantesSpan = document.getElementById("intentosRestantes"); 
     if (intentosRestantesSpan) {
@@ -650,8 +658,11 @@ async function crearNuevaPartidaOnline() {
             return;
         }
 
-        ocultarMensajeAlerta(mensajeJuego);
+        const dificultadSeleccionada = parseInt(document.getElementById("selectorDificultad")?.value || "6");
+        console.log("🎚️ Dificultad seleccionada en modo online:", dificultadSeleccionada);
+
         mostrarMensajeAlerta(mensajeIdPartida, "Creando partida online...", 'info');
+        ocultarMensajeAlerta(mensajeJuego);
 
         ocultarSeccion(botonCrearPartida);
         ocultarSeccion(botonUnirsePartida);
@@ -659,41 +670,22 @@ async function crearNuevaPartidaOnline() {
         ocultarSeccion(botonVolverModosOnline);
         ocultarSeccion(contenedorGameId);
 
-        const response = await fetch(`${BACKEND_URL}juego/crear-online`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ creatorConnectionId: connectionId, alias: alias }),
-            credentials: 'include'
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Error al crear partida online: ${response.status} - ${errorText}`);
-        }
-
-        const data = await response.json();
-        const gameId = data.gameId;
-        const codigoSala = data.codigoSala;
+        // ✅ Crear la partida online vía SignalR
+        const data = await connection.invoke("CreateOnlineGame", dificultadSeleccionada);
+        const gameId = data.gameId; // 🔽 CAMBIO: en minúscula
+        const codigoSala = data.codigoSala; // 🔽 CAMBIO: en minúscula
 
         currentGameId = gameId;
         currentMode = "online";
 
-        console.log("J1: Partida creada. currentGameId:", currentGameId, "currentMode:", currentMode);
+        console.log("J1: Partida creada vía SignalR. currentGameId:", gameId, "codigoSala:", codigoSala);
+        console.log(`Creador (${connection.connectionId}) unido al grupo SignalR de la partida: ${gameId}`);
 
-        console.log("🧪 Respuesta completa del backend:", data);
+        mostrarMensajeAlerta(mensajeIdPartida, `¡Partida creada! Comparte este código: <strong>${codigoSala}</strong>`, 'success');
+        displayGameId.textContent = `🔡 Código: ${codigoSala}`;
+        mostrarSeccion(contenedorGameId);
 
-        await connection.invoke("JoinGameGroup", gameId);
-            console.log(`Creador (${connection.connectionId}) unido al grupo SignalR de la partida: ${gameId}`);
-            console.log(`Creador (${alias}) ha creado la partida con ID: ${gameId} y código de sala: ${codigoSala}`);
-            
-
-            // Mostramos el código legible en pantalla
-            mostrarMensajeAlerta(mensajeIdPartida, `¡Partida creada! Comparte este código: <strong>${codigoSala}</strong>`, 'success');
-            displayGameId.textContent = `🔡 Código: ${codigoSala}`;
-            mostrarSeccion(contenedorGameId);
-
-            // Botón "Copiar ID" ahora copia el código de sala, no el GUID
-            botonCopiarId.onclick = async () => {
+        botonCopiarId.onclick = async () => {
             try {
                 await navigator.clipboard.writeText(codigoSala);
                 mostrarMensajeAlerta(mensajeIdPartida, `📋 Código '${codigoSala}' copiado. ¡Compártelo!`, 'success');
@@ -702,7 +694,6 @@ async function crearNuevaPartidaOnline() {
                 mostrarMensajeAlerta(mensajeIdPartida, `No se pudo copiar. Copia manualmente: ${codigoSala}`, 'warning');
             }
         };
-        
 
         let botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
         if (!botonIrAlJuego) {
@@ -749,6 +740,9 @@ async function crearNuevaPartidaOnline() {
         mostrarSeccion(botonVolverModosOnline);
     }
 }
+
+
+
 
 // --- Lógica para Unirse a Partida Online ---
 
