@@ -681,7 +681,7 @@ async function crearNuevaPartidaOnline() {
         console.log("J1: Partida creada vía SignalR. currentGameId:", gameId, "codigoSala:", codigoSala);
         console.log(`Creador (${connection.connectionId}) unido al grupo SignalR de la partida: ${gameId}`);
 
-        mostrarMensajeAlerta(mensajeIdPartida, `¡Partida creada! Comparte este código: <strong>${codigoSala}</strong>`, 'success');
+        mostrarMensajeAlerta(mensajeIdPartida, `¡Partida creada! Comparte este código: ${codigoSala}`, 'success');
         displayGameId.textContent = `🔡 Código: ${codigoSala}`;
         mostrarSeccion(contenedorGameId);
 

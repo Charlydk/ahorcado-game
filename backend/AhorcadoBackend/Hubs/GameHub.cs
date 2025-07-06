@@ -44,7 +44,8 @@ namespace AhorcadoBackend.Hubs
 
             game.CreadorConnectionId = Context.ConnectionId;
             game.TurnoActualConnectionId = Context.ConnectionId;
-            game.Message = $"Partida creada. ID: {game.GameId}. Esperando a otro jugador...";
+            game.Message = $"🎮 Sala creada. Código: {game.CodigoSala}. Esperando a otro jugador...";
+
 
             await Groups.AddToGroupAsync(Context.ConnectionId, game.GameId);
             Console.WriteLine($"Partida online creada con ID: {game.GameId} por {Context.ConnectionId}");
