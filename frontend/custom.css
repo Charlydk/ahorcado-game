@@ -672,3 +672,69 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
       margin-bottom: 0.5rem;
     }
   }
+
+  .modo-juego-btn {
+    background: linear-gradient(to right, #1f1f1f, #2a2a2a) !important;
+    color: #ffc107 !important;
+    border: 2px solid #ffc107 !important;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-radius: 8px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 0 8px rgba(255, 193, 7, 0.3);
+  }
+  
+  .modo-juego-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 12px rgba(255, 193, 7, 0.5), 0 0 24px rgba(255, 193, 7, 0.3);
+  }
+
+  #volverAlInicioModos {
+    border-color: #777 !important;
+    color: #ccc !important;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+  }
+  #volverAlInicioModos:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  button.modo-juego-btn.btn.btn-secondary {
+    background: linear-gradient(to right, #1f1f1f, #2a2a2a) !important;
+    border: 2px solid #ffc107 !important;
+    color: #ffc107 !important;
+    font-weight: bold;
+    text-transform: uppercase;
+    border-radius: 8px;
+    box-shadow: 0 0 8px rgba(255, 193, 7, 0.3);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  
+  button.modo-juego-btn.btn.btn-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 12px rgba(255, 193, 7, 0.5), 0 0 24px rgba(255, 193, 7, 0.3);
+  }
+  
+
+  .modo-juego-btn {
+    white-space: nowrap; /* evita que el texto salte a otra línea */
+    padding-inline: 1.5rem !important; /* más espacio horizontal */
+    min-width: 160px; /* asegura espacio suficiente para icono + texto */
+  }
+
+  
+  @media (max-width: 576px) {
+    .modo-juego-btn {
+      width: 100%; /* se adaptan al ancho disponible */
+      justify-content: center;
+      text-align: center;
+      padding-inline: 1rem !important;
+    }
+  }
+
+  @media (max-width: 576px) {
+    #botonOnline {
+      font-size: 0.9rem;
+      padding-inline: 1rem !important;
+    }
+  }
