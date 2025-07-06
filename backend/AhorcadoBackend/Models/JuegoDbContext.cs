@@ -7,6 +7,8 @@ namespace AhorcadoBackend.Models
         public JuegoDbContext(DbContextOptions<JuegoDbContext> options) : base(options) { }
 
         public DbSet<Partida> Partidas { get; set; }
+        public DbSet<Palabra> Palabras { get; set; }
+
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

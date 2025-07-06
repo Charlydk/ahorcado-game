@@ -33,7 +33,7 @@ namespace AhorcadoBackend.Hubs
         public async Task<string> CreateOnlineGame()
         {
             // Pasa el ConnectionId del creador al GameManager para que lo asocie a la partida.
-            var game = _gameManager.CreateNewGame(null, Context.ConnectionId); // Nuevo overload para creador connectionId
+            var game = await _gameManager.CreateNewGame(null, Context.ConnectionId);
 
             game.CreadorConnectionId = Context.ConnectionId;
             game.TurnoActualConnectionId = Context.ConnectionId;

@@ -3,6 +3,8 @@ using AhorcadoBackend.Models;
 using AhorcadoBackend.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.OpenApi.Models;
+
 
 
 Console.WriteLine("DEBUG: Iniciando la aplicación ASP.NET Core...");
@@ -33,7 +35,7 @@ builder.Services.AddSignalR(hubOptions =>
     hubOptions.HandshakeTimeout = TimeSpan.FromSeconds(30); // El valor por defecto es 15 segundos
 });
 builder.Services.AddEndpointsApiExplorer();
-//builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<GameManager>();
 builder.Services.AddHostedService<GameCleanupService>();
 builder.Services.AddDistributedMemoryCache();
@@ -106,8 +108,8 @@ Console.WriteLine("DEBUG: App construida. Configurando pipeline de solicitudes..
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    //app.UseSwagger();
-    //app.UseSwaggerUI();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 //app.UseHttpsRedirection(); --> Descomentar si se quiere forzar HTTPS

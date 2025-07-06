@@ -49,9 +49,25 @@ namespace AhorcadoBackend.Services
             return _activeGames.Values;
         }
 
-        private string GenerarPalabraAleatoria()
+            private async Task<string?> GenerarPalabraAleatoriaAsync()
         {
-            return _palabras[_random.Next(_palabras.Count)];
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var palabras = await context.Palabras
+                    .Where(p => p.Activa)
+                    .Select(p => p.TextoPalabra)
+                    .ToListAsync();
+
+                if (!palabras.Any()) return null;
+
+                return palabras[_random.Next(palabras.Count)].ToUpper();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❌ Error al generar palabra aleatoria desde Supabase");
+                return null;
+            }
         }
 
 
@@ -77,7 +93,7 @@ namespace AhorcadoBackend.Services
 
         // Crea una nueva partida y la añade al diccionario
         // Agregamos un parámetro 'creatorConnectionId' para poder asociarlo desde el inicio.
-        public JuegoEstado CreateNewGame(string? palabraSecreta = null, string? creatorConnectionId = null, string? gameId = null, string? aliasCreador = null)
+        public async Task<JuegoEstado> CreateNewGame(string? palabraSecreta = null, string? creatorConnectionId = null, string? gameId = null, string? aliasCreador = null)
         {
 
             
@@ -85,9 +101,12 @@ namespace AhorcadoBackend.Services
             _logger.LogInformation($"🧩 Partida {newGameId} registrada en memoria en instancia: {GetHashCode()}");
 
             if (string.IsNullOrEmpty(palabraSecreta))
-            {
-                palabraSecreta = GenerarPalabraAleatoria();
-            }
+        {
+            palabraSecreta = await GenerarPalabraAleatoriaAsync();
+            if (string.IsNullOrEmpty(palabraSecreta))
+                palabraSecreta = "AHORCADO"; // fallback literal si falla
+        }
+
             else
             {
                 palabraSecreta = palabraSecreta.ToUpper();
@@ -459,39 +478,40 @@ return result;
         }
 
 
-
-
         // Reinicia una partida existente
-        public JuegoEstado? RestartGame(string gameId)
+        public async Task<JuegoEstado?> RestartGame(string gameId)
         {
             if (_activeGames.TryGetValue(gameId, out var game))
             {
-                game.PalabraSecreta = GenerarPalabraAleatoria();
-                game.GuionesActuales = new string('_', game.PalabraSecreta.Length);
+                var palabra = await GenerarPalabraAleatoriaAsync();
+                if (string.IsNullOrWhiteSpace(palabra))
+                {
+                    _logger.LogWarning($"❗ No se encontró palabra en Supabase. Usando fallback 'AHORCADO'.");
+                    palabra = "AHORCADO";
+                }
+
+                game.PalabraSecreta = palabra;
+                game.GuionesActuales = new string('_', palabra.Length);
                 game.LetrasIngresadas.Clear();
                 game.LetrasIncorrectas.Clear();
                 game.IntentosRestantes = 6;
                 game.JuegoTerminado = false;
                 game.LastActivityTime = DateTime.UtcNow;
 
-                if (game.PlayerConnectionIds.Any())
-                {
-                    game.TurnoActualConnectionId = game.CreadorConnectionId ?? game.PlayerConnectionIds.First();
-                }
-                else
-                {
-                    game.TurnoActualConnectionId = null;
-                }
-                game.Message = "La partida ha sido reiniciada. ¡A adivinar!";
-                _logger.LogInformation($"Partida {gameId} reiniciada."); // <-- LOGGING
+                game.TurnoActualConnectionId = game.PlayerConnectionIds.Any()
+                    ? game.CreadorConnectionId ?? game.PlayerConnectionIds.First()
+                    : null;
 
+                game.Message = "La partida ha sido reiniciada. ¡A adivinar!";
+                _logger.LogInformation($"Partida {gameId} reiniciada.");
 
                 return game;
             }
-            _logger.LogWarning($"Intento de reiniciar partida {gameId}: Partida no encontrada."); // <-- LOGGING
 
+            _logger.LogWarning($"Intento de reiniciar partida {gameId}: Partida no encontrada.");
             return null;
         }
+
 
         public void CleanInactiveGames(TimeSpan inactivityThreshold, TimeSpan completedGameRetention)
         {

@@ -78,7 +78,7 @@ namespace AhorcadoBackend.Controllers
         // --- ENDPOINTS DEL CONTROLADOR ---
 
         [HttpPost("iniciar")]
-        public ActionResult IniciarJuego([FromBody] PalabraEntrada entrada)
+        public async Task< ActionResult>IniciarJuego([FromBody] PalabraEntrada entrada)
         {
             string gameIdParaSesion = Guid.NewGuid().ToString();
             JuegoEstado nuevoEstado;
@@ -91,7 +91,7 @@ namespace AhorcadoBackend.Controllers
                     return BadRequest("Para el modo 'versus', la palabra debe tener entre 4 y 8 caracteres.");
                 }
 
-                nuevoEstado = _gameManager.CreateNewGame(entrada.Palabra.ToUpper(), null, gameIdParaSesion);
+                nuevoEstado = await _gameManager.CreateNewGame(entrada.Palabra.ToUpper(), null, gameIdParaSesion);
 
 
                 // Seteamos los alias en el juego
@@ -105,7 +105,7 @@ namespace AhorcadoBackend.Controllers
             }
             else if (entrada.Modo == "solitario")
             {
-                nuevoEstado = _gameManager.CreateNewGame(null, null, gameIdParaSesion);
+                nuevoEstado = await _gameManager.CreateNewGame(null, null, gameIdParaSesion);
 
                 nuevoEstado.AliasJugadorPorConnectionId = new Dictionary<string, string>
             {
@@ -134,14 +134,15 @@ namespace AhorcadoBackend.Controllers
         }
 
         [HttpPost("reiniciar")]
-        public ActionResult ReiniciarJuego([FromBody] ReiniciarJuegoEntrada entrada)
+            public async Task<IActionResult> ReiniciarJuego([FromBody] ReiniciarJuegoEntrada entrada)
+
         {
             if (string.IsNullOrEmpty(entrada.GameId))
             {
                 return BadRequest(new { message = "El ID de partida es requerido para reiniciar." });
             }
 
-            var game = _gameManager.RestartGame(entrada.GameId);
+            var game = await _gameManager.RestartGame(entrada.GameId);
 
             if (game == null)
             {
@@ -230,7 +231,7 @@ namespace AhorcadoBackend.Controllers
         [HttpPost("crear-online")]
         public async Task<IActionResult> CrearPartidaOnline([FromBody] CrearGameOnlineRequest request)
         {
-            var game = _gameManager.CreateNewGame(null, request.CreatorConnectionId);
+            var game = await _gameManager.CreateNewGame(null, request.CreatorConnectionId);
 
             if (game == null)
             {
