@@ -652,3 +652,23 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
   font-style: italic;
   opacity: 0.7;
 }
+
+
+#crearPartida,
+#unirsePartida {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#crearPartida:hover,
+#unirsePartida:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 576px) {
+    #crearPartida,
+    #unirsePartida {
+      width: 100%;
+      margin-bottom: 0.5rem;
+    }
+  }
