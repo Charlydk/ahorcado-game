@@ -332,7 +332,7 @@ connection.onreconnected(async () => {
   
     if (currentGameId && alias) {
       try {
-        await connection.invoke("ReingresarPartida", currentGameId, alias);
+        await connection.invoke("ReingresarPartida", currentGameId, aliasJugadorActual);
         console.log("✅ Reconexión lógica completada. Estado solicitado desde el servidor.");
       } catch (err) {
         console.error("❌ Error al reingresar a la partida tras reconexión:", err);
@@ -424,23 +424,21 @@ connection.on("PlayerJoined", (gameId, playerConnectionId) => {
 
 // Inicia la conexión SignalR
 async function startSignalRConnection() {
-    try {
-        await connection.start();
-        console.log("Conexión SignalR establecida con éxito.");
-        // Opcional: Podrías querer guardar el connectionId en alguna parte del estado si lo necesitas globalmente
-        // console.log("Mi ConnectionId:", connection.connectionId);
-        
-        // --- INICIAR HEARTBEAT AQUÍ ---
+    try {
+      if (connection.state === signalR.HubConnectionState.Disconnected) {
+        await connection.start();
+        console.log("✅ Conexión SignalR establecida.");
         startHeartbeat();
-
-    } catch (err) {
-        console.error("Error al iniciar la conexión SignalR:", err);
-        // Intentar reconectar después de un retraso
-        setTimeout(startSignalRConnection, 5000);
-        // --- DETENER HEARTBEAT EN CASO DE ERROR INICIAL ---
-        stopHeartbeat();
-    }
-}
+      } else {
+        console.warn("⚠️ SignalR ya estaba conectada o conectándose:", connection.state);
+      }
+    } catch (err) {
+      console.error("Error al iniciar la conexión SignalR:", err);
+      setTimeout(startSignalRConnection, 5000);
+      stopHeartbeat();
+    }
+  }
+  
 
 // --- Funciones de Lógica de Juego ---
 
