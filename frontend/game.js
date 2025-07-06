@@ -1093,6 +1093,9 @@ if (botonInicio) {
     });
   }
 
+
+
+
 botonSolitario.addEventListener("click", async function(event) {
     event.preventDefault();
     // No necesitamos pasar palabraVersus para solitario
@@ -1120,6 +1123,15 @@ if (botonOnline) {
         // Simplemente restaura la UI, la función ya establece el mensaje por defecto
         restaurarSeccionOnlineUI(); 
     });
+}
+
+const botonVolverAlInicioModos = document.getElementById("volverAlInicioModos");
+
+if (botonVolverAlInicioModos) {
+  botonVolverAlInicioModos.addEventListener("click", () => {
+    ocultarSeccion(seccionModosJuego);
+    mostrarSeccion(seccionBienvenida);
+  });
 }
 
 botonCrearPartida.addEventListener("click", async () => {
