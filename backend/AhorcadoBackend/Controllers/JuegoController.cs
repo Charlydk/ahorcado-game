@@ -434,7 +434,7 @@ namespace AhorcadoBackend.Controllers
                 JuegoTerminado = nuevoGame.JuegoTerminado,
                 PalabraSecreta = nuevoGame.JuegoTerminado ? nuevoGame.PalabraSecreta : null,
                 TurnoActualConnectionId = nuevoGame.TurnoActualConnectionId,
-                Message = $"🎉 ¡Bienvenido/a {request.Alias}!"
+                Message = "🎉 ¡Bienvenidos, que empiece la partida colaborativa!"
             };
 
             foreach (var id in nuevoGame.PlayerConnectionIds)
