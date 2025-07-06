@@ -17,11 +17,7 @@ namespace AhorcadoBackend.Services
         private readonly IHubContext<GameHub> _hubContext; // ¡DECLARACIÓN AQUÍ!
         private readonly ILogger<GameManager> _logger; // <-- ADICIÓN AQUÍ: Declaración del logger
 
-
-        // Lista de palabras predefinidas. Considerar cargar desde un archivo o DB a futuro.
-        private readonly List<string> _palabras = new List<string>
-        { "CASA", "PAYASO", "CAMARA", "HOMERO", "PLATO", "TECLADO", "TRISTEZA", "MONITOR", "PROGRAMACION", "DESARROLLO", "SOFTWARE", "COMPUTADORA", "INTERNET" };
-
+        
         // Constructor que ACEPTA IHubContext<GameHub>
         public GameManager(IHubContext<GameHub> hubContext, ILogger<GameManager> logger)
 

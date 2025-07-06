@@ -15,13 +15,11 @@ public class PalabrasController : ControllerBase
         _contextFactory = contextFactory;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    [HttpGet("todas")]
+    public async Task<IActionResult> GetAllIncludingInactivas()
     {
         using var context = await _contextFactory.CreateDbContextAsync();
-        var palabras = await context.Palabras
-            .Where(p => p.Activa)
-            .ToListAsync();
+        var palabras = await context.Palabras.ToListAsync(); // sin filtro
         return Ok(palabras);
     }
 

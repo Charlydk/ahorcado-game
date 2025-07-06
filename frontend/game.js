@@ -63,10 +63,21 @@ let juegoTerminadoManualmente = false;
 let aliasJugadorActual = "";
 
 
+document.addEventListener("DOMContentLoaded", () => {
+    inicializarUI();
+    startSignalRConnection();
+  
+    // Mostrar botón admin solo si estamos en desarrollo o con alias especial
+    const botonAdmin = document.getElementById("botonAdmin");
+    if (botonAdmin) {
+      botonAdmin.style.display = "inline-block"; // 👈 para mostrarlo temporalmente
+    }
+  });
+
 
 // --- Variables de conexion al backend ---
-//const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
-const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
+const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
+//const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
 
 // --- Variables y Funciones para Heartbeat ---
 // Variable para almacenar el ID del intervalo del heartbeat
@@ -275,8 +286,8 @@ function capturarAliasGlobal() {
 
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-    .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",  // URL de producción
-    //.withUrl("http://localhost:8080/gamehub",  // URL de desarrollo
+    //.withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",  // URL de producción
+    .withUrl("http://localhost:8080/gamehub",  // URL de desarrollo
     {
     transport: signalR.HttpTransportType.WebSockets,
     withCredentials: true
