@@ -800,33 +800,35 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
   }
 
 
-  @keyframes sacudidaAhorcado {
-    0% { transform: rotate(0deg); }
-    20% { transform: rotate(-5deg); }
-    40% { transform: rotate(5deg); }
-    60% { transform: rotate(-3deg); }
-    80% { transform: rotate(3deg); }
-    100% { transform: rotate(0deg); }
-  }
-  
-  .ahorcado-animado {
-    animation: sacudidaAhorcado 0.6s ease-in-out;
-  }
-
-  .ahorcado-resplandor {
-    animation: glowRojo 0.6s ease-out;
-  }
-  
-  @keyframes glowRojo {
+  @keyframes sacudidaYGlow {
     0% {
+      transform: translateX(0);
       filter: drop-shadow(0 0 0px transparent);
     }
-    50% {
-      filter: drop-shadow(0 0 18px rgba(220, 53, 69, 0.8));
+    20% {
+      transform: translateX(-6px);
+      filter: drop-shadow(0 0 10px rgba(220, 53, 69, 0.4));
+    }
+    40% {
+      transform: translateX(6px);
+      filter: drop-shadow(0 0 18px rgba(220, 53, 69, 0.7));
+    }
+    60% {
+      transform: translateX(-4px);
+      filter: drop-shadow(0 0 10px rgba(220, 53, 69, 0.4));
+    }
+    80% {
+      transform: translateX(4px);
+      filter: drop-shadow(0 0 5px rgba(220, 53, 69, 0.3));
     }
     100% {
+      transform: translateX(0);
       filter: drop-shadow(0 0 0px transparent);
     }
+  }
+  
+  .ahorcado-impacto {
+    animation: sacudidaYGlow 0.6s ease-in-out;
   }
   
 

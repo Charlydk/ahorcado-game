@@ -574,8 +574,8 @@ function actualizarUIJuego(data) {
             imagenAhorcado.classList.remove("final-victoria", "final-derrota", "ahorcado-animado", "ahorcado-resplandor");
             void imagenAhorcado.offsetWidth; // Reinicia la animación
   
-  imagenAhorcado.src = `img/ahorcadito_0.png`; // Imagen de éxito
-  imagenAhorcado.classList.add("final-victoria");
+            imagenAhorcado.src = `img/ahorcadito_0.png`; // Imagen de éxito
+            imagenAhorcado.classList.add("final-victoria");
         } else if (data.intentosRestantes <= 0) {
             mostrarMensajeAlerta(mensajeJuego, `¡GAME OVER! La palabra era: ${data.palabraSecreta}`, 'danger');
             imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de derrota
@@ -597,6 +597,7 @@ function actualizarUIJuego(data) {
     } else {
 
         imagenAhorcado.src = `img/ahorcadito_${Math.min(cantidadErradasCalculada + 1, 7)}.png`;
+
      
         mostrarSeccion(inputIngresaLetra);
         mostrarSeccion(botonSubirLetra);
@@ -623,23 +624,22 @@ function actualizarUIJuego(data) {
         if (data.message && data.message !== "") {
           console.log("     Mostrando data.message:", data.message);
         
-          // ... tus alertas y animaciones existentes ...
-        
-          // 🎯 Detectar error para sacudir al ahorcadito
-          const letraIncorrecta = (
-            data.message.includes("Incorrecto") ||
-            data.message.includes("no está") ||
-            data.message.includes("fallaste")
-          );
-        
-          if (letraIncorrecta) {
-            imagenAhorcado.classList.remove("ahorcado-animado", "ahorcado-resplandor");
-            void imagenAhorcado.offsetWidth;
-            imagenAhorcado.classList.add("ahorcado-animado", "ahorcado-resplandor");
-          }
+                    
         }
+        // 🎯 Detectar error para sacudir al ahorcadito
 
-
+        const letraIncorrecta = (
+          data.message?.includes("Incorrecto") ||
+          data.message?.includes("no está") ||
+          data.message?.includes("fallaste")
+        );
+        
+        // Solo sacude si no terminó el juego y fue incorrecta
+        if (letraIncorrecta && !data.juegoTerminado) {
+          imagenAhorcado.classList.remove("ahorcado-impacto", "final-victoria", "final-derrota");
+          void imagenAhorcado.offsetWidth;
+          imagenAhorcado.classList.add("ahorcado-impacto");
+        }
 
         // 🎯 Aplicar animación según el mensaje
         const input = document.getElementById("inputAdivinarLetra");
