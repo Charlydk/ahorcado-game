@@ -570,17 +570,24 @@ function actualizarUIJuego(data) {
         ocultarMensajeAlerta(mensajeTurno); // Ocultar mensaje de turno al terminar el juego
 
         if (data.palabra === data.palabraSecreta) {
-            mostrarMensajeAlerta(mensajeJuego, `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`, 'success');
-            imagenAhorcado.src = `img/ahorcadito_0.png`; // Imagen de éxito
+            mostrarMensajeAlerta(mensajeJuego, `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`, 'success');
+            imagenAhorcado.classList.remove("final-victoria", "final-derrota", "ahorcado-animado", "ahorcado-resplandor");
+            void imagenAhorcado.offsetWidth; // Reinicia la animación
+  
+  imagenAhorcado.src = `img/ahorcadito_0.png`; // Imagen de éxito
+  imagenAhorcado.classList.add("final-victoria");
         } else if (data.intentosRestantes <= 0) {
             mostrarMensajeAlerta(mensajeJuego, `¡GAME OVER! La palabra era: ${data.palabraSecreta}`, 'danger');
             imagenAhorcado.src = `img/ahorcadito_7.png`; // Imagen de derrota
+            imagenAhorcado.classList.add("final-derrota");
         } else if (data.message && data.message !== "") {
             mostrarMensajeAlerta(mensajeJuego, data.message, 'danger'); // Usamos danger para finalización inesperada
             imagenAhorcado.src = `img/ahorcadito_7.png`; 
+            imagenAhorcado.classList.add("final-derrota");
         } else {
             mostrarMensajeAlerta(mensajeJuego, "El juego ha terminado.", 'info'); // Mensaje por defecto
-            imagenAhorcado.src = `img/ahorcadito_7.png`; 
+            imagenAhorcado.src = `img/ahorcadito_7.png`;
+            imagenAhorcado.classList.add("final-derrota");
         }
         
         mostrarSeccion(botonReiniciar);

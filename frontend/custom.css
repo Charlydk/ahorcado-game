@@ -829,3 +829,42 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     }
   }
   
+
+  .final-victoria {
+    animation: triunfoZoom 1s ease-out;
+  }
+  
+  @keyframes triunfoZoom {
+    0% {
+      transform: scale(0.8);
+      filter: brightness(150%) drop-shadow(0 0 0px #28a745);
+    }
+    50% {
+      transform: scale(1.2);
+      filter: brightness(180%) drop-shadow(0 0 20px #28a745);
+    }
+    100% {
+      transform: scale(1);
+      filter: none;
+    }
+  }
+
+  .final-derrota {
+    animation: derrotaFade 1s ease-out;
+  }
+  
+  @keyframes derrotaFade {
+    0% {
+      filter: grayscale(0%) brightness(100%) drop-shadow(0 0 0px transparent);
+      transform: scale(1);
+    }
+    50% {
+      filter: grayscale(100%) brightness(80%) drop-shadow(0 0 15px #dc3545);
+      transform: scale(0.95);
+    }
+    100% {
+      filter: grayscale(100%) brightness(60%);
+      transform: scale(1);
+    }
+  }
+  
