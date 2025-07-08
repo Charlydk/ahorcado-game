@@ -546,7 +546,18 @@ function actualizarUIJuego(data) {
         intentosRestantesSpan.textContent = data.intentosRestantes;
     }
 
-    inputGuiones.textContent = data.palabra.split('').join(' ');
+    inputGuiones.innerHTML = data.palabra
+      .split('')
+      .map(letra => letra === '_' 
+        ? '_'
+        : `<span class="letra-acertada">${letra}</span>`
+      )
+      .join(' ');
+      setTimeout(() => {
+        document.querySelectorAll(".letra-acertada").forEach(el => {
+          el.classList.remove("letra-acertada");
+        });
+      }, 1200);
     inputLetrasOut.textContent = Array.isArray(data.letrasIncorrectas) ? data.letrasIncorrectas.join(", ") : data.letrasIncorrectas;
 
     const cantidadErradasCalculada = 6 - data.intentosRestantes;
@@ -585,23 +596,46 @@ function actualizarUIJuego(data) {
         mostrarSeccion(botonVolverAlMenu);
 
         if (data.message && data.message !== "") {
-            console.log("     Mostrando data.message:", data.message);
-            // Si el mensaje indica una letra ya ingresada, es una ADVERTENCIA (amarillo)
-            if (data.message.includes("enviaste") || data.message.includes("anteriormente") || data.message.includes("Intenta con otra")) {
-                mostrarMensajeAlerta(mensajeJuego, data.message, 'warning');
-            // Si el mensaje indica que la letra es INCORRECTA (rojo)
-            } else if (data.message.includes("Incorrecto") || data.message.includes("La letra no está en la palabra")) {
-                mostrarMensajeAlerta(mensajeJuego, data.message, 'danger');
-            // Si el mensaje es una letra CORRECTA (verde)
-            } else if (data.message.includes("correcta.") || data.message.includes("¡Bien!")) {
-                mostrarMensajeAlerta(mensajeJuego, data.message, 'success'); 
-            // Para otros mensajes informativos (azul por defecto)
-            } else {
-                mostrarMensajeAlerta(mensajeJuego, data.message, 'info'); 
-            }
-        } else {
-            ocultarMensajeAlerta(mensajeJuego); 
-        }
+  console.log("     Mostrando data.message:", data.message);
+
+        // Si el mensaje indica una letra ya ingresada, es una ADVERTENCIA (amarillo)
+        if (data.message.includes("enviaste") || data.message.includes("anteriormente") || data.message.includes("Intenta con otra")) {
+            mostrarMensajeAlerta(mensajeJuego, data.message, 'warning');
+        // Si el mensaje indica que la letra es INCORRECTA (rojo)
+        } else if (data.message.includes("Incorrecto") || data.message.includes("La letra no está en la palabra")) {
+            mostrarMensajeAlerta(mensajeJuego, data.message, 'danger');
+        // Si el mensaje es una letra CORRECTA (verde)
+        } else if (data.message.includes("correcta.") || data.message.includes("¡Bien!")) {
+            mostrarMensajeAlerta(mensajeJuego, data.message, 'success');
+        // Para otros mensajes informativos (azul por defecto)
+        } else {
+            mostrarMensajeAlerta(mensajeJuego, data.message, 'info');
+        }
+
+        // 🎯 Aplicar animación según el mensaje
+        const input = document.getElementById("inputAdivinarLetra");
+
+        if (data.message.includes("correcta") || data.message.includes("¡Bien!")) {
+            input.classList.add("acierto-efecto");
+            inputGuiones.classList.add("acierto-efecto");
+        } else if (
+            data.message.includes("Incorrecto") ||
+            data.message.includes("no está") ||
+            data.message.includes("enviaste") ||
+            data.message.includes("anteriormente") ||
+            data.message.includes("Intenta con otra")
+        ) {
+            input.classList.add("error-efecto");
+        }
+
+        setTimeout(() => {
+            input.classList.remove("acierto-efecto", "error-efecto");
+            inputGuiones.classList.remove("acierto-efecto");
+        }, 600);
+
+      } else {
+        ocultarMensajeAlerta(mensajeJuego);
+      }
         
         if (currentMode === "online") {
             console.log("     Modo online detectado. Evaluando turno.");

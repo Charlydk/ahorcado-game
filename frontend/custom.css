@@ -452,11 +452,92 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     text-align: center; /* Centra el texto dentro del recuadro */
     font-family: 'Courier New', Courier, monospace; /* Fuente monoespaciada para las letras */
     font-size: 1.5em; /* Ligeramente más pequeño, antes 1.2em */
-    color: #ff8800 !important; /* Un naranja un poco más suave */
+    color: #ff8800; /* Un naranja un poco más suave */
     letter-spacing: 1px; /* Menos espacio entre las letras */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); /* Sombra más sutil */
     flex-grow: 0;
     flex-shrink: 0;
+}
+
+.letra-acertada {
+  display: inline-block;
+  animation: glowAcertado 1.0s ease-in-out;
+  color: #28a745 !important;
+  font-weight: bold;
+}
+
+@keyframes glowAcertado {
+  0% {
+    text-shadow: none;
+    transform: scale(1);
+    color: #28a745;
+  }
+  50% {
+    text-shadow: 0 0 10px #28a745, 0 0 20px #28a745;
+    transform: scale(1.2);
+  }
+  100% {
+    text-shadow: none;
+    transform: scale(1);
+    color: #fff; /* 👈 vuelve a blanco (o el color que uses como base) */
+  }
+}
+
+.letra-incorrecta-efecto {
+  display: inline-block;
+  animation: desvanecerLetraIncorrecta 1s ease forwards;
+  color: #dc3545 !important; /* Rojo Bootstrap */
+  font-weight: bold;
+  opacity: 0;
+  transform: translateY(0);
+}
+
+@keyframes desvanecerLetraIncorrecta {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+    color: #dc3545;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+
+
+
+
+.acierto-efecto {
+  animation: correctoBrillo 0.6s ease;
+  border-color: #28a745 !important;
+  box-shadow: 0 0 12px rgba(40, 167, 69, 0.7);
+}
+
+@keyframes correctoBrillo {
+  0% {
+    background-color: #28a745;
+    color: #fff;
+  }
+  100% {
+    background-color: transparent;
+    color: inherit;
+  }
+}
+
+.error-efecto {
+  animation: sacudidaError 0.4s ease;
+  border-color: #dc3545 !important;
+  box-shadow: 0 0 12px rgba(220, 53, 69, 0.7);
+}
+
+@keyframes sacudidaError {
+  0% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+  100% { transform: translateX(0); }
 }
 
 /* -------------estilizar ranking------------- */
