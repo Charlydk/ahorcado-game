@@ -588,8 +588,9 @@ function actualizarUIJuego(data) {
         console.log("     Juego Terminado detectado. Mensaje establecido en UI:", mensajeJuego.textContent);
 
     } else {
+
         imagenAhorcado.src = `img/ahorcadito_${Math.min(cantidadErradasCalculada + 1, 7)}.png`;
-        
+     
         mostrarSeccion(inputIngresaLetra);
         mostrarSeccion(botonSubirLetra);
         ocultarSeccion(botonReiniciar);
@@ -611,6 +612,27 @@ function actualizarUIJuego(data) {
         } else {
             mostrarMensajeAlerta(mensajeJuego, data.message, 'info');
         }
+
+        if (data.message && data.message !== "") {
+          console.log("     Mostrando data.message:", data.message);
+        
+          // ... tus alertas y animaciones existentes ...
+        
+          // 🎯 Detectar error para sacudir al ahorcadito
+          const letraIncorrecta = (
+            data.message.includes("Incorrecto") ||
+            data.message.includes("no está") ||
+            data.message.includes("fallaste")
+          );
+        
+          if (letraIncorrecta) {
+            imagenAhorcado.classList.remove("ahorcado-animado", "ahorcado-resplandor");
+            void imagenAhorcado.offsetWidth;
+            imagenAhorcado.classList.add("ahorcado-animado", "ahorcado-resplandor");
+          }
+        }
+
+
 
         // 🎯 Aplicar animación según el mensaje
         const input = document.getElementById("inputAdivinarLetra");

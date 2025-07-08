@@ -459,6 +459,10 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     flex-shrink: 0;
 }
 
+/* ------------------------------------------- */
+/* ESTILOS PARA LAS LETRAS CORRECTAS */
+/* ------------------------------------------- */
+
 .letra-acertada {
   display: inline-block;
   animation: glowAcertado 1.0s ease-in-out;
@@ -482,31 +486,6 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     color: #fff; /* 👈 vuelve a blanco (o el color que uses como base) */
   }
 }
-
-.letra-incorrecta-efecto {
-  display: inline-block;
-  animation: desvanecerLetraIncorrecta 1s ease forwards;
-  color: #dc3545 !important; /* Rojo Bootstrap */
-  font-weight: bold;
-  opacity: 0;
-  transform: translateY(0);
-}
-
-@keyframes desvanecerLetraIncorrecta {
-  0% {
-    opacity: 1;
-    transform: translateY(0);
-    color: #dc3545;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-}
-
-
-
-
 
 .acierto-efecto {
   animation: correctoBrillo 0.6s ease;
@@ -819,3 +798,34 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
       padding-inline: 1rem !important;
     }
   }
+
+
+  @keyframes sacudidaAhorcado {
+    0% { transform: rotate(0deg); }
+    20% { transform: rotate(-5deg); }
+    40% { transform: rotate(5deg); }
+    60% { transform: rotate(-3deg); }
+    80% { transform: rotate(3deg); }
+    100% { transform: rotate(0deg); }
+  }
+  
+  .ahorcado-animado {
+    animation: sacudidaAhorcado 0.6s ease-in-out;
+  }
+
+  .ahorcado-resplandor {
+    animation: glowRojo 0.6s ease-out;
+  }
+  
+  @keyframes glowRojo {
+    0% {
+      filter: drop-shadow(0 0 0px transparent);
+    }
+    50% {
+      filter: drop-shadow(0 0 18px rgba(220, 53, 69, 0.8));
+    }
+    100% {
+      filter: drop-shadow(0 0 0px transparent);
+    }
+  }
+  
