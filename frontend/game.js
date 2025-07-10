@@ -5,6 +5,7 @@
  */
 
 
+
 // --- Elementos HTML de la interfaz (Selección de Modo, Ingreso de Palabra VS, Área de Juego) ---
 
 const seccionBienvenida = document.getElementById("seccionBienvenida"); // Agregado, ya que la tienes
@@ -49,6 +50,9 @@ const contenedorGameId = document.getElementById("contenedorGameId");
 const displayGameId = document.getElementById("displayGameId");
 const botonCopiarId = document.getElementById("botonCopiarId");
 const contenedorBotonJuegoOnline = document.getElementById("contenedorBotonJuegoOnline");
+
+
+
 
 
 function esEscritorio() {
@@ -541,8 +545,6 @@ function getEscenaAhorcado(intentosRestantes, maxIntentos, juegoTerminado, palab
 }
 
 
-
-
 function actualizarUIJuego(data) {
     console.log("DEBUG: Datos recibidos en actualizarUIJuego:", data);
     console.log("     Dentro de actualizarUIJuego. currentMode:", currentMode);
@@ -572,6 +574,10 @@ function actualizarUIJuego(data) {
 
     const cantidadErradasCalculada = 6 - data.intentosRestantes;
     console.log("     cantidad de erradas:", cantidadErradasCalculada);
+if (!data.juegoTerminado && data.intentosRestantes === 1) {
+  sonidoUltimoIntento.currentTime = 0;
+  sonidoUltimoIntento.play();
+}
 
     if (data.juegoTerminado) {
   finalizandoJuego = true;
@@ -586,14 +592,31 @@ function actualizarUIJuego(data) {
     data.juegoTerminado,
     palabraAdivinada
   );
+  
 
   if (palabraAdivinada) {
     mostrarMensajeAlerta(mensajeJuego, `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`, 'success');
+    efectoTriunfo.currentTime = 0;
+    efectoTriunfo.play();
+    setTimeout(() => {
+      musicaFondoIntro.pause(); // detenemos música intro
+      musicaFestejo.currentTime = 0;
+      musicaFestejo.play();
+    }, 800);
+
+
     imagenAhorcado.classList.remove("final-victoria", "final-derrota", "ahorcado-animado", "ahorcado-resplandor");
     void imagenAhorcado.offsetWidth;
     imagenAhorcado.src = `img/ahorcadito_${escena}.png`;
     imagenAhorcado.classList.add("final-victoria");
   } else if (data.intentosRestantes <= 0) {
+    efectoDerrota.currentTime = 0;
+    efectoDerrota.play();
+    setTimeout(() => {
+      musicaFondoIntro.pause();
+      musicaDerrota.currentTime = 0;
+      musicaDerrota.play();
+    }, 800);
     mostrarMensajeAlerta(mensajeJuego, `¡GAME OVER! La palabra era: ${data.palabraSecreta}`, 'danger');
     imagenAhorcado.src = `img/ahorcadito_${escena}.png`;
     imagenAhorcado.classList.add("final-derrota");
@@ -637,9 +660,15 @@ function actualizarUIJuego(data) {
         // Si el mensaje indica que la letra es INCORRECTA (rojo)
         } else if (data.message.includes("Incorrecto") || data.message.includes("La letra no está en la palabra")) {
             mostrarMensajeAlerta(mensajeJuego, data.message, 'danger');
+            efectoErrorLetra.currentTime = 0;
+            efectoErrorLetra.play();
+
         // Si el mensaje es una letra CORRECTA (verde)
         } else if (data.message.includes("correcta.") || data.message.includes("¡Bien!")) {
             mostrarMensajeAlerta(mensajeJuego, data.message, 'success');
+            efectoAciertoLetra.currentTime = 0;
+            efectoAciertoLetra.play();
+
         // Para otros mensajes informativos (azul por defecto)
         } else {
             mostrarMensajeAlerta(mensajeJuego, data.message, 'info');
@@ -1139,6 +1168,7 @@ async function reiniciarJuego() {
 if (botonInicio) {
     botonInicio.addEventListener("click", function (event) {
       event.preventDefault();
+      musicaFondoIntro.play();
   
       const alias = document.getElementById("aliasInput")?.value.trim();
       const mensajeAlias = document.getElementById("mensajeAlias");
@@ -1185,6 +1215,7 @@ if (botonInicio) {
 
 botonSolitario.addEventListener("click", async function(event) {
     event.preventDefault();
+    
     // No necesitamos pasar palabraVersus para solitario
     await iniciarJuego("solitario");
 });
@@ -1480,8 +1511,50 @@ function inicializarUI() {
     ocultarSeccion(botonReiniciar);
 }
 
+//musica de fondo
+
+const musicaFondoIntro = new Audio('sounds/musica_fondo_intro.mp3');
+const efectoAciertoLetra = new Audio('sounds/acierto_letra.mp3');
+const efectoErrorLetra = new Audio('sounds/error_letra.mp3');
+const efectoTriunfo = new Audio('sounds/triunfo.mp3');
+efectoTriunfo.volume = 0.2; // Volumen más alto para el triunfo
+const efectoDerrota = new Audio('sounds/derrota.mp3');
+const sonidoUltimoIntento = new Audio('sounds/ultimo_intento.mp3');
+sonidoUltimoIntento.volume = 1;
+musicaFondoIntro.loop = true;
+musicaFondoIntro.volume = 0.3; // Volumen suave para no tapar los efectos
+
 // Llama a la función de inicialización y SignalR cuando el DOM esté completamente cargado
 document.addEventListener("DOMContentLoaded", () => {
-    inicializarUI();
-    startSignalRConnection();
+  setTimeout(() => {
+    // ✅ Ocultamos primero la pantalla de carga
+    const pantalla = document.getElementById("pantallaCargaInicial");
+    pantalla.classList.add("fade-out");
+
+    // ✅ Luego mostramos el modal
+    const modalMusica = new bootstrap.Modal(document.getElementById("modalMusica"), {
+      backdrop: 'static',
+      keyboard: false
+    });
+    modalMusica.show();
+
+    document.getElementById("btnMusicaSi").addEventListener("click", () => {
+      musicaFondoIntro.currentTime = 0;
+      musicaFondoIntro.volume = 0.3;
+      musicaFondoIntro.loop = true;
+      musicaFondoIntro.play();
+      modalMusica.hide();
+      inicializarUI();
+      startSignalRConnection();
+    });
+
+    document.getElementById("btnMusicaNo").addEventListener("click", () => {
+      modalMusica.hide();
+      inicializarUI();
+      startSignalRConnection();
+    });
+  }, 2000); // ⏳ tiempo de protagonismo de pantallaCargaInicial
 });
+
+
+

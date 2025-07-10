@@ -870,3 +870,119 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     }
   }
   
+  .pantalla-bloqueo {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000000aa; /* semitransparente */
+    color: white;
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999; /* 👈 muy importante */
+  }
+
+  .fade-out {
+    animation: desaparecer 0.5s forwards;
+  }
+  
+  @keyframes desaparecer {
+    to { opacity: 0; visibility: hidden; }
+  }
+
+  .cortina-container {
+    overflow: hidden;
+    animation: cortinaVertical 2.5s ease-out forwards;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    font-family: 'Creepster', cursive;
+    font-size: 2rem;
+    color: white;
+  }
+  
+  @keyframes cortinaVertical {
+    0% {
+      clip-path: inset(100% 0 0 0); /* tapado desde arriba */
+      opacity: 0;
+    }
+    40% {
+      opacity: 1;
+    }
+    100% {
+      clip-path: inset(0 0 0 0); /* todo visible */
+    }
+  }
+
+  #modalMusica .modal-content {
+    background: #1a1a1a; /* fondo oscuro */
+    color: #f1f1f1;
+    border: 2px solid #690000; /* borde rojo sangre */
+    border-radius: 8px;
+    box-shadow: 0 0 20px #440000; /* sombra siniestra */
+    font-family: 'Creepster', cursive;
+    text-align: center;
+  }
+  
+  #modalMusica .btn {
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 1px;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  #btnMusicaSi {
+    background-color: #007b00;
+    color: #fff;
+  }
+  
+  #btnMusicaNo {
+    background-color: #444;
+    color: #fff;
+  }
+  
+  #modalMusica h5 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: #ff4d4d;
+  }
+
+  #modalMusica .btn:hover {
+    transform: scale(1.05);
+  }
+  
+  #modalMusica .descripcion-modal {
+    color: #f8f8f8; /* más claro que #f1f1f1 */
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-family: 'Roboto', sans-serif;
+    line-height: 1.4;
+  }
+
+  #modalMusica .modal-content {
+    animation: cartelTenebroso 0.8s ease-out;
+  }
+
+  #modalMusica .descripcion-modal {
+  color: #f8f8f8; /* más claro que #f1f1f1 */
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  font-family: 'Roboto', sans-serif;
+  line-height: 1.4;
+}
+  
+  @keyframes cartelTenebroso {
+    from {
+      opacity: 0;
+      transform: scale(0.95) translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
