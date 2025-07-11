@@ -986,3 +986,31 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
       transform: scale(1) translateY(0);
     }
   }
+
+  .boton-musica {
+    position: fixed;
+    bottom: 80px;  /* <-- antes era 16px */
+    right: 20px;
+    z-index: 1000;
+    background-color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    font-size: 24px;
+    padding: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+  
+  
+  .boton-musica {
+    display: inline-block !important;
+  }
+  
+  @media (max-width: 768px) {
+    .boton-musica {
+      bottom: 100px;
+      right: 10px;
+    }
+  }
+  

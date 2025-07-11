@@ -598,13 +598,7 @@ if (!data.juegoTerminado && data.intentosRestantes === 1) {
     mostrarMensajeAlerta(mensajeJuego, `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`, 'success');
     efectoTriunfo.currentTime = 0;
     efectoTriunfo.play();
-    setTimeout(() => {
-      musicaFondoIntro.pause(); // detenemos música intro
-      musicaFestejo.currentTime = 0;
-      musicaFestejo.play();
-    }, 800);
-
-
+    
     imagenAhorcado.classList.remove("final-victoria", "final-derrota", "ahorcado-animado", "ahorcado-resplandor");
     void imagenAhorcado.offsetWidth;
     imagenAhorcado.src = `img/ahorcadito_${escena}.png`;
@@ -1413,7 +1407,7 @@ if (inputIngresaLetra) {
 if (botonReiniciar) {
     botonReiniciar.addEventListener("click", async () => { // Hacer async para await
         console.log("Clic en 'Reiniciar Partida'. Modo actual:", currentMode);
-
+musicaFondoIntro.play();
         if (currentMode === 'online') {
             await abandonarPartidaOnline(); // Notificar si estaba en online ANTES de cambiar la UI
             // La lógica que tienes para mostrar seccionOnline ya está bien para la UI
@@ -1450,6 +1444,7 @@ inputIngresaLetra.addEventListener("keypress", async function(event) {
 });
 
 botonVolverAlMenu.addEventListener("click", function () {
+  musicaFondoIntro.play();
     Swal.fire({
         title: '¿Abandonar partida?',
         text: "Perderás el progreso actual.",
@@ -1511,7 +1506,7 @@ function inicializarUI() {
     ocultarSeccion(botonReiniciar);
 }
 
-//musica de fondo
+//musica y efectos de sonido
 
 const musicaFondoIntro = new Audio('sounds/musica_fondo_intro.mp3');
 const efectoAciertoLetra = new Audio('sounds/acierto_letra.mp3');
@@ -1554,7 +1549,24 @@ document.addEventListener("DOMContentLoaded", () => {
       startSignalRConnection();
     });
   }, 2000); // ⏳ tiempo de protagonismo de pantallaCargaInicial
+
+
+      const botonMusica = document.getElementById("toggleMusicaBtn");
+      let musicaActiva = false;
+
+    botonMusica.addEventListener("click", () => {
+      if (musicaActiva) {
+        musicaFondoIntro.pause();
+        botonMusica.textContent = "🔇";
+      } else {
+        musicaFondoIntro.play();
+        botonMusica.textContent = "🔊";
+      }
+      musicaActiva = !musicaActiva;
+    });
+
 });
+
 
 
 
