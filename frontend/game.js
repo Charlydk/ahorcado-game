@@ -82,14 +82,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 // --- Variables de conexion al backend ---
-const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
-//const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
+//const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
+const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
 
 // --- Variables y Funciones para Heartbeat ---
 // Variable para almacenar el ID del intervalo del heartbeat
 let heartbeatIntervalId;
 // Intervalo en milisegundos para enviar el heartbeat (15 segundos)
-const HEARTBEAT_INTERVAL_MS = 15000; 
+const HEARTBEAT_INTERVAL_MS = 45000; 
 
 // Función para iniciar el envío periódico de heartbeats
 function startHeartbeat() {
@@ -292,8 +292,8 @@ function capturarAliasGlobal() {
 
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-    //.withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",  // URL de producción
-    .withUrl("http://localhost:8080/gamehub",  // URL de desarrollo
+    .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",  // URL de producción
+    //.withUrl("http://localhost:8080/gamehub",  // URL de desarrollo
     {
     transport: signalR.HttpTransportType.WebSockets,
     withCredentials: true
