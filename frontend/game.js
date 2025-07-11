@@ -1335,92 +1335,72 @@ botonCancelarVersus.addEventListener("click", function(event) {
 });
 
 if (botonSubirLetra) {
+  // CLICK (Desktop + Mobile)
   botonSubirLetra.addEventListener("click", async (event) => {
-    event.preventDefault(); 
-    document.activeElement.blur();
+      event.preventDefault();
+      document.activeElement.blur();
 
-    const letraIngresada = inputIngresaLetra.value.toUpperCase().trim();
+      const letraIngresada = inputIngresaLetra.value.toUpperCase().trim();
 
-    // Validación
-    if (letraIngresada.length === 0) {
-      mostrarMensajeAlerta(mensajeJuego, "Por favor, ingresa una letra.", 'warning');
-      inputIngresaLetra.focus();
-      return;
-    }
+      // Validación: Vacío
+      if (letraIngresada.length === 0) {
+          mostrarMensajeAlerta(mensajeJuego, "Por favor, ingresa una letra.", 'warning');
+          inputIngresaLetra.focus();
+          return;
+      }
 
-    // ✅ Envía la letra
-    await manejarEnvioLetra(letraIngresada);
+      // Validación: Letra válida
+      if (letraIngresada.length !== 1 || !/^[A-ZÑ]$/.test(letraIngresada)) {
+          mostrarMensajeAlerta(mensajeJuego, "Ingresa una sola letra válida (A-Z, Ñ).", 'warning');
+          inputIngresaLetra.value = "";
+          inputIngresaLetra.focus();
+          return;
+      }
+
+      // Validación: Letra ya ingresada
+      const letrasCorrectasEnGuiones = inputGuiones.textContent.replace(/ /g, '');
+      const textoLetrasIncorrectas = letrasIncorrectasSpan.textContent;
+      let letrasIncorrectasArray = [];
+      const match = textoLetrasIncorrectas.match(/:\s*([A-ZÑ,\s]*)$/);
+      if (match && match[1]) {
+          letrasIncorrectasArray = match[1].replace(/,\s*/g, '').split('');
+      }
+
+      const letrasYaIntentadas = new Set();
+      letrasCorrectasEnGuiones.split('').filter(char => char !== '_').forEach(char => letrasYaIntentadas.add(char));
+      letrasIncorrectasArray.forEach(char => letrasYaIntentadas.add(char));
+
+      if (letrasYaIntentadas.has(letraIngresada)) {
+          mostrarMensajeAlerta(mensajeJuego, `Ya enviaste la letra ${letraIngresada} anteriormente. Intenta con otra.`, 'warning');
+          inputIngresaLetra.value = "";
+          inputIngresaLetra.focus();
+          return;
+      }
+
+      // Enviar letra
+      inputIngresaLetra.disabled = true;
+      botonSubirLetra.disabled = true;
+      await manejarEnvioLetra(letraIngresada);
   });
 
-  // 👇 Agregar touchend una sola vez
+  // TOUCHEND (Mobile fix)
   botonSubirLetra.addEventListener("touchend", () => {
-    document.activeElement.blur();
-    setTimeout(() => {
-      botonSubirLetra.click();
-      botonSubirLetra.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 100);
+      document.activeElement.blur();
+      setTimeout(() => {
+          botonSubirLetra.click();
+          botonSubirLetra.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
   });
 }
 
-
-        // 2. Validación de una sola letra y solo letras (A-Z, Ñ)
-        if (letraIngresada.length !== 1 || !/^[A-ZÑ]$/.test(letraIngresada)) {
-            mostrarMensajeAlerta(mensajeJuego, "Ingresa una sola letra válida (A-Z, Ñ).", 'warning');
-            inputIngresaLetra.value = "";
-            inputIngresaLetra.focus();
-        if (esEscritorio()) {
-            inputIngresaLetra.focus();
-        }
-
-            return;
-        }
-
-        // 3. Validación de letra YA ADIVINADA
-        const letrasCorrectasEnGuiones = inputGuiones.textContent.replace(/ /g, ''); 
-        
-        const textoLetrasIncorrectas = letrasIncorrectasSpan.textContent;
-        let letrasIncorrectasArray = [];
-        const match = textoLetrasIncorrectas.match(/:\s*([A-ZÑ,\s]*)$/); 
-        if (match && match[1]) {
-            letrasIncorrectasArray = match[1].replace(/,\s*/g, '').split(''); 
-        }
-
-        const letrasYaIntentadas = new Set();
-        letrasCorrectasEnGuiones.split('').filter(char => char !== '_').forEach(char => letrasYaIntentadas.add(char));
-        letrasIncorrectasArray.forEach(char => letrasYaIntentadas.add(char));
-
-        if (letrasYaIntentadas.has(letraIngresada)) {
-            
-            mostrarMensajeAlerta(mensajeJuego, `Ya enviaste la letra ${letraIngresada} anteriormente. Intenta con otra.`, 'warning'); 
-            inputIngresaLetra.value = "";
-            
-        if (esEscritorio()) {
-            inputIngresaLetra.focus();
-        }
-
-            return; 
-        }
-
-        // Si todas las validaciones pasan, PASAMOS LA LETRA COMO ARGUMENTO
-        // Deshabilitar input y botón para evitar doble envío mientras se espera la respuesta
-        inputIngresaLetra.disabled = true;
-        botonSubirLetra.disabled = true;
-        
-        await manejarEnvioLetra(letraIngresada); 
-    });
-}
-
-// --- NUEVO: Manejar el evento 'Enter' en el input de adivinar letra ---
+// ENTER en el input
 if (inputIngresaLetra) {
-    inputIngresaLetra.addEventListener("keydown", (event) => {
-        // Verificar si la tecla presionada es 'Enter' (código 13 o 'Enter' por nombre de tecla)
-        if (event.key === "Enter" || event.keyCode === 13) {
-            event.preventDefault(); // Previene el comportamiento por defecto (ej. submit de formulario, salto de línea)
-            
-            // Simula un clic en el botón de subir letra
-            botonSubirLetra.click(); 
-        }
-    });
+  inputIngresaLetra.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+          event.preventDefault();
+          botonSubirLetra.click();
+      }
+  });
 }
 
 
