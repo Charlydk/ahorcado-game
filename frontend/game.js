@@ -598,6 +598,11 @@ if (!data.juegoTerminado && data.intentosRestantes === 1) {
     mostrarMensajeAlerta(mensajeJuego, `¡Felicidades! Has adivinado la palabra: ${data.palabraSecreta}`, 'success');
     efectoTriunfo.currentTime = 0;
     efectoTriunfo.play();
+    setTimeout(() => {
+      musicaFondoIntro.pause();
+      musicaDerrota.currentTime = 0;
+      musicaDerrota.play();
+    }, 800);
     
     imagenAhorcado.classList.remove("final-victoria", "final-derrota", "ahorcado-animado", "ahorcado-resplandor");
     void imagenAhorcado.offsetWidth;
