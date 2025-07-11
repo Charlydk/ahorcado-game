@@ -1444,6 +1444,14 @@ inputIngresaLetra.addEventListener("keypress", async function(event) {
     }
 });
 
+inputIngresaLetra.addEventListener("touchstart", () => {
+  setTimeout(() => {
+    inputIngresaLetra.focus();
+    inputIngresaLetra.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 100); // Espera que el layout se acomode
+});
+
+
 botonVolverAlMenu.addEventListener("click", function () {
   musicaFondoIntro.play();
     Swal.fire({
