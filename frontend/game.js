@@ -1335,17 +1335,33 @@ botonCancelarVersus.addEventListener("click", function(event) {
 });
 
 if (botonSubirLetra) {
-    botonSubirLetra.addEventListener("click", async (event) => {
-        event.preventDefault(); 
+  botonSubirLetra.addEventListener("click", async (event) => {
+    event.preventDefault(); 
+    document.activeElement.blur();
 
-        const letraIngresada = inputIngresaLetra.value.toUpperCase().trim();
+    const letraIngresada = inputIngresaLetra.value.toUpperCase().trim();
 
-        // 1. Validación de Vacío
-        if (letraIngresada.length === 0) {
-            mostrarMensajeAlerta(mensajeJuego, "Por favor, ingresa una letra.", 'warning');
-            inputIngresaLetra.focus();
-            return;
-        }
+    // Validación
+    if (letraIngresada.length === 0) {
+      mostrarMensajeAlerta(mensajeJuego, "Por favor, ingresa una letra.", 'warning');
+      inputIngresaLetra.focus();
+      return;
+    }
+
+    // ✅ Envía la letra
+    await manejarEnvioLetra(letraIngresada);
+  });
+
+  // 👇 Agregar touchend una sola vez
+  botonSubirLetra.addEventListener("touchend", () => {
+    document.activeElement.blur();
+    setTimeout(() => {
+      botonSubirLetra.click();
+      botonSubirLetra.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  });
+}
+
 
         // 2. Validación de una sola letra y solo letras (A-Z, Ñ)
         if (letraIngresada.length !== 1 || !/^[A-ZÑ]$/.test(letraIngresada)) {
