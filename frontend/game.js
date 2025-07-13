@@ -1493,11 +1493,12 @@ musicaFondoIntro.volume = 0.3; // Volumen suave para no tapar los efectos
 // Llama a la función de inicialización y SignalR cuando el DOM esté completamente cargado
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 🕒 Pantalla de carga + Música (después de barra animada)
+  // 🕒 Pantalla de carga + Música
   setTimeout(() => {
     const pantalla = document.getElementById("pantallaCargaInicial");
     pantalla.classList.add("fade-out");
-    setTimeout(() => pantalla.style.display = "none", 1000); // Quita del DOM visual tras la transición
+
+    setTimeout(() => pantalla.style.display = "none", 1000);
 
     const modalMusica = new bootstrap.Modal(document.getElementById("modalMusica"), {
       backdrop: 'static',
@@ -1523,30 +1524,61 @@ document.addEventListener("DOMContentLoaded", () => {
       inicializarUI();
       startSignalRConnection();
     });
-  }, 2500); // ⏳ mismo tiempo que la animación .progreso
+  }, 2500);
 
+  // 🎵 Activar/desactivar música desde el botón flotante
+  const botonMusica = document.getElementById("toggleMusicaBtn");
+  let musicaActiva = false;
 
-// 👇 Este va afuera del btnValidarAdmin (una sola vez al cargar)
-document.getElementById("modalValidarAdmin").addEventListener("hidden.bs.modal", () => {
-  if (!adminAliasValidado) {
-    
-    ocultarSeccion(seccionAdminPalabras); 
-    mostrarSeccion(seccionBienvenida); // ✅ Restaurar la vista limpia
-  }
-});
+  botonMusica.addEventListener("click", () => {
+    if (musicaActiva) {
+      musicaFondoIntro.pause();
+      botonMusica.textContent = "🔇";
+    } else {
+      musicaFondoIntro.play();
+      botonMusica.textContent = "🔊";
+    }
+    musicaActiva = !musicaActiva;
+  });
 
+  // 🛠️ Panel Admin comportamiento
+  const botonAdmin = document.getElementById("botonAdmin");
+  const modalAdmin = new bootstrap.Modal(document.getElementById("modalValidarAdmin"), {
+    backdrop: 'static',
+    keyboard: false
+  });
+  const btnValidarAdmin = document.getElementById("btnValidarAdmin");
+  const aliasAdminInput = document.getElementById("aliasAdminInput");
+  const adminErrorMsg = document.getElementById("adminErrorMsg");
 
-  document.getElementById("modalValidarAdmin").addEventListener("hidden.bs.modal", () => {
-    if (!adminAliasValidado) {
-      
+  const aliasesPermitidos = ["devfab", "portfolio"];
+  let adminAliasValidado = false;
+
+  botonAdmin.addEventListener("click", () => {
+    modalAdmin.show();
+    adminErrorMsg.classList.add("d-none");
+    aliasAdminInput.value = "";
+    adminAliasValidado = false;
+  });
+
+  btnValidarAdmin.addEventListener("click", () => {
+    const aliasIngresado = aliasAdminInput.value.trim().toLowerCase();
+    if (aliasesPermitidos.includes(aliasIngresado)) {
+      adminAliasValidado = true;
+      modalAdmin.hide();
+      irASeccionAdmin();
+    } else {
+      adminErrorMsg.classList.remove("d-none");
     }
   });
 
-  // 🧭 Inicializar UI al cargar
-  inicializarUI();
-  startSignalRConnection();
+  document.getElementById("modalValidarAdmin").addEventListener("hidden.bs.modal", () => {
+    if (!adminAliasValidado) {
+      ocultarSeccion(seccionAdminPalabras);
+      mostrarSeccion(seccionBienvenida);
+    }
+  });
+
+  // 🧭 Mostrar el botón admin en la bienvenida
   botonAdmin.style.display = "inline-block";
 });
-
-
-
