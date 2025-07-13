@@ -1493,10 +1493,11 @@ musicaFondoIntro.volume = 0.3; // Volumen suave para no tapar los efectos
 // Llama a la función de inicialización y SignalR cuando el DOM esté completamente cargado
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 🕒 Pantalla de carga + Música
+  // 🕒 Pantalla de carga + Música (después de barra animada)
   setTimeout(() => {
     const pantalla = document.getElementById("pantallaCargaInicial");
     pantalla.classList.add("fade-out");
+    setTimeout(() => pantalla.style.display = "none", 1000); // Quita del DOM visual tras la transición
 
     const modalMusica = new bootstrap.Modal(document.getElementById("modalMusica"), {
       backdrop: 'static',
@@ -1522,54 +1523,8 @@ document.addEventListener("DOMContentLoaded", () => {
       inicializarUI();
       startSignalRConnection();
     });
-  }, 1500);
+  }, 2500); // ⏳ mismo tiempo que la animación .progreso
 
-  // 🎵 Botón para alternar música manualmente
-  const botonMusica = document.getElementById("toggleMusicaBtn");
-  let musicaActiva = false;
-
-  botonMusica.addEventListener("click", () => {
-    if (musicaActiva) {
-      musicaFondoIntro.pause();
-      botonMusica.textContent = "🔇";
-    } else {
-      musicaFondoIntro.play();
-      botonMusica.textContent = "🔊";
-    }
-    musicaActiva = !musicaActiva;
-  });
-
-  // 🛠️ Acceso al panel Admin
-  const botonAdmin = document.getElementById("botonAdmin");
-  const modalAdmin = new bootstrap.Modal(document.getElementById("modalValidarAdmin"), {
-    backdrop: 'static',
-    keyboard: false
-  });
-  const btnValidarAdmin = document.getElementById("btnValidarAdmin");
-  const aliasAdminInput = document.getElementById("aliasAdminInput");
-  const adminErrorMsg = document.getElementById("adminErrorMsg");
-
-  const aliasesPermitidos = ["devfab", "portfolio"];
-  let adminAliasValidado = false;
-
-  botonAdmin.addEventListener("click", () => {
-    modalAdmin.show();
-    adminErrorMsg.classList.add("d-none");
-    aliasAdminInput.value = "";
-    adminAliasValidado = false; // Resetear en cada intento
-  });
-
-  
-btnValidarAdmin.addEventListener("click", () => {
-  const aliasIngresado = aliasAdminInput.value.trim().toLowerCase();
-  if (aliasesPermitidos.includes(aliasIngresado)) {
-    adminAliasValidado = true;
-    modalAdmin.hide();
-    irASeccionAdmin();
-  } else {
-    adminErrorMsg.classList.remove("d-none");
-  }
-});
 
 // 👇 Este va afuera del btnValidarAdmin (una sola vez al cargar)
 document.getElementById("modalValidarAdmin").addEventListener("hidden.bs.modal", () => {
