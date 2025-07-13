@@ -4,8 +4,6 @@
  * @param {Function} [onComplete] Función a ejecutar una vez que la animación termina.
  */
 
-
-
 // --- Elementos HTML de la interfaz (Selección de Modo, Ingreso de Palabra VS, Área de Juego) ---
 
 const seccionBienvenida = document.getElementById("seccionBienvenida"); // Agregado, ya que la tienes
@@ -93,12 +91,12 @@ function startHeartbeat() {
     heartbeatIntervalId = setInterval(() => {
         // Solo enviamos el heartbeat si la conexión está en estado 'Connected'
         if (connection.state === signalR.HubConnectionState.Connected) {
-            console.log("Enviando heartbeat al servidor...");
+            
             // Llamamos al método 'SendHeartbeat' en tu GameHub
             connection.invoke("SendHeartbeat")
                 .catch(err => console.error("Error al enviar heartbeat:", err));
         } else {
-            console.warn("No se pudo enviar heartbeat, la conexión no está en estado 'Connected'. Estado actual:", connection.state);
+            
         }
     }, HEARTBEAT_INTERVAL_MS);
 }
@@ -109,7 +107,7 @@ function stopHeartbeat() {
         clearInterval(heartbeatIntervalId);
         heartbeatIntervalId = null; // Reiniciar la variable
     }
-    console.log("Heartbeat detenido.");
+    
 }
 
 mostrarRankingHorizontal();
@@ -276,8 +274,7 @@ function capturarAliasGlobal() {
         alert("Por favor ingresá tu alias para continuar.");
         throw new Error("Alias vacío");
     }
-    console.log("Alias global capturado:", aliasJugadorActual);
-}
+ }
 
 
 
@@ -324,10 +321,7 @@ connection.onclose((error) => {
 
 // Manejar la reconexión automática de SignalR ***
 connection.onreconnected(async () => {
-    console.log("🌀 Nuevo connectionId tras reconexión:", connection.connectionId);
-    console.log("🔁 Reconectado a SignalR. Intentando restaurar sesión de juego...");
-  
-    if (currentGameId && alias) {
+   if (currentGameId && alias) {
       try {
         await connection.invoke("ReingresarPartida", currentGameId, aliasJugadorActual);
         console.log("✅ Reconexión lógica completada. Estado solicitado desde el servidor.");
@@ -344,16 +338,11 @@ connection.onreconnected(async () => {
 
 // Escucha eventos del Hub de SignalR
 connection.on("ReceiveGameUpdate", (data) => {
-    console.log("ReceiveGameUpdate recibido:", data);
     latestGameData = data;
     if (data.JuegoTerminado) {
         juegoTerminadoManualmente = true;
-        console.log("⚠️ Flag juegoTerminadoManualmente activado.");
+        
     }
-    console.log("ReceiveGameUpdate recibido. Datos:", data);
-    console.log("Juego terminado (juegoTerminado):", data.juegoTerminado);
-    console.log("Mensaje recibido (gameData.message):", data.message);
-
     // Solo actualiza la UI si la sección de juego está actualmente visible.
     if (seccionJuego.style.display !== 'none') {
         if (data.message?.includes("ha abandonado la partida")) {
@@ -401,7 +390,6 @@ connection.on("OpponentDisconnected", (gameId) => {
 
 // Cuando un segundo jugador se une a una partida online
 connection.on("PlayerJoined", (gameId, playerConnectionId) => {
-    console.log(`Jugador ${playerConnectionId} se unió a la partida ${gameId}.`);
     if (gameId === currentGameId) {
         // En lugar de style.color, usa la función de alerta
         mostrarMensajeAlerta(mensajeJuego, "¡Otro jugador se ha unido! Comienza el juego.", 'success', true);
@@ -486,8 +474,6 @@ async function iniciarJuego(modo, palabraVersus = "") {
             IntentosPermitidos: intentosIniciales
         };
 
-        console.log("📨 Payload enviado a /iniciar:", payload);
-        console.log("🎚️ Dificultad seleccionada:", intentosIniciales);
         const response = await fetch(`${BACKEND_URL}juego/iniciar`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -501,8 +487,6 @@ async function iniciarJuego(modo, palabraVersus = "") {
         }
 
         const data = await response.json();
-        console.log("✅ Respuesta del backend (iniciar):", data);
-
         // 🧠 Actualizar estado local
         currentGameId = data.gameId;
         currentMode = modo;
@@ -517,7 +501,6 @@ async function iniciarJuego(modo, palabraVersus = "") {
        
 
     } catch (error) {
-        console.error("❌ Error CATCHED al iniciar el juego:", error);
         mostrarMensajeAlerta(
             mensajeJuego,
             `Error: ${error.message}. Por favor, reiniciá o intentá de nuevo.`,
@@ -537,14 +520,7 @@ function getEscenaAhorcado(intentosRestantes, maxIntentos, juegoTerminado, palab
 
 
 function actualizarUIJuego(data) {
-    console.log("DEBUG: Datos recibidos en actualizarUIJuego:", data);
-    console.log("     Dentro de actualizarUIJuego. currentMode:", currentMode);
-    console.log("     Datos recibidos para actualizar UI:", data);
-    console.log("     [DEBUG] Mensaje recibido del backend (data.message):", data.message);
-    console.log("Intentos iniciales:", data.IntentosRestantes);
-
-
-    const intentosRestantesSpan = document.getElementById("intentosRestantes"); 
+   const intentosRestantesSpan = document.getElementById("intentosRestantes"); 
     if (intentosRestantesSpan) {
         intentosRestantesSpan.textContent = data.intentosRestantes;
     }
@@ -564,7 +540,6 @@ function actualizarUIJuego(data) {
     inputLetrasOut.textContent = Array.isArray(data.letrasIncorrectas) ? data.letrasIncorrectas.join(", ") : data.letrasIncorrectas;
 
     const cantidadErradasCalculada = 6 - data.intentosRestantes;
-    console.log("     cantidad de erradas:", cantidadErradasCalculada);
 if (!data.juegoTerminado && data.intentosRestantes === 1) {
   sonidoUltimoIntento.currentTime = 0;
   sonidoUltimoIntento.play();
@@ -622,7 +597,6 @@ if (!data.juegoTerminado && data.intentosRestantes === 1) {
 
   mostrarSeccion(botonReiniciar);
   mostrarSeccion(botonVolverAlMenu);
-  console.log("     Juego Terminado detectado. Mensaje establecido en UI:", mensajeJuego.textContent);
 }
 
    else {
@@ -642,8 +616,6 @@ if (!data.juegoTerminado && data.intentosRestantes === 1) {
          mostrarSeccion(botonVolverAlMenu);
 
         if (data.message && data.message !== "") {
-  console.log("     Mostrando data.message:", data.message);
-
         // Si el mensaje indica una letra ya ingresada, es una ADVERTENCIA (amarillo)
         if (data.message.includes("enviaste") || data.message.includes("anteriormente") || data.message.includes("Intenta con otra")) {
             mostrarMensajeAlerta(mensajeJuego, data.message, 'warning');
@@ -710,7 +682,6 @@ if (!data.juegoTerminado && data.intentosRestantes === 1) {
       }
         
         if (currentMode === "online") {
-            console.log("     Modo online detectado. Evaluando turno.");
             mostrarSeccion(mensajeTurno); // El mensaje de turno no es una alerta, se muestra directamente
 
             const myConnectionId = connection.connectionId;
@@ -719,21 +690,21 @@ if (!data.juegoTerminado && data.intentosRestantes === 1) {
                     mensajeTurno.textContent = "¡Es tu turno!";
                     inputIngresaLetra.disabled = false;
                     botonSubirLetra.disabled = false;
-                    console.log("     Es mi turno.");
+
                 } else {
                     mensajeTurno.textContent = "Espera tu turno.";
                     inputIngresaLetra.disabled = true;
                     botonSubirLetra.disabled = true;
-                    console.log("     Es el turno del otro jugador.");
+
                 }
             } else {
                 mensajeJuego.textContent = "Esperando a otro jugador..."; // Este sí se queda sin alerta
                 inputIngresaLetra.disabled = true;
                 botonSubirLetra.disabled = true;
-                console.log("     Modo online: Esperando a otro jugador (turno no asignado).");
+
             }
         } else {
-            console.log("     Modo solitario/versus detectado.");
+
             ocultarMensajeAlerta(mensajeTurno); // Ocultar mensaje de turno (no es una alerta)
             inputIngresaLetra.disabled = false;
             botonSubirLetra.disabled = false;
@@ -765,8 +736,7 @@ async function crearNuevaPartidaOnline() {
         }
 
         const dificultadSeleccionada = parseInt(document.getElementById("selectorDificultad")?.value || "6");
-        console.log("🎚️ Dificultad seleccionada en modo online:", dificultadSeleccionada);
-
+        
         mostrarMensajeAlerta(mensajeIdPartida, "Creando partida online...", 'info');
         ocultarMensajeAlerta(mensajeJuego);
 
@@ -783,9 +753,7 @@ async function crearNuevaPartidaOnline() {
 
         currentGameId = gameId;
         currentMode = "online";
-
-        console.log("J1: Partida creada vía SignalR. currentGameId:", gameId, "codigoSala:", codigoSala);
-        console.log(`Creador (${connection.connectionId}) unido al grupo SignalR de la partida: ${gameId}`);
+    
 
         mostrarMensajeAlerta(mensajeIdPartida, `¡Partida creada! Comparte este código: ${codigoSala}`, 'success');
         displayGameId.textContent = `🔡 Código: ${codigoSala}`;
@@ -796,7 +764,7 @@ async function crearNuevaPartidaOnline() {
                 await navigator.clipboard.writeText(codigoSala);
                 mostrarMensajeAlerta(mensajeIdPartida, `📋 Código '${codigoSala}' copiado. ¡Compártelo!`, 'success');
             } catch (err) {
-                console.error('Error al copiar el código:', err);
+                
                 mostrarMensajeAlerta(mensajeIdPartida, `No se pudo copiar. Copia manualmente: ${codigoSala}`, 'warning');
             }
         };
@@ -813,14 +781,14 @@ async function crearNuevaPartidaOnline() {
         mostrarSeccion(botonVolverModosOnline);
 
         botonIrAlJuego.onclick = async () => {
-            console.log("J1: Clic en 'Ir al Juego (esperar)'. Navegando a la sección de juego.");
+            
             ocultarTodasLasSecciones();
             mostrarSeccion(seccionJuego);
             if (latestGameData && latestGameData.gameId === currentGameId) {
-                console.log("J1: Actualizando UI con latestGameData al entrar al juego (J2 ya unido).");
+                
                 actualizarUIJuego(latestGameData);
             } else {
-                console.log("J1: J2 aún no se ha unido. Mostrando mensaje de espera inicial.");
+             
                 mostrarMensajeAlerta(mensajeJuego, "Esperando que otro jugador se una...", 'info');
                 inputIngresaLetra.disabled = true;
                 botonSubirLetra.disabled = true;
@@ -830,7 +798,7 @@ async function crearNuevaPartidaOnline() {
         };
 
     } catch (error) {
-        console.error("Error CATCHED al crear partida online:", error);
+        
         mostrarMensajeAlerta(mensajeIdPartida, `Error: ${error.message}`, 'danger');
 
         const botonIrAlJuego = document.getElementById("botonIrAlJuegoOnline");
@@ -905,9 +873,7 @@ async function unirseAPartidaOnline(gameId) {
       botonUnirsePartida.disabled = true;
       inputIdPartida.readOnly = true;
       mostrarMensajeAlerta(mensajeIdPartida, "Uniéndose a la partida...", 'info');
-  
-      console.log(`🔑 Enviando solicitud de entrada inteligente: ${alias} → ${connectionId}`);
-  
+         
       const response = await fetch(`${BACKEND_URL}juego/entrada-inteligente`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -925,8 +891,7 @@ async function unirseAPartidaOnline(gameId) {
       }
   
       const data = await response.json();
-      console.log("🟢 Respuesta del backend:", data);
-  
+        
       mostrarMensajeAlerta(mensajeIdPartida, data.message || "Ingreso exitoso a la partida", 'success', true);
       ocultarTodasLasSecciones();
       mostrarSeccion(seccionJuego);
@@ -936,7 +901,7 @@ async function unirseAPartidaOnline(gameId) {
       ocultarMensajeAlerta(mensajeIdPartida);
   
     } catch (error) {
-      console.error("⛔ Error en entrada inteligente:", error);
+      
       mostrarMensajeAlerta(mensajeIdPartida, `Error: ${error.message}`, 'danger');
       restaurarSeccionOnlineUI();
       if (esEscritorio()) inputIdPartida.focus();
@@ -947,8 +912,7 @@ async function unirseAPartidaOnline(gameId) {
 
 
 async function manejarEnvioLetra(letra) {
-    console.log("Enviando letra:", letra);
-
+    
     if (!currentGameId) {
         mostrarMensajeAlerta(mensajeJuego, "Error: No hay una partida activa.", 'danger');
         inputIngresaLetra.disabled = false;
@@ -1026,7 +990,7 @@ async function manejarEnvioLetra(letra) {
             return;
         }
     } catch (error) {
-        console.error("Error CATCHED al enviar letra:", error);
+        
         mostrarMensajeAlerta(mensajeJuego, `Error: ${error.message || "Un error inesperado ocurrió."}`, 'danger');
         inputIngresaLetra.disabled = false;
         botonSubirLetra.disabled = false;
@@ -1057,8 +1021,6 @@ async function reiniciarJuego() {
             throw new Error(`Error al reiniciar el juego: ${response.status} - ${errorText}`);
         }
 
-        console.log("Juego reiniciado en el backend.");
-
         currentGameId = null;
         currentMode = null;
 
@@ -1066,7 +1028,7 @@ async function reiniciarJuego() {
         inicializarUI(); // Vuelve a la pantalla de inicio limpia
         resetearUIJuego(); // Para asegurar que la UI del juego esté limpia si se vuelve a jugar
     } catch (error) {
-        console.error("Error CATCHED al reiniciar juego:", error);
+
         mensajeJuego.textContent = `Error al reiniciar: ${error.message}`;
     }
 }
@@ -1077,13 +1039,9 @@ async function reiniciarJuego() {
         if (currentMode === 'online' && currentGameId && connection.state === signalR.HubConnectionState.Connected) 
     {
             try {
-                console.log(`Intentando abandonar partida online ${currentGameId}...`);
-                // Llama a un endpoint de tu backend o a un método de SignalR para notificar
-                // Opción 1: Llamar a un método de SignalR (más directo para el Hub)
-                console.trace("🧃 LeaveGameGroup invocado");
+               
                 await connection.invoke("LeaveGameGroup", currentGameId); 
-                console.log(`Abandonado el grupo SignalR para la partida: ${currentGameId}`);
-                         
+                                    
 
             } catch (error) {
                 console.error("Error al intentar abandonar la partida online:", error);
@@ -1093,9 +1051,6 @@ async function reiniciarJuego() {
         // Siempre limpiar el estado local después de intentar notificar al backend
         limpiarEstadoGlobalDeJuego();
     }
-
-
-
     
         const modalRanking = document.getElementById("modalRanking");
         modalRanking.addEventListener("shown.bs.modal", cargarRankingEnTabla);
@@ -1132,7 +1087,7 @@ async function reiniciarJuego() {
             }
         
           } catch (err) {
-            console.error("⛔ Error al cargar el ranking:", err);
+            
             alert("No se pudo cargar el ranking. Intentalo más tarde.");
           }
         }
@@ -1159,7 +1114,7 @@ async function reiniciarJuego() {
         
             document.getElementById("rankingHorizontal").classList.remove("d-none");
           } catch (err) {
-            console.error("⛔ Error al mostrar ranking horizontal:", err);
+            
           }
         }
         
@@ -1240,7 +1195,6 @@ if (esEscritorio()) {
 
 if (botonOnline) {
     botonOnline.addEventListener("click", () => {
-        console.log("Modo Online seleccionado.");
         currentMode = 'online';
         // Simplemente restaura la UI, la función ya establece el mensaje por defecto
         restaurarSeccionOnlineUI(); 
@@ -1261,7 +1215,6 @@ if (botonVolverAlInicioModos) {
 botonCrearPartida.addEventListener("click", async () => {
     try {
         capturarAliasGlobal(); // 👈 Capturamos alias antes de crear
-        console.log("Creando nueva partida online...");
         await crearNuevaPartidaOnline();
     } catch (error) {
         console.warn("No se pudo crear la partida: alias inválido.");
@@ -1274,7 +1227,7 @@ botonUnirsePartida.addEventListener("click", async () => {
         currentMode = 'online';
         const gameId = inputIdPartida.value.trim();
         if (gameId) {
-            console.log(`Intentando unirse a la partida: ${gameId}`);
+            
             await unirseAPartidaOnline(gameId);
         } else {
             mostrarMensajeAlerta(mensajeIdPartida, "Por favor, ingresa un ID de partida.", 'warning');
@@ -1285,7 +1238,6 @@ botonUnirsePartida.addEventListener("click", async () => {
 });
 
 botonVolverModosOnline.addEventListener("click", async () => { // Hacer async para await
-    console.log("Volviendo de la sala Online a Modos de Juego.");
     if (currentMode === 'online' && currentGameId) { // Si había una partida activa (incluso si no se unió otro)
         await abandonarPartidaOnline(); 
     }
@@ -1414,7 +1366,6 @@ if (inputIngresaLetra) {
 // --- Event Listener para el botón Reiniciar Partida ---
 if (botonReiniciar) {
     botonReiniciar.addEventListener("click", async () => { // Hacer async para await
-        console.log("Clic en 'Reiniciar Partida'. Modo actual:", currentMode);
 musicaFondoIntro.play();
         if (currentMode === 'online') {
             await abandonarPartidaOnline(); // Notificar si estaba en online ANTES de cambiar la UI
@@ -1571,7 +1522,7 @@ document.addEventListener("DOMContentLoaded", () => {
       inicializarUI();
       startSignalRConnection();
     });
-  }, 2000);
+  }, 1500);
 
   // 🎵 Botón para alternar música manualmente
   const botonMusica = document.getElementById("toggleMusicaBtn");
@@ -1623,7 +1574,7 @@ btnValidarAdmin.addEventListener("click", () => {
 // 👇 Este va afuera del btnValidarAdmin (una sola vez al cargar)
 document.getElementById("modalValidarAdmin").addEventListener("hidden.bs.modal", () => {
   if (!adminAliasValidado) {
-    console.log("❌ Modal cerrado sin validación. No se accede.");
+    
     ocultarSeccion(seccionAdminPalabras); 
     mostrarSeccion(seccionBienvenida); // ✅ Restaurar la vista limpia
   }
@@ -1632,7 +1583,7 @@ document.getElementById("modalValidarAdmin").addEventListener("hidden.bs.modal",
 
   document.getElementById("modalValidarAdmin").addEventListener("hidden.bs.modal", () => {
     if (!adminAliasValidado) {
-      console.log("❌ Modal cerrado sin validación. No se accede.");
+      
     }
   });
 
