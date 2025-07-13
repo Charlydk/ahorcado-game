@@ -69,16 +69,7 @@ let juegoTerminadoManualmente = false;
 let aliasJugadorActual = "";
 
 
-document.addEventListener("DOMContentLoaded", () => {
-    inicializarUI();
-    startSignalRConnection();
-  
-    // Mostrar botón admin solo si estamos en desarrollo o con alias especial
-    const botonAdmin = document.getElementById("botonAdmin");
-    if (botonAdmin) {
-      botonAdmin.style.display = "inline-block"; // 👈 para mostrarlo temporalmente
-    }
-  });
+
 
 
 // --- Variables de conexion al backend ---
@@ -1110,55 +1101,68 @@ async function reiniciarJuego() {
         modalRanking.addEventListener("shown.bs.modal", cargarRankingEnTabla);
 
         async function cargarRankingEnTabla() {
-            try {
-              const response = await fetch(`${BACKEND_URL}juego/ranking`);
-              const data = await response.json();
-          
-              const tbody = document.getElementById("tablaRankingBody");
-              tbody.innerHTML = "";
-          
-              const medallas = ["🥇", "🥈", "🥉"];
-          
-              data.forEach((jugador, i) => {
-                const icono = medallas[i] || `${i + 1}°`;
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                  <td>${icono}</td>
-                  <td>${jugador.alias}</td>
-                  <td>${jugador.victorias}</td>
-                  <td>${jugador.derrotas}</td>
-                  <td>${jugador.winrate}%</td>
-                  <td>${jugador.total}</td>
-                `;
-                tbody.appendChild(tr);
-              });
-            } catch (err) {
-              console.error("⛔ Error al cargar el ranking:", err);
-              alert("No se pudo cargar el ranking. Intentalo más tarde.");
+          try {
+            const response = await fetch(`${BACKEND_URL}juego/ranking`);
+            const data = await response.json();
+        
+            const tbody = document.getElementById("tablaRankingBody");
+            const tituloRanking = document.querySelector("#modalRanking .modal-title");
+            tbody.innerHTML = "";
+        
+            const medallas = ["🥇", "🥈", "🥉"];
+            const top15 = data.slice(0, 15); // 👈 Limita a los 15 mejores
+        
+            top15.forEach((jugador, i) => {
+              const icono = medallas[i] || `${i + 1}°`;
+              const tr = document.createElement("tr");
+              tr.innerHTML = `
+                <td>${icono}</td>
+                <td>${jugador.alias}</td>
+                <td>${jugador.victorias}</td>
+                <td>${jugador.derrotas}</td>
+                <td>${jugador.winrate}%</td>
+                <td>${jugador.total}</td>
+              `;
+              tbody.appendChild(tr);
+            });
+        
+            // ✅ Actualiza el título para aclarar el límite
+            if (tituloRanking) {
+              tituloRanking.innerHTML = `🏆 TOP 15 JUGADORES (de ${data.length}) 🏆`;
             }
+        
+          } catch (err) {
+            console.error("⛔ Error al cargar el ranking:", err);
+            alert("No se pudo cargar el ranking. Intentalo más tarde.");
+          }
         }
+        
+        
           
 
         async function mostrarRankingHorizontal() {
-            try {
+          try {
             const response = await fetch(`${BACKEND_URL}juego/ranking`);
             const data = await response.json();
         
             if (data.length === 0) return;
         
-            const rankingTexto = data
-                .map((j, i) => `${i + 1}° ${j.alias}`)
-                .join(" • ");
+            const top15 = data.slice(0, 15); // 👈 Limita a los 15 mejores
+        
+            const rankingTexto = top15
+              .map((j, i) => `${i + 1}° ${j.alias}`)
+              .join(" • ");
         
             const scrollContainer = document.getElementById("scrollRanking");
-            const frase = `🏆 RANKING: ${rankingTexto} 🏆`;
+            const frase = `🏆 TOP 15: ${rankingTexto} 🏆`;
             scrollContainer.innerHTML = `${frase}&nbsp;&nbsp;&nbsp;&nbsp;${frase}`;
         
             document.getElementById("rankingHorizontal").classList.remove("d-none");
-            } catch (err) {
+          } catch (err) {
             console.error("⛔ Error al mostrar ranking horizontal:", err);
-            }
+          }
         }
+        
 
 
 
@@ -1167,11 +1171,12 @@ async function reiniciarJuego() {
 if (botonInicio) {
     botonInicio.addEventListener("click", function (event) {
       event.preventDefault();
-      musicaFondoIntro.play();
+      //musicaFondoIntro.play();
   
       const alias = document.getElementById("aliasInput")?.value.trim();
       const mensajeAlias = document.getElementById("mensajeAlias");
-  
+      botonAdmin.classList.add("d-none");
+        
       if (!alias) {
         mensajeAlias.classList.remove("d-none");
   
@@ -1248,6 +1253,8 @@ if (botonVolverAlInicioModos) {
   botonVolverAlInicioModos.addEventListener("click", () => {
     ocultarSeccion(seccionModosJuego);
     mostrarSeccion(seccionBienvenida);
+    botonAdmin.classList.remove("d-none");
+    
   });
 }
 
@@ -1470,9 +1477,13 @@ botonVolverAlMenu.addEventListener("click", function () {
             }
 
             inicializarUI();
+            botonAdmin.classList.remove("d-none");
+            
         }
     });
 });
+
+
 
 
 
@@ -1529,20 +1540,23 @@ musicaFondoIntro.loop = true;
 musicaFondoIntro.volume = 0.3; // Volumen suave para no tapar los efectos
 
 // Llama a la función de inicialización y SignalR cuando el DOM esté completamente cargado
+
 document.addEventListener("DOMContentLoaded", () => {
+  // 🕒 Pantalla de carga + Música
   setTimeout(() => {
-    // ✅ Ocultamos primero la pantalla de carga
     const pantalla = document.getElementById("pantallaCargaInicial");
     pantalla.classList.add("fade-out");
 
-    // ✅ Luego mostramos el modal
     const modalMusica = new bootstrap.Modal(document.getElementById("modalMusica"), {
       backdrop: 'static',
       keyboard: false
     });
     modalMusica.show();
 
-    document.getElementById("btnMusicaSi").addEventListener("click", () => {
+    const btnMusicaSi = document.getElementById("btnMusicaSi");
+    const btnMusicaNo = document.getElementById("btnMusicaNo");
+
+    btnMusicaSi.addEventListener("click", () => {
       musicaFondoIntro.currentTime = 0;
       musicaFondoIntro.volume = 0.3;
       musicaFondoIntro.loop = true;
@@ -1552,30 +1566,81 @@ document.addEventListener("DOMContentLoaded", () => {
       startSignalRConnection();
     });
 
-    document.getElementById("btnMusicaNo").addEventListener("click", () => {
+    btnMusicaNo.addEventListener("click", () => {
       modalMusica.hide();
       inicializarUI();
       startSignalRConnection();
     });
-  }, 2000); // ⏳ tiempo de protagonismo de pantallaCargaInicial
+  }, 2000);
 
+  // 🎵 Botón para alternar música manualmente
+  const botonMusica = document.getElementById("toggleMusicaBtn");
+  let musicaActiva = false;
 
-      const botonMusica = document.getElementById("toggleMusicaBtn");
-      let musicaActiva = false;
+  botonMusica.addEventListener("click", () => {
+    if (musicaActiva) {
+      musicaFondoIntro.pause();
+      botonMusica.textContent = "🔇";
+    } else {
+      musicaFondoIntro.play();
+      botonMusica.textContent = "🔊";
+    }
+    musicaActiva = !musicaActiva;
+  });
 
-    botonMusica.addEventListener("click", () => {
-      if (musicaActiva) {
-        musicaFondoIntro.pause();
-        botonMusica.textContent = "🔇";
-      } else {
-        musicaFondoIntro.play();
-        botonMusica.textContent = "🔊";
-      }
-      musicaActiva = !musicaActiva;
-    });
+  // 🛠️ Acceso al panel Admin
+  const botonAdmin = document.getElementById("botonAdmin");
+  const modalAdmin = new bootstrap.Modal(document.getElementById("modalValidarAdmin"), {
+    backdrop: 'static',
+    keyboard: false
+  });
+  const btnValidarAdmin = document.getElementById("btnValidarAdmin");
+  const aliasAdminInput = document.getElementById("aliasAdminInput");
+  const adminErrorMsg = document.getElementById("adminErrorMsg");
 
+  const aliasesPermitidos = ["devfab", "portfolio"];
+  let adminAliasValidado = false;
+
+  botonAdmin.addEventListener("click", () => {
+    modalAdmin.show();
+    adminErrorMsg.classList.add("d-none");
+    aliasAdminInput.value = "";
+    adminAliasValidado = false; // Resetear en cada intento
+  });
+
+  
+btnValidarAdmin.addEventListener("click", () => {
+  const aliasIngresado = aliasAdminInput.value.trim().toLowerCase();
+  if (aliasesPermitidos.includes(aliasIngresado)) {
+    adminAliasValidado = true;
+    modalAdmin.hide();
+    irASeccionAdmin();
+  } else {
+    adminErrorMsg.classList.remove("d-none");
+  }
 });
 
+// 👇 Este va afuera del btnValidarAdmin (una sola vez al cargar)
+document.getElementById("modalValidarAdmin").addEventListener("hidden.bs.modal", () => {
+  if (!adminAliasValidado) {
+    console.log("❌ Modal cerrado sin validación. No se accede.");
+    ocultarSeccion(seccionAdminPalabras); 
+    mostrarSeccion(seccionBienvenida); // ✅ Restaurar la vista limpia
+  }
+});
+
+
+  document.getElementById("modalValidarAdmin").addEventListener("hidden.bs.modal", () => {
+    if (!adminAliasValidado) {
+      console.log("❌ Modal cerrado sin validación. No se accede.");
+    }
+  });
+
+  // 🧭 Inicializar UI al cargar
+  inicializarUI();
+  startSignalRConnection();
+  botonAdmin.style.display = "inline-block";
+});
 
 
 

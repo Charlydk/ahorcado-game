@@ -10,294 +10,310 @@
     <link rel="stylesheet" href="custom.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> <!-- SweetAlert2 -->
 
-    
-
-
     <title>Juego del Ahorcado</title>
 
     
 </head>
-
-<div id="pantallaCargaInicial" class="pantalla-bloqueo">
-  <div class="cortina-container">
-    <p>Invocando al Juego...</p>
-  </div>
-</div>
-
-  <header class="navbar navbar-light bg-info py-2 shadow-sm"> 
-    <div class="container-fluid d-flex justify-content-between align-items-center">
-      <a class="navbar-brand d-flex align-items-center" href="#">
-        <img src="./img/create a small logo .png" alt="logo" height="40" class="me-2">
-        <h2 class="h4 mb-0 text-white">Juego del Ahorcado</h2>
-      </a>
-    
-      <!-- Botón Admin a la derecha -->
-      <button id="botonAdmin" class="btn btn-outline-light btn-sm" onclick="irASeccionAdmin()" style="display: none;">
-        🛠️ Admin
-      </button>
-    </div>
-  </header>
-
-  <!-- Musica de fondo -->
-  <div class="modal fade" id="modalMusica" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content text-center p-3">
-        <h5 class="modal-title">¿Activás la música… o enfrentás el silencio?</h5>
-        <p class="descripcion-modal">Tu decisión cambiará el destino del verdugo.</p>
-
-        <div>
-          <button id="btnMusicaSi" class="btn btn-success me-2">🎵 Sí, con música</button>
-          <button id="btnMusicaNo" class="btn btn-secondary">🔇 No por ahora</button>
-        </div>
+<body>
+    <div id="pantallaCargaInicial" class="pantalla-bloqueo">
+      <div class="cortina-container">
+        <p>Invocando al Juego...</p>
       </div>
     </div>
-  </div>
-  
 
-
-    <section id="seccionAdminPalabras" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center p-4">
-      <h2 class="mb-4 text-primary">🛠️ Panel de Administración de Palabras</h2>
-    
-      <button class="btn btn-success mb-3" onclick="mostrarFormularioAdmin()">➕ Nueva Palabra</button>
-    
-      <div id="formularioAdmin" class="card p-3 mb-4 d-none w-75 mx-auto">
-        <h5 id="formAdminTitulo">Agregar Palabra</h5>
-        <input type="hidden" id="palabraIdAdmin" />
-        <div class="row g-2">
-          <div class="col-md-4">
-            <input id="textoAdmin" type="text" class="form-control" placeholder="Palabra" required />
-          </div>
-          <div class="col-md-4">
-            <input id="categoriaAdmin" type="text" class="form-control" placeholder="Categoría" />
-          </div>
-          <div class="col-md-3">
-            <select id="dificultadAdmin" class="form-select">
-              <option value="fácil">Fácil</option>
-              <option value="media">Media</option>
-              <option value="difícil">Difícil</option>
-            </select>
-          </div>
-          <div class="col-md-1">
-            <button class="btn btn-primary w-100" onclick="guardarPalabraAdmin()">💾</button>
-          </div>
-        </div>
-      </div>
-    
-      <div class="table-responsive w-100">
-        <table class="table table-bordered table-hover align-middle">
-          <thead class="table-dark">
-            <tr>
-              <th>Palabra</th>
-              <th>Categoría</th>
-              <th>Dificultad</th>
-              <th>Activa</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tablaAdminPalabras"></tbody>
-        </table>
-      </div>
-    
-      <button class="btn btn-secondary mt-4" onclick="volverAlInicioAdmin()">🔙 Volver al Inicio</button>
-    </section>
-    
-
-    <main class="container-fluid d-flex flex-column flex-grow-1 p-3"> 
-        <section id="seccionBienvenida" class="d-flex flex-column justify-content-center align-items-center flex-grow-1 text-center">
-
-            <svg viewBox="0 0 1320 300" class="titulo-principal-svg mb-4" style="max-width: 100%; height: auto;">
-                <defs>
-                    <filter id="combined-effect" x="-50%" y="-50%" width="200%" height="200%">
-                        <feOffset dx="6" dy="6" in="SourceGraphic" result="offsetShadow"></feOffset>
-                        <feGaussianBlur in="offsetShadow" stdDeviation="3" result="blurredShadow"></feGaussianBlur>
-                        <feFlood flood-color="rgba(0, 0, 0, 0.7)" result="shadowColor"></feFlood>
-                        <feComposite in="shadowColor" in2="blurredShadow" operator="in" result="shadowComposite"></feComposite>
-                        
-                        <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blurredGlow"></feGaussianBlur>
-                        <feFlood flood-color="#ff6600" flood-opacity="0.8" result="glowColor"></feFlood>
-                        <feComposite in="glowColor" in2="blurredGlow" operator="in" result="glowComposite"></feComposite>
-            
-                        <feMerge>
-                            <feMergeNode in="shadowComposite"></feMergeNode>
-                            <feMergeNode in="glowComposite"></feMergeNode>
-                            <feMergeNode in="SourceGraphic"></feMergeNode> </feMerge>
-                    </filter>
-                </defs>
-            
-                <symbol id="s-text">
-                    <text text-anchor="middle" x="50%" y="35%" dy=".10em" class="titulo-linea-superior">JUEGO DEL</text>
-                    <text text-anchor="middle" x="50%" y="75%" dy=".25em" class="titulo-line0-inferior">AHORCADO</text>
-                </symbol>
-                
-                <use xlink:href="#s-text" class="titulo-final-con-efectos"></use>
-            </svg>
-
-            <div class="mb-4 w-75 mx-auto">
-              <label for="aliasInput" class="form-label text-warning fw-bold">Ingresa tu alias:</label>
-              <input type="text" id="aliasInput" class="form-control alias-estilizado" placeholder="Ej: CharlyDK">
-              <div id="mensajeAlias" class="alert alert-warning d-none mt-3" role="alert">
-                ⚠️ Por favor, ingresá tu alias antes de continuar.
-              </div>
-              
-
-            </div>
-            
-            <div class="mb-4 w-75 mx-auto">
-              <label for="selectorDificultad" class="form-label text-info fw-bold">Dificultad:</label>
-              <select id="selectorDificultad" class="form-select w-100">
-                <option value="6">Normal (6 intentos)</option>
-                <option value="8">Fácil (8 intentos)</option>
-                <option value="4">Difícil (4 intentos)</option>
-              </select>
-            </div>
-            
-
-            <button id="botonInicio" class="btn btn-primary btn-lg mt-4">Iniciar Juego</button>
-
-            <button class="btn btn-warning btn-lg shadow fw-bold d-inline-flex align-items-center gap-2 mt-3" data-bs-toggle="modal" data-bs-target="#modalRanking">
-                <i class="bi bi-trophy-fill"></i> Ver Ranking
-              </button>
-             
-              <div class="container">
-                <div id="rankingHorizontal" class="ranking-marquesina position-relative">
-                  <div class="scroll-wrapper">
-                    <div id="scrollRanking" class="scroll-text"></div>
-                  </div>
-                </div>
-                <div id="rankingTicker" class="text-center pulse-text mt-2">🔥 ACTUALIZADO EN TIEMPO REAL</div>
-              </div>
-          
-        </section>
-
-        <section id="seccionModosJuego" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
-            <h2 class="mb-4 text-danger font-creepster neon-glow-effect" style="font-size: 5em;">JUEGO DEL AHORCADO</h2>      <!-- Esto lo vamos a modificar cuando le demos movimientos entre secciones -->
-            <h2 class="mb-4">Selecciona el Modo de Juego</h2>
-            <div class="d-grid gap-3 col-6 mx-auto"> 
-              <button id="botonSolitario" class="btn btn-secondary btn-lg modo-juego-btn">
-                🎮 Solitario
-              </button>
-              <button id="botonVersus" class="btn btn-secondary btn-lg modo-juego-btn">
-                👥 Versus
-              </button>
-              <button id="botonOnline" class="btn btn-secondary btn-lg modo-juego-btn">
-                🌐 Online Coop
-              </button>
-              
-                <button id="volverAlInicioModos" class="btn btn-outline-secondary mt-3">Volver al Inicio</button>
-            </div>
-        </section>
-
-        <section id="seccionOnline" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
-            <h2 class="mb-4">Juego Online</h2>
-            <p id="mensajeIdPartida" class="alert d-none text-center" role="alert"></p>
-
-            <div id="contenedorGameId" style="display: none; text-align: center; margin-top: 10px;">
-                <span id="displayGameId" class="lead text-primary" style="font-weight: bold; margin-right: 10px;"></span>
-                <button id="botonCopiarId" class="btn btn-info btn-sm">Copiar ID</button>
-            </div>
-
-            <input type="text" id="inputIdPartida" class="form-control alias-estilizado mb-3" placeholder="Ingresa ID de partida">
-            <div class="d-grid gap-2 d-md-flex justify-content-center mb-3">
-              <button id="crearPartida" class="btn btn-success btn-lg px-4">Crear Partida</button>
-              <button id="unirsePartida" class="btn btn-primary btn-lg px-4">Unirse a Partida</button>
-            </div>
-
-
-            <button id="volverModosOnline" class="btn btn-secondary mt-3">Volver a Modos</button>
-
-            <div id="contenedorBotonJuegoOnline" class="text-center mt-3"></div>
-
-        </section>
-
-        <section id="seccionIngresarPalabra" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
-            <div class="mb-3">
-                <label for="aliasInput2" class="form-label">Ingresa el alias de tu amigo:</label>
-                <input type="text" id="aliasInput2" class="form-control alias-estilizado" placeholder="Ej: Ximenita">
-            </div>
-                                      
-            <h3 id="mensajeIngresarPalabraVersus" class="mb-4 text-center alert d-none" role="alert">Ingresa una palabra de 4 a 8 letras para tu amigo</h3>
-            <div class="input-group mb-3 w-75 mx-auto">
-              <input type="text" id="inputPalabraVersus" class="form-control alias-estilizado" placeholder="Palabra Secreta" maxlength="8">
-                <button id="botonEnviarPalabra" class="btn btn-primary">Enviar</button>
-            </div>
-            <div id="mensajeAliasVersus" class="alert alert-warning d-none mt-2" role="alert">
-                ⚠️ Por favor, ingresá el alias tu amigo antes de continuar.
-              </div>
-            <button id="botonCancelarVersus" class="btn btn-danger mt-3">Cancelar</button>
-        </section>
-
-        <section id="seccionJuego" class="d-none flex-column justify-content-center align-items-center flex-grow-1">
-            <div class="row w-100 flex-grow-1 align-items-center justify-content-center"> <div class="col-12 col-md-6 d-flex justify-content-center align-items-center p-0"> <img id="imagenAhorcado" src="img/ahorcado_0.png" class="img-fluid" alt="Ahorcado" style="max-height: 80vh;"> </div>
-
-                <div class="col-12 col-md-6 d-flex flex-column justify-content-around align-items-center p-3">
-                    <p id="palabra-guiones" class="fs-1 fw-bold text-center text-primary neon-glow-effect"></p>
-                    <p id="letrasIncorrectasSpan" class="text-danger fs-6">Letras <br> incorrectas <span id="letrasIncorrectasValor" class="incorrect-letters-display"></span></p>
-                    <p id="intentos-restantes" class="text-info fs-5"></p>
-                    <p id="mensajeTurno" class="text-primary fw-bold"></p> <div class="input-group mb-3 w-75">
-                        <input type="text" id="inputAdivinarLetra" class="form-control text-uppercase" placeholder="una letra" maxlength="1">
-                        <button id="botonSubirLetra" class="btn btn-primary">Adivinar</button>
-                    </div>
-                    <p id="mensajeJuego" class="alert d-none text-center" role="alert"></p>
-
-                    
-                    
-                    <div class="d-grid gap-2 col-6 mx-auto mt-3">
-                        <button id="reiniciar" class="btn btn-warning">Reiniciar Partida</button>
-                        <button id="volverAlMenu" class="btn btn-outline-secondary">Volver al Menú</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <div class="modal fade" id="modalRanking" tabindex="-1" aria-labelledby="rankingLabel" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-centered">
-              <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title w-100 text-center text-uppercase fw-bold">
-                        🏆 Ranking Oficial de Jugadores 🏆
-                      </h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                  <div class="table-responsive">
-                    <table class="table table-hover">
-                      <thead>
-                        <tr>
-                          <th>#</th>
-                          <th>Alias</th>
-                          <th>Victorias</th>
-                          <th>Derrotas</th>
-                          <th>% Éxito</th>
-                          <th>Total</th>
-                        </tr>
-                      </thead>
-                      <tbody id="tablaRankingBody"></tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-    
-    
+      <header class="navbar navbar-light bg-info py-2 shadow-sm"> 
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+          <a class="navbar-brand d-flex align-items-center" href="#">
+            <img src="./img/create a small logo .png" alt="logo" height="40" class="me-2">
+            <h2 class="h4 mb-0 text-white">Juego del Ahorcado</h2>
+          </a>
         
-    </main>
-
-    <footer class="bg-dark text-white text-center py-3 mt-auto"> <h4 class="mb-1">#Portfolio Personal</h4>
-        <h5 class="mb-1">©Todos los derechos reservados - 2025</h5>
-        <h5 class="mb-2">Creado por Fabian Bernardino</h5>
-        <div class="d-flex justify-content-center gap-3"> <a title="GitHub" href="https://github.com/Charlydk"><img src="img/github_logo_icon_143772.ico" alt="GitHub" height="24"></a>
-            <a title="LinkedIn" href="https://www.linkedin.com/in/fabian-bernardino/"><img src="img/linkedin_socialnetwork_17441.ico" alt="LinkedIn" height="24"></a>
+          <!-- Botón Admin a la derecha -->
+          <button id="botonAdmin" class="btn btn-outline-light btn-sm" onclick="irASeccionAdmin()" style="display: none;">
+            🛠️ Admin
+          </button>
         </div>
-    </footer>
+      </header>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
-    <script src="game.js"></script> <script src="script.js"></script> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    <script src="admin.js"></script>
+      
+
+      <!-- Musica de fondo -->
+      <div class="modal fade" id="modalMusica" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content text-center p-3">
+            <h5 class="modal-title">¿Activás la música… o enfrentás el silencio?</h5>
+            <p class="descripcion-modal">Tu decisión cambiará el destino del verdugo.</p>
+
+            <div>
+              <button id="btnMusicaSi" class="btn btn-success me-2">🎵 Sí, con música</button>
+              <button id="btnMusicaNo" class="btn btn-secondary">🔇 No por ahora</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+
+      <!-- acceso admin -->
+      <div class="modal fade" id="modalValidarAdmin" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content text-center p-3 bg-dark text-warning">
+            <h5 class="modal-title">🛠️ Panel de administración</h5>
+            <p class="mb-3">Ingresa el alias autorizado para acceder:</p>
+            <input type="text" id="aliasAdminInput" class="form-control alias-estilizado mb-3" placeholder="Ej: admin">
+            <div>
+              <button id="btnValidarAdmin" class="btn btn-success me-2">Acceder</button>
+              <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+            </div>
+            <div id="adminErrorMsg" class="alert alert-danger mt-3 d-none" role="alert">
+              Alias incorrecto. Intentá de nuevo.
+            </div>
+          </div>
+        </div>
+      </div>
+
+        <section id="seccionAdminPalabras" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center p-4">
+          <h2 class="mb-4 text-primary">🛠️ Panel de Administración de Palabras</h2>
+        
+          <button class="btn btn-success mb-3" onclick="mostrarFormularioAdmin()">➕ Nueva Palabra</button>
+        
+          <div id="formularioAdmin" class="card p-3 mb-4 d-none w-75 mx-auto">
+            <h5 id="formAdminTitulo">Agregar Palabra</h5>
+            <input type="hidden" id="palabraIdAdmin" />
+            <div class="row g-2">
+              <div class="col-md-4">
+                <input id="textoAdmin" type="text" class="form-control" placeholder="Palabra" required />
+              </div>
+              <div class="col-md-4">
+                <input id="categoriaAdmin" type="text" class="form-control" placeholder="Categoría" />
+              </div>
+              <div class="col-md-3">
+                <select id="dificultadAdmin" class="form-select">
+                  <option value="fácil">Fácil</option>
+                  <option value="media">Media</option>
+                  <option value="difícil">Difícil</option>
+                </select>
+              </div>
+              <div class="col-md-1">
+                <button class="btn btn-primary w-100" onclick="guardarPalabraAdmin()">💾</button>
+              </div>
+            </div>
+          </div>
+        
+          <div class="table-responsive w-100">
+            <table class="table table-bordered table-hover align-middle">
+              <thead class="table-dark">
+                <tr>
+                  <th>Palabra</th>
+                  <th>Categoría</th>
+                  <th>Dificultad</th>
+                  <th>Activa</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tablaAdminPalabras"></tbody>
+            </table>
+          </div>
+        
+          <button class="btn btn-secondary mt-4" onclick="volverAlInicioAdmin()">🔙 Volver al Inicio</button>
+        </section>
+        
+
+        <main class="container-fluid d-flex flex-column flex-grow-1 p-3"> 
+            <section id="seccionBienvenida" class="d-flex flex-column justify-content-center align-items-center flex-grow-1 text-center">
+
+                <svg viewBox="0 0 1320 300" class="titulo-principal-svg mb-4" style="max-width: 100%; height: auto;">
+                    <defs>
+                        <filter id="combined-effect" x="-50%" y="-50%" width="200%" height="200%">
+                            <feOffset dx="6" dy="6" in="SourceGraphic" result="offsetShadow"></feOffset>
+                            <feGaussianBlur in="offsetShadow" stdDeviation="3" result="blurredShadow"></feGaussianBlur>
+                            <feFlood flood-color="rgba(0, 0, 0, 0.7)" result="shadowColor"></feFlood>
+                            <feComposite in="shadowColor" in2="blurredShadow" operator="in" result="shadowComposite"></feComposite>
+                            
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blurredGlow"></feGaussianBlur>
+                            <feFlood flood-color="#ff6600" flood-opacity="0.8" result="glowColor"></feFlood>
+                            <feComposite in="glowColor" in2="blurredGlow" operator="in" result="glowComposite"></feComposite>
+                
+                            <feMerge>
+                                <feMergeNode in="shadowComposite"></feMergeNode>
+                                <feMergeNode in="glowComposite"></feMergeNode>
+                                <feMergeNode in="SourceGraphic"></feMergeNode> </feMerge>
+                        </filter>
+                    </defs>
+                
+                    <symbol id="s-text">
+                        <text text-anchor="middle" x="50%" y="35%" dy=".10em" class="titulo-linea-superior">JUEGO DEL</text>
+                        <text text-anchor="middle" x="50%" y="75%" dy=".25em" class="titulo-line0-inferior">AHORCADO</text>
+                    </symbol>
+                    
+                    <use xlink:href="#s-text" class="titulo-final-con-efectos"></use>
+                </svg>
+
+                <div class="mb-4 w-75 mx-auto">
+                  <label for="aliasInput" class="form-label text-warning fw-bold">Ingresa tu alias:</label>
+                  <input type="text" id="aliasInput" class="form-control alias-estilizado" placeholder="Ej: CharlyDK">
+                  <div id="mensajeAlias" class="alert alert-warning d-none mt-3" role="alert">
+                    ⚠️ Por favor, ingresá tu alias antes de continuar.
+                  </div>
+                  
+
+                </div>
+                
+                <div class="mb-4 w-75 mx-auto">
+                  <label for="selectorDificultad" class="form-label text-info fw-bold">Dificultad:</label>
+                  <select id="selectorDificultad" class="form-select w-100">
+                    <option value="6">Normal (6 intentos)</option>
+                    <option value="8">Fácil (8 intentos)</option>
+                    <option value="4">Difícil (4 intentos)</option>
+                  </select>
+                </div>
+                
+
+                <button id="botonInicio" class="btn btn-primary btn-lg mt-4">Iniciar Juego</button>
+
+                <button class="btn btn-warning btn-lg shadow fw-bold d-inline-flex align-items-center gap-2 mt-3" data-bs-toggle="modal" data-bs-target="#modalRanking">
+                    <i class="bi bi-trophy-fill"></i> Ver Ranking
+                  </button>
+                
+                  <div class="container">
+                    <div id="rankingHorizontal" class="ranking-marquesina position-relative">
+                      <div class="scroll-wrapper">
+                        <div id="scrollRanking" class="scroll-text"></div>
+                      </div>
+                    </div>
+                    <div id="rankingTicker" class="text-center pulse-text mt-2">🔥 ACTUALIZADO EN TIEMPO REAL</div>
+                  </div>
+              
+            </section>
+
+            <section id="seccionModosJuego" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
+                <h2 class="mb-4 text-danger font-creepster neon-glow-effect" style="font-size: 5em;">JUEGO DEL AHORCADO</h2>      <!-- Esto lo vamos a modificar cuando le demos movimientos entre secciones -->
+                <h2 class="mb-4">Selecciona el Modo de Juego</h2>
+                <div class="d-grid gap-3 col-6 mx-auto"> 
+                  <button id="botonSolitario" class="btn btn-secondary btn-lg modo-juego-btn">
+                    🎮 Solitario
+                  </button>
+                  <button id="botonVersus" class="btn btn-secondary btn-lg modo-juego-btn">
+                    👥 Versus
+                  </button>
+                  <button id="botonOnline" class="btn btn-secondary btn-lg modo-juego-btn">
+                    🌐 Online Coop
+                  </button>
+                  
+                    <button id="volverAlInicioModos" class="btn btn-outline-secondary mt-3">Volver al Inicio</button>
+                </div>
+            </section>
+
+            <section id="seccionOnline" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
+                <h2 class="mb-4">Juego Online</h2>
+                <p id="mensajeIdPartida" class="alert d-none text-center" role="alert"></p>
+
+                <div id="contenedorGameId" style="display: none; text-align: center; margin-top: 10px;">
+                    <span id="displayGameId" class="lead text-primary" style="font-weight: bold; margin-right: 10px;"></span>
+                    <button id="botonCopiarId" class="btn btn-info btn-sm">Copiar ID</button>
+                </div>
+
+                <input type="text" id="inputIdPartida" class="form-control alias-estilizado mb-3" placeholder="Ingresa ID de partida">
+                <div class="d-grid gap-2 d-md-flex justify-content-center mb-3">
+                  <button id="crearPartida" class="btn btn-success btn-lg px-4">Crear Partida</button>
+                  <button id="unirsePartida" class="btn btn-primary btn-lg px-4">Unirse a Partida</button>
+                </div>
+
+
+                <button id="volverModosOnline" class="btn btn-secondary mt-3">Volver a Modos</button>
+
+                <div id="contenedorBotonJuegoOnline" class="text-center mt-3"></div>
+
+            </section>
+
+            <section id="seccionIngresarPalabra" class="d-none flex-column justify-content-center align-items-center flex-grow-1 text-center">
+                <div class="mb-3">
+                    <label for="aliasInput2" class="form-label">Ingresa el alias de tu amigo:</label>
+                    <input type="text" id="aliasInput2" class="form-control alias-estilizado" placeholder="Ej: Ximenita">
+                </div>
+                                          
+                <h3 id="mensajeIngresarPalabraVersus" class="mb-4 text-center alert d-none" role="alert">Ingresa una palabra de 4 a 8 letras para tu amigo</h3>
+                <div class="input-group mb-3 w-75 mx-auto">
+                  <input type="text" id="inputPalabraVersus" class="form-control alias-estilizado" placeholder="Palabra Secreta" maxlength="8">
+                    <button id="botonEnviarPalabra" class="btn btn-primary">Enviar</button>
+                </div>
+                <div id="mensajeAliasVersus" class="alert alert-warning d-none mt-2" role="alert">
+                    ⚠️ Por favor, ingresá el alias tu amigo antes de continuar.
+                  </div>
+                <button id="botonCancelarVersus" class="btn btn-danger mt-3">Cancelar</button>
+            </section>
+
+            <section id="seccionJuego" class="d-none flex-column justify-content-center align-items-center flex-grow-1">
+                <div class="row w-100 flex-grow-1 align-items-center justify-content-center"> <div class="col-12 col-md-6 d-flex justify-content-center align-items-center p-0"> <img id="imagenAhorcado" src="img/ahorcado_0.png" class="img-fluid" alt="Ahorcado" style="max-height: 80vh;"> </div>
+
+                    <div class="col-12 col-md-6 d-flex flex-column justify-content-around align-items-center p-3">
+                        <p id="palabra-guiones" class="fs-1 fw-bold text-center text-primary neon-glow-effect"></p>
+                        <p id="letrasIncorrectasSpan" class="text-danger fs-6">Letras <br> incorrectas <span id="letrasIncorrectasValor" class="incorrect-letters-display"></span></p>
+                        <p id="intentos-restantes" class="text-info fs-5"></p>
+                        <p id="mensajeTurno" class="text-primary fw-bold"></p> <div class="input-group mb-3 w-75">
+                            <input type="text" id="inputAdivinarLetra" class="form-control text-uppercase" placeholder="una letra" maxlength="1">
+                            <button id="botonSubirLetra" class="btn btn-primary">Adivinar</button>
+                        </div>
+                        <p id="mensajeJuego" class="alert d-none text-center" role="alert"></p>
+
+                        
+                        
+                        <div class="d-grid gap-2 col-6 mx-auto mt-3">
+                            <button id="reiniciar" class="btn btn-warning">Reiniciar Partida</button>
+                            <button id="volverAlMenu" class="btn btn-outline-secondary">Volver al Menú</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="modal fade" id="modalRanking" tabindex="-1" aria-labelledby="rankingLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title w-100 text-center text-uppercase fw-bold">
+                            🏆 Ranking Oficial de Jugadores 🏆
+                          </h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                      <div class="table-responsive">
+                        <table class="table table-hover">
+                          <thead>
+                            <tr>
+                              <th>#</th>
+                              <th>Alias</th>
+                              <th>Victorias</th>
+                              <th>Derrotas</th>
+                              <th>% Éxito</th>
+                              <th>Total</th>
+                            </tr>
+                          </thead>
+                          <tbody id="tablaRankingBody"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+        
+        
+            
+        </main>
+
+        <footer class="bg-dark text-white text-center py-3 mt-auto"> <h4 class="mb-1">#Portfolio Personal</h4>
+            <h5 class="mb-1">©Todos los derechos reservados - 2025</h5>
+            <h5 class="mb-2">Creado por Fabian Bernardino</h5>
+            <div class="d-flex justify-content-center gap-3"> <a title="GitHub" href="https://github.com/Charlydk"><img src="img/github_logo_icon_143772.ico" alt="GitHub" height="24"></a>
+                <a title="LinkedIn" href="https://www.linkedin.com/in/fabian-bernardino/"><img src="img/linkedin_socialnetwork_17441.ico" alt="LinkedIn" height="24"></a>
+            </div>
+        </footer>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+        <script src="game.js"></script> <script src="script.js"></script> <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+        <script src="admin.js"></script>
 
 
 
-    <button id="toggleMusicaBtn" class="boton-musica" title="Activar/Desactivar música">🔊</button>
+        <button id="toggleMusicaBtn" class="boton-musica" title="Activar/Desactivar música">🔊</button>
 
-</body>
+  </body>
 </html>
