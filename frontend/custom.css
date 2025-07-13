@@ -521,6 +521,11 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
 
 /* -------------estilizar ranking------------- */
 
+.table-responsive {
+  max-height: 600px; /* Ajustable según tu diseño */
+  overflow-y: auto;
+}
+
 #modalRanking .modal-content {
     background: linear-gradient(to bottom, #111, #222);
     color: #ffc107;
