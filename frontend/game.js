@@ -68,8 +68,6 @@ let aliasJugadorActual = "";
 
 
 
-
-
 // --- Variables de conexion al backend ---
 //const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
 const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
@@ -716,6 +714,12 @@ if (!data.juegoTerminado && data.intentosRestantes === 1) {
     inputIngresaLetra.focus();
   }
 
+  // ✅ Enfocar la imagen del ahorcado en móviles
+if (window.innerWidth < 768) {
+  imagenAhorcado.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+
 
 }
 // --- Lógica para Crear Partida Online ---
@@ -966,6 +970,12 @@ async function manejarEnvioLetra(letra) {
 
             const data = await response.json();
             actualizarUIJuego(data);
+
+            // ✅ Enfocar la imagen del ahorcado en móviles
+                if (window.innerWidth < 768) {
+                  imagenAhorcado.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+
         } else if (currentMode === 'online') {
             if (!connection || connection.state !== signalR.HubConnectionState.Connected) {
                 mostrarMensajeAlerta(mensajeJuego, "Error: Conexión SignalR no establecida o no activa.", 'danger');
@@ -1296,61 +1306,61 @@ botonCancelarVersus.addEventListener("click", function(event) {
 if (botonSubirLetra) {
   // CLICK (Desktop + Mobile)
   botonSubirLetra.addEventListener("click", async (event) => {
-      event.preventDefault();
-      document.activeElement.blur();
+    event.preventDefault();
+    document.activeElement.blur();
 
-      const letraIngresada = inputIngresaLetra.value.toUpperCase().trim();
+    const letraIngresada = inputIngresaLetra.value.toUpperCase().trim();
 
-      // Validación: Vacío
-      if (letraIngresada.length === 0) {
-          mostrarMensajeAlerta(mensajeJuego, "Por favor, ingresa una letra.", 'warning');
-          inputIngresaLetra.focus();
-          return;
-      }
+    // Validación: Vacío
+    if (letraIngresada.length === 0) {
+      mostrarMensajeAlerta(mensajeJuego, "Por favor, ingresa una letra.", 'warning');
+      inputIngresaLetra.focus();
+      return;
+    }
 
-      // Validación: Letra válida
-      if (letraIngresada.length !== 1 || !/^[A-ZÑ]$/.test(letraIngresada)) {
-          mostrarMensajeAlerta(mensajeJuego, "Ingresa una sola letra válida (A-Z, Ñ).", 'warning');
-          inputIngresaLetra.value = "";
-          inputIngresaLetra.focus();
-          return;
-      }
+    // Validación: Letra válida
+    if (letraIngresada.length !== 1 || !/^[A-ZÑ]$/.test(letraIngresada)) {
+      mostrarMensajeAlerta(mensajeJuego, "Ingresa una sola letra válida (A-Z, Ñ).", 'warning');
+      inputIngresaLetra.value = "";
+      inputIngresaLetra.focus();
+      return;
+    }
 
-      // Validación: Letra ya ingresada
-      const letrasCorrectasEnGuiones = inputGuiones.textContent.replace(/ /g, '');
-      const textoLetrasIncorrectas = letrasIncorrectasSpan.textContent;
-      let letrasIncorrectasArray = [];
-      const match = textoLetrasIncorrectas.match(/:\s*([A-ZÑ,\s]*)$/);
-      if (match && match[1]) {
-          letrasIncorrectasArray = match[1].replace(/,\s*/g, '').split('');
-      }
+    // Validación: Letra ya ingresada
+    const letrasCorrectasEnGuiones = inputGuiones.textContent.replace(/ /g, '');
+    const textoLetrasIncorrectas = letrasIncorrectasSpan.textContent;
+    let letrasIncorrectasArray = [];
+    const match = textoLetrasIncorrectas.match(/:\s*([A-ZÑ,\s]*)$/);
+    if (match && match[1]) {
+      letrasIncorrectasArray = match[1].replace(/,\s*/g, '').split('');
+    }
 
-      const letrasYaIntentadas = new Set();
-      letrasCorrectasEnGuiones.split('').filter(char => char !== '_').forEach(char => letrasYaIntentadas.add(char));
-      letrasIncorrectasArray.forEach(char => letrasYaIntentadas.add(char));
+    const letrasYaIntentadas = new Set();
+    letrasCorrectasEnGuiones
+      .split('')
+      .filter(char => char !== '_')
+      .forEach(char => letrasYaIntentadas.add(char));
+    letrasIncorrectasArray.forEach(char => letrasYaIntentadas.add(char));
 
-      if (letrasYaIntentadas.has(letraIngresada)) {
-          mostrarMensajeAlerta(mensajeJuego, `Ya enviaste la letra ${letraIngresada} anteriormente. Intenta con otra.`, 'warning');
-          inputIngresaLetra.value = "";
-          inputIngresaLetra.focus();
-          return;
-      }
+    if (letrasYaIntentadas.has(letraIngresada)) {
+      mostrarMensajeAlerta(mensajeJuego, `Ya enviaste la letra ${letraIngresada} anteriormente. Intenta con otra.`, 'warning');
+      inputIngresaLetra.value = "";
+      inputIngresaLetra.focus();
+      return;
+    }
 
-      // Enviar letra
-      inputIngresaLetra.disabled = true;
-      botonSubirLetra.disabled = true;
-      await manejarEnvioLetra(letraIngresada);
-  });
+    // Enviar letra
+    inputIngresaLetra.disabled = true;
+    botonSubirLetra.disabled = true;
+    await manejarEnvioLetra(letraIngresada);
 
-  // TOUCHEND (Mobile fix)
-  botonSubirLetra.addEventListener("touchend", () => {
-      document.activeElement.blur();
-      setTimeout(() => {
-          botonSubirLetra.click();
-          botonSubirLetra.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 100);
+    // ✅ Scroll a la imagen del ahorcado en móviles
+    if (window.innerWidth < 768) {
+      imagenAhorcado.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   });
 }
+
 
 // ENTER en el input
 if (inputIngresaLetra) {
