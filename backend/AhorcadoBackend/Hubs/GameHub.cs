@@ -22,7 +22,7 @@ namespace AhorcadoBackend.Hubs
             _logger = logger;
             _dbContext = dbContext;
         }
-        
+
         public async Task JoinGameGroup(string gameId)
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, gameId);
@@ -103,40 +103,40 @@ namespace AhorcadoBackend.Hubs
         }
 
         // Método para procesar una letra ingresada por un cliente
-      public async Task ProcessLetter(string gameId, char letter)
-{
-    try
-    {
-        var connectionId = Context.ConnectionId;
-        var result = await _gameManager.ProcessLetter(gameId, letter, Context.ConnectionId);
-        var game = result.UpdatedGame;
-
-        if (game == null)
+        public async Task ProcessLetter(string gameId, char letter)
         {
-            await Clients.Caller.SendAsync("ReceiveMessage", result.Message ?? "Error desconocido.");
-            return;
+            try
+            {
+                var connectionId = Context.ConnectionId;
+                var result = await _gameManager.ProcessLetter(gameId, letter, Context.ConnectionId);
+                var game = result.UpdatedGame;
+
+                if (game == null)
+                {
+                    await Clients.Caller.SendAsync("ReceiveMessage", result.Message ?? "Error desconocido.");
+                    return;
+                }
+
+                var gameUpdate = new JuegoEstadoResponse
+                {
+                    GameId = game.GameId,
+                    Palabra = game.GuionesActuales,
+                    IntentosRestantes = game.IntentosRestantes,
+                    LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+                    JuegoTerminado = game.JuegoTerminado,
+                    PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null,
+                    TurnoActualConnectionId = game.TurnoActualConnectionId,
+                    Message = result.Message
+                };
+
+                await Clients.Group(gameId).SendAsync("ReceiveGameUpdate", gameUpdate);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "❗ Error inesperado al procesar letra en GameHub");
+                await Clients.Caller.SendAsync("ReceiveMessage", "⚠️ Ocurrió un error inesperado al procesar la letra. Por favor, vuelve a intentarlo.");
+            }
         }
-
-        var gameUpdate = new JuegoEstadoResponse
-        {
-            GameId = game.GameId,
-            Palabra = game.GuionesActuales,
-            IntentosRestantes = game.IntentosRestantes,
-            LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
-            JuegoTerminado = game.JuegoTerminado,
-            PalabraSecreta = game.JuegoTerminado ? game.PalabraSecreta : null,
-            TurnoActualConnectionId = game.TurnoActualConnectionId,
-            Message = result.Message
-        };
-
-        await Clients.Group(gameId).SendAsync("ReceiveGameUpdate", gameUpdate);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "❗ Error inesperado al procesar letra en GameHub");
-        await Clients.Caller.SendAsync("ReceiveMessage", "⚠️ Ocurrió un error inesperado al procesar la letra. Por favor, vuelve a intentarlo.");
-    }
-}
 
         // Nuevo método para cuando el cliente abandona un grupo (voluntariamente)
         public async Task LeaveGameGroup(string gameId)
@@ -150,66 +150,66 @@ namespace AhorcadoBackend.Hubs
         }
 
 
-// Método para reingresar a una partida después de una desconexión
-public async Task ReingresarPartida(string gameId, string alias)
-{
-    if (!_gameManager.TryGetGame(gameId, out var game))
-    {
-        _logger.LogWarning($"🔁 Reingreso fallido: partida {gameId} no existe.");
-        await Clients.Caller.SendAsync("ReceiveError", "No se encontró la partida.");
-        return;
-    }
-
-    // Buscar connectionId del jugador reconectado
-    var nuevoConnectionId = Context.ConnectionId;
-
-    // Mapear alias → connectionId nuevamente
-    var match = game.AliasJugadorPorConnectionId
-        .FirstOrDefault(kvp => kvp.Value.Equals(alias, StringComparison.OrdinalIgnoreCase));
-
-    if (match.Key != null)
-    {
-        // Actualizar ConnectionId si cambió
-        if (match.Key != nuevoConnectionId)
+        // Método para reingresar a una partida después de una desconexión
+        public async Task ReingresarPartida(string gameId, string alias)
         {
-            game.PlayerConnectionIds.Remove(match.Key);
-            game.PlayerConnectionIds.Add(nuevoConnectionId);
-            game.AliasJugadorPorConnectionId.Remove(match.Key);
-            game.AliasJugadorPorConnectionId[nuevoConnectionId] = alias;
+            if (!_gameManager.TryGetGame(gameId, out var game))
+            {
+                _logger.LogWarning($"🔁 Reingreso fallido: partida {gameId} no existe.");
+                await Clients.Caller.SendAsync("ReceiveError", "No se encontró la partida.");
+                return;
+            }
 
-            // Restaurar turno si era suyo
-            if (game.TurnoActualConnectionId == match.Key)
-                game.TurnoActualConnectionId = nuevoConnectionId;
+            // Buscar connectionId del jugador reconectado
+            var nuevoConnectionId = Context.ConnectionId;
 
-            _logger.LogInformation($"🔁 Jugador '{alias}' reconectado exitosamente a la partida {gameId}.");
+            // Mapear alias → connectionId nuevamente
+            var match = game.AliasJugadorPorConnectionId
+                .FirstOrDefault(kvp => kvp.Value.Equals(alias, StringComparison.OrdinalIgnoreCase));
+
+            if (match.Key != null)
+            {
+                // Actualizar ConnectionId si cambió
+                if (match.Key != nuevoConnectionId)
+                {
+                    game.PlayerConnectionIds.Remove(match.Key);
+                    game.PlayerConnectionIds.Add(nuevoConnectionId);
+                    game.AliasJugadorPorConnectionId.Remove(match.Key);
+                    game.AliasJugadorPorConnectionId[nuevoConnectionId] = alias;
+
+                    // Restaurar turno si era suyo
+                    if (game.TurnoActualConnectionId == match.Key)
+                        game.TurnoActualConnectionId = nuevoConnectionId;
+
+                    _logger.LogInformation($"🔁 Jugador '{alias}' reconectado exitosamente a la partida {gameId}.");
+                }
+
+                game.DesconexionDetectada = false;
+                game.JugadorDesconectadoConnectionId = null;
+                game.DesconexionTimestamp = null;
+
+                // Volver a agregar al grupo SignalR
+                await Groups.AddToGroupAsync(nuevoConnectionId, gameId);
+
+                // Enviar estado actualizado al jugador que vuelve
+                await Clients.Client(nuevoConnectionId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
+                {
+                    GameId = game.GameId,
+                    Palabra = game.GuionesActuales,
+                    IntentosRestantes = game.IntentosRestantes,
+                    LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
+                    JuegoTerminado = game.JuegoTerminado,
+                    PalabraSecreta = game.PalabraSecreta,
+                    TurnoActualConnectionId = game.TurnoActualConnectionId,
+                    Message = $"🎉 ¡Bienvenido de nuevo, {alias}!"
+                });
+            }
+            else
+            {
+                _logger.LogWarning($"🔁 Alias '{alias}' no encontrado en la partida {gameId}.");
+                await Clients.Caller.SendAsync("ReceiveError", "Tu alias no coincide con ningún jugador de la partida.");
+            }
         }
-
-        game.DesconexionDetectada = false;
-        game.JugadorDesconectadoConnectionId = null;
-        game.DesconexionTimestamp = null;
-
-        // Volver a agregar al grupo SignalR
-        await Groups.AddToGroupAsync(nuevoConnectionId, gameId);
-
-        // Enviar estado actualizado al jugador que vuelve
-        await Clients.Client(nuevoConnectionId).SendAsync("ReceiveGameUpdate", new JuegoEstadoResponse
-        {
-            GameId = game.GameId,
-            Palabra = game.GuionesActuales,
-            IntentosRestantes = game.IntentosRestantes,
-            LetrasIncorrectas = string.Join(", ", game.LetrasIncorrectas),
-            JuegoTerminado = game.JuegoTerminado,
-            PalabraSecreta = game.PalabraSecreta,
-            TurnoActualConnectionId = game.TurnoActualConnectionId,
-            Message = $"🎉 ¡Bienvenido de nuevo, {alias}!"
-        });
-    }
-    else
-    {
-        _logger.LogWarning($"🔁 Alias '{alias}' no encontrado en la partida {gameId}.");
-        await Clients.Caller.SendAsync("ReceiveError", "Tu alias no coincide con ningún jugador de la partida.");
-    }
-}
 
 
 

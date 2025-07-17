@@ -21,10 +21,10 @@ function irASeccionAdmin() {
 
 // Volver
 function volverAlInicioAdmin() {
-    ocultarSeccion(seccionAdminPalabras); // Asegura que desaparezca del DOM visible
-    inicializarUI(); // Tu lógica actual para volver a bienvenida
-  }
-  
+  ocultarSeccion(seccionAdminPalabras); // Asegura que desaparezca del DOM visible
+  inicializarUI(); // Tu lógica actual para volver a bienvenida
+}
+
 
 // Mostrar form
 function mostrarFormularioAdmin() {
@@ -67,23 +67,23 @@ async function guardarPalabraAdmin() {
 
 // Cargar todas
 async function cargarPalabrasAdmin() {
-    const res = await fetch(`${API_URL_ADMIN}todas`);
+  const res = await fetch(`${API_URL_ADMIN}todas`);
 
-    if (!res.ok) {
-      const msg = await res.text();
-      console.warn("Error al cargar palabras:", msg);
-      Swal.fire("Error", "No se pudieron cargar las palabras.", "error");
-      return;
-    }
-  
-    let datos = [];
-    try {
-      datos = await res.json();
-    } catch (e) {
-      console.error("Error al parsear JSON:", e);
-      Swal.fire("Error", "Respuesta inesperada del servidor", "warning");
-      return;
-    }
+  if (!res.ok) {
+    const msg = await res.text();
+    console.warn("Error al cargar palabras:", msg);
+    Swal.fire("Error", "No se pudieron cargar las palabras.", "error");
+    return;
+  }
+
+  let datos = [];
+  try {
+    datos = await res.json();
+  } catch (e) {
+    console.error("Error al parsear JSON:", e);
+    Swal.fire("Error", "Respuesta inesperada del servidor", "warning");
+    return;
+  }
   tablaAdmin.innerHTML = "";
 
   datos.forEach(p => {

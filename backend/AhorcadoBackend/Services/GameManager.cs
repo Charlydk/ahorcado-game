@@ -17,7 +17,7 @@ namespace AhorcadoBackend.Services
         private readonly IHubContext<GameHub> _hubContext; // ¡DECLARACIÓN AQUÍ!
         private readonly ILogger<GameManager> _logger; // <-- ADICIÓN AQUÍ: Declaración del logger
 
-        
+
         // Constructor que ACEPTA IHubContext<GameHub>
         public GameManager(IHubContext<GameHub> hubContext, ILogger<GameManager> logger)
 
@@ -45,7 +45,7 @@ namespace AhorcadoBackend.Services
             return _activeGames.Values;
         }
 
-            private async Task<string?> GenerarPalabraAleatoriaAsync()
+        private async Task<string?> GenerarPalabraAleatoriaAsync()
         {
             try
             {
@@ -92,16 +92,16 @@ namespace AhorcadoBackend.Services
         public async Task<JuegoEstado> CreateNewGame(string? palabraSecreta = null, string? creatorConnectionId = null, string? gameId = null, string? aliasCreador = null, int intentosPermitidos = 6)
         {
 
-            
+
             string newGameId = gameId ?? Guid.NewGuid().ToString();
             _logger.LogInformation($"🧩 Partida {newGameId} registrada en memoria en instancia: {GetHashCode()}");
 
             if (string.IsNullOrEmpty(palabraSecreta))
-        {
-            palabraSecreta = await GenerarPalabraAleatoriaAsync();
-            if (string.IsNullOrEmpty(palabraSecreta))
-                palabraSecreta = "AHORCADO"; // fallback literal si falla
-        }
+            {
+                palabraSecreta = await GenerarPalabraAleatoriaAsync();
+                if (string.IsNullOrEmpty(palabraSecreta))
+                    palabraSecreta = "AHORCADO"; // fallback literal si falla
+            }
 
             else
             {
@@ -400,76 +400,76 @@ namespace AhorcadoBackend.Services
             }
 
             // 🚨 ¿La partida terminó?
-bool esVictoria = game.GuionesActuales == game.PalabraSecreta;
-bool esDerrota = game.IntentosRestantes <= 0;
+            bool esVictoria = game.GuionesActuales == game.PalabraSecreta;
+            bool esDerrota = game.IntentosRestantes <= 0;
 
-if (esVictoria || esDerrota)
-{
-    game.JuegoTerminado = true;
-    game.Message = esVictoria
-        ? $"¡Felicidades! Has adivinado la palabra: {game.PalabraSecreta}"
-        : $"¡GAME OVER! La palabra era: {game.PalabraSecreta}";
+            if (esVictoria || esDerrota)
+            {
+                game.JuegoTerminado = true;
+                game.Message = esVictoria
+                    ? $"¡Felicidades! Has adivinado la palabra: {game.PalabraSecreta}"
+                    : $"¡GAME OVER! La palabra era: {game.PalabraSecreta}";
 
-    string alias1;
-    string? alias2 = null;
+                string alias1;
+                string? alias2 = null;
 
-    if (game.PlayerConnectionIds.Count == 0)
-    {
-        alias1 = game.AliasJugadorPorConnectionId.GetValueOrDefault("LOCAL",
-                  game.AliasJugadorPorConnectionId.GetValueOrDefault("J1", "Jugador1"));
-        alias2 = game.AliasJugadorPorConnectionId.GetValueOrDefault("J2", null);
-    }
-    else
-    {
-        var j1 = game.PlayerConnectionIds.ElementAtOrDefault(0);
-        var j2 = game.PlayerConnectionIds.ElementAtOrDefault(1);
-        alias1 = game.AliasJugadorPorConnectionId.GetValueOrDefault(j1 ?? "", "Jugador1");
-        alias2 = game.AliasJugadorPorConnectionId.GetValueOrDefault(j2 ?? "", "Jugador2");
-    }
+                if (game.PlayerConnectionIds.Count == 0)
+                {
+                    alias1 = game.AliasJugadorPorConnectionId.GetValueOrDefault("LOCAL",
+                              game.AliasJugadorPorConnectionId.GetValueOrDefault("J1", "Jugador1"));
+                    alias2 = game.AliasJugadorPorConnectionId.GetValueOrDefault("J2", null);
+                }
+                else
+                {
+                    var j1 = game.PlayerConnectionIds.ElementAtOrDefault(0);
+                    var j2 = game.PlayerConnectionIds.ElementAtOrDefault(1);
+                    alias1 = game.AliasJugadorPorConnectionId.GetValueOrDefault(j1 ?? "", "Jugador1");
+                    alias2 = game.AliasJugadorPorConnectionId.GetValueOrDefault(j2 ?? "", "Jugador2");
+                }
 
-    try
-    {
-        using var db = await _contextFactory.CreateDbContextAsync();
+                try
+                {
+                    using var db = await _contextFactory.CreateDbContextAsync();
 
-        db.Partidas.Add(new Partida
-        {
-            AliasJugador = alias1 ?? "SinNombre1",
-            AliasJugador2 = alias2,
-            FueVictoria = esVictoria,
-            Fecha = DateTime.UtcNow,
-            PalabraSecreta = game.PalabraSecreta ?? "???",
-            EsOnline = game.PlayerConnectionIds.Count > 1
-        });
+                    db.Partidas.Add(new Partida
+                    {
+                        AliasJugador = alias1 ?? "SinNombre1",
+                        AliasJugador2 = alias2,
+                        FueVictoria = esVictoria,
+                        Fecha = DateTime.UtcNow,
+                        PalabraSecreta = game.PalabraSecreta ?? "???",
+                        EsOnline = game.PlayerConnectionIds.Count > 1
+                    });
 
-        await db.SaveChangesAsync();
-        _logger.LogInformation($"💾 Partida {gameId} guardada en Supabase. Resultado: {(esVictoria ? "VICTORIA" : "DERROTA")}");
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, $"❌ Error al guardar la partida {gameId} en la base de datos.");
-        result.Message = "El juego terminó correctamente, pero no se pudo guardar la partida.";
-        result.UpdatedGame = game;
-        result.IsGameOver = true;
-        return result;
-    }
+                    await db.SaveChangesAsync();
+                    _logger.LogInformation($"💾 Partida {gameId} guardada en Supabase. Resultado: {(esVictoria ? "VICTORIA" : "DERROTA")}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"❌ Error al guardar la partida {gameId} en la base de datos.");
+                    result.Message = "El juego terminó correctamente, pero no se pudo guardar la partida.";
+                    result.UpdatedGame = game;
+                    result.IsGameOver = true;
+                    return result;
+                }
 
-    game.TurnoActualConnectionId = null;
-    result.IsGameWon = esVictoria;
-    result.IsGameOver = true;
-    result.Message = game.Message;
-}
+                game.TurnoActualConnectionId = null;
+                result.IsGameWon = esVictoria;
+                result.IsGameOver = true;
+                result.Message = game.Message;
+            }
 
-game.LastActivityTime = DateTime.UtcNow;
+            game.LastActivityTime = DateTime.UtcNow;
 
-if (!game.JuegoTerminado && game.PlayerConnectionIds.Count == 2)
-{
-    string oldTurnId = game.TurnoActualConnectionId;
-    game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != oldTurnId);
-    _logger.LogDebug($"Turno cambiado en partida {game.GameId}. Anterior: {oldTurnId}, Nuevo: {game.TurnoActualConnectionId}");
-}
+            if (!game.JuegoTerminado && game.PlayerConnectionIds.Count == 2)
+            {
+                string oldTurnId = game.TurnoActualConnectionId;
+                game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != oldTurnId);
+                _logger.LogDebug($"Turno cambiado en partida {game.GameId}. Anterior: {oldTurnId}, Nuevo: {game.TurnoActualConnectionId}");
+            }
 
-result.UpdatedGame = game;
-return result;
+            result.UpdatedGame = game;
+            return result;
 
         }
 
@@ -552,12 +552,12 @@ return result;
                     gamesToCleanDirectly.Add(game.GameId);
                 }
 
-           }
+            }
 
             // Primero, manejar las "desconexiones" de jugadores inactivos
             foreach (var (gameId, connectionId) in inactivePlayersToDisconnect)
             {
-              
+
                 PlayerDisconnected(connectionId);
             }
 

@@ -80,7 +80,7 @@ namespace AhorcadoBackend.Controllers
         // --- ENDPOINTS DEL CONTROLADOR ---
 
         [HttpPost("iniciar")]
-        public async Task< ActionResult>IniciarJuego([FromBody] PalabraEntrada entrada)
+        public async Task<ActionResult> IniciarJuego([FromBody] PalabraEntrada entrada)
         {
             string gameIdParaSesion = Guid.NewGuid().ToString();
             JuegoEstado nuevoEstado;
@@ -146,7 +146,7 @@ namespace AhorcadoBackend.Controllers
         }
 
         [HttpPost("reiniciar")]
-            public async Task<IActionResult> ReiniciarJuego([FromBody] ReiniciarJuegoEntrada entrada)
+        public async Task<IActionResult> ReiniciarJuego([FromBody] ReiniciarJuegoEntrada entrada)
 
         {
             if (string.IsNullOrEmpty(entrada.GameId))
@@ -366,6 +366,14 @@ namespace AhorcadoBackend.Controllers
         [HttpPost("entrada-inteligente")]
         public async Task<IActionResult> EntradaInteligente([FromBody] UnirseGameOnlineRequest request)
         {
+
+            var posiblePartida = _gameManager.GetAllGames()
+            .FirstOrDefault(g => g.CodigoSala.Equals(request.GameId, StringComparison.OrdinalIgnoreCase));
+
+            if (posiblePartida != null)
+                request.GameId = posiblePartida.GameId;
+
+
             if (!_gameManager.TryGetGame(request.GameId, out var game))
                 return NotFound(new { message = "Partida no encontrada." });
 
@@ -464,7 +472,7 @@ namespace AhorcadoBackend.Controllers
         }
 
 
-       [HttpGet("ranking")]
+        [HttpGet("ranking")]
         public async Task<IActionResult> ObtenerRanking()
         {
             var partidas = await _dbContext.Partidas.ToListAsync();
@@ -508,7 +516,7 @@ namespace AhorcadoBackend.Controllers
                 .ToList();
 
             return Ok(ranking);
-}
+        }
 
 
         [HttpGet("estadisticas/{alias}")]

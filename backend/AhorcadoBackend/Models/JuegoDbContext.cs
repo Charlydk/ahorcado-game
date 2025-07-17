@@ -2,7 +2,7 @@
 
 namespace AhorcadoBackend.Models
 {
-    public class JuegoDbContext :DbContext
+    public class JuegoDbContext : DbContext
     {
         public JuegoDbContext(DbContextOptions<JuegoDbContext> options) : base(options) { }
 
