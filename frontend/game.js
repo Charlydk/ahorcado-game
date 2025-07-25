@@ -66,8 +66,8 @@ let aliasJugadorActual = ""; // Almacena el alias del jugador actual
 
 
 // --- Variables de conexion al backend ---
-const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
-//const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
+//const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
+const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
 
 // 🚀 Inicialización y SignalR
 
@@ -273,8 +273,8 @@ function capturarAliasGlobal() {
 
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-  //.withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",  // URL de producción
-  .withUrl("http://localhost:8080/gamehub",  // URL de desarrollo
+  .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",  // URL de producción
+  //.withUrl("http://localhost:8080/gamehub",  // URL de desarrollo
     {
       transport: signalR.HttpTransportType.WebSockets,
       withCredentials: true
