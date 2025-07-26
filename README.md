@@ -4,8 +4,7 @@ Este proyecto es una reimaginación completa del clásico juego del Ahorcado, de
 
 **➡️ [Juega la demo en vivo aquí](https://charlydk.github.io/ahorcado-game/frontend/)**
 
-![Captura de pantalla del juego del ahorcado](https://raw.githubusercontent.com/Charlydk/ahorcado-game/main/frontend/assets/images/hangman-game.png)
-*(Nota: Esta URL asume que la imagen está en `frontend/assets/images/hangman-game.png`. Ajústala si es necesario.)*
+![Captura de pantalla del juego del ahorcado](https://github.com/Charlydk/ahorcado-game/blob/main/frontend/img/screenshot.png?raw=true)
 
 ---
 
@@ -58,6 +57,9 @@ El proyecto sigue una arquitectura cliente-servidor bien definida:
 1.  Navega a la carpeta `frontend`.
 2.  Abre el archivo `game.js` y asegúrate de que la constante `BACKEND_URL` apunta a la dirección de tu backend local (ej. `http://localhost:5000/api/`).
 3.  Abre el archivo `index.html` en tu navegador.
+
+### Nota
+Para ingresar al modo admin y agregar palabras desde el portal usa el usuario devfab
 
 ---
 
