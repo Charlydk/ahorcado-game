@@ -1178,7 +1178,7 @@ botonVersus.addEventListener("click", function (event) {
 if (botonOnline) {
   botonOnline.addEventListener("click", () => {
     currentMode = 'online';
-    // Simplemente restaura la UI, la función ya establece el mensaje por defecto
+    startSignalRConnection();
     restaurarSeccionOnlineUI();
   });
 }
@@ -1482,13 +1482,11 @@ document.addEventListener("DOMContentLoaded", () => {
       musicaFondoIntro.play();
       modalMusica.hide();
       inicializarUI();
-      startSignalRConnection();
     });
 
     btnMusicaNo.addEventListener("click", () => {
       modalMusica.hide();
       inicializarUI();
-      startSignalRConnection();
     });
   }, 2500);
 
