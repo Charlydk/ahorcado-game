@@ -80,8 +80,17 @@ Sigue estos pasos para configurar y ejecutar el proyecto en tu máquina de desar
     - Abre el archivo `frontend/game.js`.
     - Asegúrate de que la constante `BACKEND_URL` apunte a la URL de tu servidor local. Descomenta la línea de desarrollo y comenta la de producción.
       ```javascript
-      const BACKEND_URL = "http://localhost:5195/api/"; // Para desarrollo local
-      // const BACKEND_URL = "[https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/](https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/)"; // Para producción
+
+      const CONFIG = {
+      // URLs del Backend:
+      // Para desarrollo local
+      BACKEND_API_URL: "http://localhost:8080/api/",
+      BACKEND_HUB_URL: "http://localhost:8080/gamehub",
+
+      // Para producción
+      PROD_BACKEND_API_URL: "https://ahorcado-backend.onrender.com/api/",
+      PROD_BACKEND_HUB_URL: "https://ahorcado-backend.onrender.com/gamehub",
+    };
       ```
 
 2.  **Lanzar la Aplicación:**

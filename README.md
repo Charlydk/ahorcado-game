@@ -22,7 +22,7 @@ El proyecto sigue una arquitectura cliente-servidor bien definida:
     * **Cliente SignalR:** Se conecta al `GameHub` del backend para enviar y recibir actualizaciones del juego en tiempo real.
     * **Lógica de UI Dinámica:** Manipulación del DOM para reflejar los diferentes estados del juego (bienvenida, selección de modo, juego, salas online) creando una experiencia de Single Page Application (SPA).
     * **Panel de Administración:** Una sección protegida para realizar operaciones CRUD (Crear, Leer, Actualizar, Borrar) sobre las palabras en la base de datos, demostrando una funcionalidad full-stack completa.
-* **Contenerización y Despliegue (Docker & Cloud Run):** La aplicación backend está contenerizada con Docker, lo que garantiza la portabilidad. Está desplegada en Google Cloud Run, una plataforma serverless que gestiona la escalabilidad de forma automática.
+* **Contenerización y Despliegue (Docker & Render):** La aplicación backend está contenerizada con Docker, lo que garantiza la portabilidad. Estuvo desplegada en Google Cloud Run pero fue reemplazado por RENDER, una plataforma serverless que gestiona la escalabilidad de forma automática.
 
 ---
 
@@ -34,8 +34,8 @@ El proyecto sigue una arquitectura cliente-servidor bien definida:
 * Entity Framework Core (ORM)
 * PostgreSQL (Base de Datos)
 * Docker
-* Google Cloud Run (Despliegue)
-* Proximanente en Render
+* Google Cloud Run (fue reemplazado por Render)
+* Render (Despliegue actual)
 
 **Frontend:**
 * HTML5
