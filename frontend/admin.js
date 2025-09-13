@@ -1,5 +1,5 @@
 // URL base del backend
-const API_URL_ADMIN = `${BACKEND_URL}palabras/`;
+const API_URL_ADMIN = `${CONFIG.PROD_BACKEND_API_URL}palabras/`;
 
 // Referencias UI
 const seccionAdminPalabras = document.getElementById("seccionAdminPalabras");

@@ -825,7 +825,7 @@ document.getElementById("unirsePartida").addEventListener("click", async () => {
     try {
       mostrarMensajeAlerta(mensajeIdPartida, "🔍 Buscando partida...", "info");
 
-      const response = await fetch(`${BACKEND_URL}juego/buscar-por-codigo/${input}`);
+      const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/buscar-por-codigo/${input}`);
       if (!response.ok) throw new Error("No se encontró ninguna partida con ese código.");
 
       const data = await response.json();
@@ -865,7 +865,7 @@ async function unirseAPartidaOnline(gameId) {
     inputIdPartida.readOnly = true;
     mostrarMensajeAlerta(mensajeIdPartida, "Uniéndose a la partida...", 'info');
 
-    const response = await fetch(`${BACKEND_URL}juego/entrada-inteligente`, {
+    const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/entrada-inteligente`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -927,7 +927,7 @@ async function manejarEnvioLetra(letra) {
         return;
       }
 
-      const response = await fetch(`${BACKEND_URL}juego/adivinarLetraLocal`, {
+      const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/adivinarLetraLocal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1002,7 +1002,7 @@ async function reiniciarJuego() {
       return;
     }
     
-    const response = await fetch(`${BACKEND_URL}juego/reiniciar`, {
+    const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/reiniciar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ GameId: currentGameId }),
@@ -1048,7 +1048,7 @@ modalRanking.addEventListener("shown.bs.modal", cargarRankingEnTabla);
 
 async function cargarRankingEnTabla() {
   try {
-    const response = await fetch(`${BACKEND_URL}juego/ranking`);
+    const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/ranking`);
     const data = await response.json();
 
     const tbody = document.getElementById("tablaRankingBody");
@@ -1085,7 +1085,7 @@ async function cargarRankingEnTabla() {
 
 async function mostrarRankingHorizontal() {
   try {
-    const response = await fetch(`${BACKEND_URL}juego/ranking`);
+    const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/ranking`);
     const data = await response.json();
 
     if (data.length === 0) return;
