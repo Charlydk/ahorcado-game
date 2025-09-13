@@ -63,8 +63,16 @@ let aliasJugadorActual = ""; // Almacena el alias del jugador actual
 
 
 // --- Variables de conexion al backend ---
-//const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
-const BACKEND_URL = "https://ahorcado-backend.onrender.com"; // Para producción
+const CONFIG = {
+  // URLs del Backend:
+  // Para desarrollo local
+  BACKEND_API_URL: "http://localhost:8080/api/",
+  BACKEND_HUB_URL: "http://localhost:8080/gamehub",
+
+  // Para producción
+  PROD_BACKEND_API_URL: "https://ahorcado-backend.onrender.com/api/",
+  PROD_BACKEND_HUB_URL: "https://ahorcado-backend.onrender.com/gamehub",
+};
 
 // 🚀 Inicialización y SignalR
 
@@ -270,8 +278,8 @@ function capturarAliasGlobal() {
 
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-  .withUrl("https://ahorcado-backend-806698815588.southamerica-east1.run.app/gamehub",  // URL de producción
-  //.withUrl("http://localhost:8080/gamehub",  // URL de desarrollo
+  .withUrl(CONFIG.PROD_BACKEND_HUB_URL,
+
     {
       transport: signalR.HttpTransportType.WebSockets,
       withCredentials: true
@@ -459,7 +467,7 @@ async function iniciarJuego(modo, palabraVersus = "") {
       IntentosPermitidos: intentosIniciales
     };
 
-    const response = await fetch(`${BACKEND_URL}juego/iniciar`, {
+    const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/iniciar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
