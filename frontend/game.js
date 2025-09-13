@@ -48,12 +48,9 @@ const displayGameId = document.getElementById("displayGameId");
 const botonCopiarId = document.getElementById("botonCopiarId");
 const contenedorBotonJuegoOnline = document.getElementById("contenedorBotonJuegoOnline");
 
-
 function esEscritorio() {
   return window.matchMedia("(pointer: fine)").matches;
 }
-
-
 
 // --- Variables de Estado del Frontend ---
 let currentGameId = null; // Almacenará el ID de la partida activa
@@ -67,7 +64,7 @@ let aliasJugadorActual = ""; // Almacena el alias del jugador actual
 
 // --- Variables de conexion al backend ---
 //const BACKEND_URL = "http://localhost:8080/api/"; // Para desarrollo local
-const BACKEND_URL = "https://ahorcado-backend-806698815588.southamerica-east1.run.app/api/"; // Para producción
+const BACKEND_URL = "https://ahorcado-backend.onrender.com"; // Para producción
 
 // 🚀 Inicialización y SignalR
 
