@@ -43,6 +43,7 @@ const inputIdPartida = document.getElementById("inputIdPartida");
 const botonUnirsePartida = document.getElementById("unirsePartida");
 const mensajeIdPartida = document.getElementById("mensajeIdPartida");
 const botonVolverModosOnline = document.getElementById("volverModosOnline");
+const mensajeCarga = document.getElementById("mensajeCarga");
 const contenedorGameId = document.getElementById("contenedorGameId");
 const displayGameId = document.getElementById("displayGameId");
 const botonCopiarId = document.getElementById("botonCopiarId");
@@ -1459,50 +1460,79 @@ musicaFondoIntro.loop = true;
 musicaFondoIntro.volume = 0.3; // Volumen suave para no tapar los efectos
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 🕒 Pantalla de carga + Música
-  setTimeout(() => {
-    const pantalla = document.getElementById("pantallaCargaInicial");
-    pantalla.classList.add("fade-out");
+  // Referencias a elementos de la pantalla de carga
+  const pantallaCarga = document.getElementById("pantallaCargaInicial");
+  const barraProgreso = pantallaCarga.querySelector(".progreso");
+  const mensajeCarga = pantallaCarga.querySelector(".mensaje-carga");
 
-    setTimeout(() => pantalla.style.display = "none", 1000);
-
-    const modalMusica = new bootstrap.Modal(document.getElementById("modalMusica"), {
+  // Modal de música
+  const modalMusica = new bootstrap.Modal(document.getElementById("modalMusica"), {
       backdrop: 'static',
       keyboard: false
+  });
+  modalMusica.show();
+
+  const btnMusicaSi = document.getElementById("btnMusicaSi");
+  const btnMusicaNo = document.getElementById("btnMusicaNo");
+
+  // Función que maneja la lógica de la conexión y la carga
+  const iniciarConexionYAnimacion = () => {
+    // Referencias a elementos de la pantalla de carga
+    const pantallaCarga = document.getElementById("pantallaCargaInicial");
+    const barraProgreso = pantallaCarga.querySelector(".progreso");
+    const mensajeCarga = pantallaCarga.querySelector(".mensaje-carga");
+
+    // Mostramos la pantalla de carga (si no estaba visible)
+    pantallaCarga.style.display = "flex";
+
+    // 🚀 Simular la carga inicial (fase de "despertar el servidor")
+    barraProgreso.style.width = '50%';
+    barraProgreso.style.transition = 'width 5s linear'; // Animación hasta el 50%
+    mensajeCarga.textContent = "El servidor está en Render. Esto podría tardar 60 segundos si está dormido.";
+
+    // Definimos una función para finalizar la carga, sin importar si es instantánea o no.
+    const finalizarCarga = () => {
+        // Aseguramos que la barra llegue a 100%
+        barraProgreso.style.transition = 'width 1s linear';
+        barraProgreso.style.width = '100%';
+        mensajeCarga.textContent = "¡Conexión establecida!";
+
+        // Esperamos un segundo para que el usuario vea la carga al 100%
+        setTimeout(() => {
+            pantallaCarga.classList.add("fade-out");
+            // Esperamos la animación de fade-out antes de ocultar el elemento
+            setTimeout(() => {
+                pantallaCarga.style.display = "none";
+            }, 1000);
+            inicializarUI(); // Inicia la UI principal del juego
+        }, 1000);
+    };
+
+    // Intentamos la conexión de SignalR de forma asíncrona
+    startSignalRConnection().then(() => {
+        // Si la promesa se resuelve, la conexión fue exitosa
+        finalizarCarga();
+    }).catch(err => {
+        // Si la promesa es rechazada, la conexión falló
+        console.error("Error al conectar con el servidor:", err);
+        mensajeCarga.textContent = "Error al conectar. Por favor, reinicia la página.";
+        // La barra de carga no llega al 100% y el usuario puede ver el error.
     });
-    modalMusica.show();
+};
 
-    const btnMusicaSi = document.getElementById("btnMusicaSi");
-    const btnMusicaNo = document.getElementById("btnMusicaNo");
-
-    btnMusicaSi.addEventListener("click", () => {
+  // Al hacer clic en los botones del modal, iniciamos el proceso
+  btnMusicaSi.addEventListener("click", () => {
       musicaFondoIntro.currentTime = 0;
       musicaFondoIntro.volume = 0.3;
       musicaFondoIntro.loop = true;
       musicaFondoIntro.play();
       modalMusica.hide();
-      inicializarUI();
-    });
+      iniciarConexionYAnimacion();
+  });
 
-    btnMusicaNo.addEventListener("click", () => {
+  btnMusicaNo.addEventListener("click", () => {
       modalMusica.hide();
-      inicializarUI();
-    });
-  }, 2500);
-
-  // 🎵 Activar/desactivar música desde el botón flotante
-  const botonMusica = document.getElementById("toggleMusicaBtn");
-  let musicaActiva = false;
-
-  botonMusica.addEventListener("click", () => {
-    if (musicaActiva) {
-      musicaFondoIntro.pause();
-      botonMusica.textContent = "🔇";
-    } else {
-      musicaFondoIntro.play();
-      botonMusica.textContent = "🔊";
-    }
-    musicaActiva = !musicaActiva;
+      iniciarConexionYAnimacion();
   });
 
   // 🛠️ Panel Admin comportamiento
