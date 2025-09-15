@@ -70,8 +70,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", // Este es el nombre de tu política CORS existente
         policy => policy.WithOrigins(
-            "http://127.0.0.1:5500",
-            "http://localhost:5500",
+            "http://127.0.0.1:5195",
+            "http://localhost:5195",
             "https://localhost:7055",
             "https://charlydk.github.io",     // Sin barra final
             "https://charlydk.github.io/",    // Con barra final

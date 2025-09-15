@@ -1032,3 +1032,6 @@ p#letrasIncorrectasSpan.text-danger { /* Añade el 'p' y '.text-danger' para may
     }
   }
   
+  .progreso.bg-danger {
+    background: #dc3545 !important; /* Rojo de Bootstrap para errores */
+  }

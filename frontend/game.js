@@ -67,8 +67,8 @@ let aliasJugadorActual = ""; // Almacena el alias del jugador actual
 const CONFIG = {
   // URLs del Backend:
   // Para desarrollo local
-  BACKEND_API_URL: "http://localhost:8080/api/",
-  BACKEND_HUB_URL: "http://localhost:8080/gamehub",
+  BACKEND_API_URL: "http://localhost:5195/api/",
+  BACKEND_HUB_URL: "http://localhost:5195/gamehub",
 
   // Para producción
   PROD_BACKEND_API_URL: "https://ahorcado-backend.onrender.com/api/",
@@ -1477,48 +1477,59 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Función que maneja la lógica de la conexión y la carga
   const iniciarConexionYAnimacion = () => {
-    // Referencias a elementos de la pantalla de carga
+    // 1. Obtenemos las referencias a los elementos de la UI
     const pantallaCarga = document.getElementById("pantallaCargaInicial");
     const barraProgreso = pantallaCarga.querySelector(".progreso");
     const mensajeCarga = pantallaCarga.querySelector(".mensaje-carga");
 
-    // Mostramos la pantalla de carga (si no estaba visible)
+    // 2. Mostramos la pantalla de carga y reiniciamos su estado
     pantallaCarga.style.display = "flex";
+    pantallaCarga.classList.remove("fade-out");
+    barraProgreso.classList.remove('bg-danger'); // Quitamos el color de error si existía
+    barraProgreso.style.transition = 'none';
+    barraProgreso.style.width = '0%';
 
-    // 🚀 Simular la carga inicial (fase de "despertar el servidor")
-    barraProgreso.style.width = '50%';
-    barraProgreso.style.transition = 'width 5s linear'; // Animación hasta el 50%
-    mensajeCarga.textContent = "El servidor está en Render. Esto podría tardar 60 segundos si está dormido.";
+    // 3. Pequeño delay para que el navegador aplique el 0% antes de iniciar la animación
+    setTimeout(() => {
+        // Iniciamos la animación "optimista" a 95% durante 25 segundos.
+        // Esto cubre visualmente el posible "cold start" de Render.
+        barraProgreso.style.transition = 'width 25s cubic-bezier(0.2, 1, 0.8, 1)';
+        barraProgreso.style.width = '95%';
+        mensajeCarga.textContent = "Despertando al guardián del castillo... (Render puede tardar un momento)";
+    }, 100);
 
-    // Definimos una función para finalizar la carga, sin importar si es instantánea o no.
-    const finalizarCarga = () => {
-        // Aseguramos que la barra llegue a 100%
-        barraProgreso.style.transition = 'width 1s linear';
-        barraProgreso.style.width = '100%';
-        mensajeCarga.textContent = "¡Conexión establecida!";
+    // 4. Intentamos establecer la conexión REAL con SignalR
+    startSignalRConnection()
+        .then(() => {
+            // --- ¡ÉXITO! La conexión se estableció ---
+            console.log("✅ Conexión real establecida. Finalizando carga.");
 
-        // Esperamos un segundo para que el usuario vea la carga al 100%
-        setTimeout(() => {
-            pantallaCarga.classList.add("fade-out");
-            // Esperamos la animación de fade-out antes de ocultar el elemento
+            // 5. Forzamos la barra al 100% con una animación rápida y satisfactoria
+            barraProgreso.style.transition = 'width 0.5s ease-out';
+            barraProgreso.style.width = '100%';
+            mensajeCarga.textContent = "¡Conexión establecida! Iniciando juego...";
+
+            // 6. Esperamos un momento para que el usuario vea el mensaje y luego ocultamos la pantalla
             setTimeout(() => {
-                pantallaCarga.style.display = "none";
-            }, 1000);
-            inicializarUI(); // Inicia la UI principal del juego
-        }, 1000);
-    };
+                pantallaCarga.classList.add("fade-out");
+                // Esperamos que la animación de fade-out termine (1s según tu CSS)
+                setTimeout(() => {
+                    pantallaCarga.style.display = "none";
+                    inicializarUI(); // Mostramos la interfaz principal del juego
+                }, 1000); 
+            }, 500); // Pequeña pausa para leer el mensaje de éxito
+        })
+        .catch(err => {
+            // --- ¡ERROR! La conexión falló ---
+            console.error("❌ Error de conexión. La carga se ha detenido.", err);
+            
+            // 7. Detenemos la animación y mostramos un estado de error
+            barraProgreso.style.transition = 'none'; // Detiene cualquier animación en curso
+            barraProgreso.classList.add('bg-danger'); // Hacemos la barra roja para indicar error
+            mensajeCarga.textContent = "No se pudo conectar con el servidor. Por favor, recarga la página.";
+        });
+  };
 
-    // Intentamos la conexión de SignalR de forma asíncrona
-    startSignalRConnection().then(() => {
-        // Si la promesa se resuelve, la conexión fue exitosa
-        finalizarCarga();
-    }).catch(err => {
-        // Si la promesa es rechazada, la conexión falló
-        console.error("Error al conectar con el servidor:", err);
-        mensajeCarga.textContent = "Error al conectar. Por favor, reinicia la página.";
-        // La barra de carga no llega al 100% y el usuario puede ver el error.
-    });
-};
 
   // Al hacer clic en los botones del modal, iniciamos el proceso
   btnMusicaSi.addEventListener("click", () => {
