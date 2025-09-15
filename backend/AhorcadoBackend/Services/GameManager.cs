@@ -467,6 +467,12 @@ namespace AhorcadoBackend.Services
                 game.TurnoActualConnectionId = game.PlayerConnectionIds.FirstOrDefault(id => id != oldTurnId);
                 _logger.LogDebug($"Turno cambiado en partida {game.GameId}. Anterior: {oldTurnId}, Nuevo: {game.TurnoActualConnectionId}");
             }
+            
+            if (game.JuegoTerminado)
+            {
+                _logger.LogInformation($"Partida {game.GameId} ha terminado. Limpiando del GameManager.");
+                RemoveGame(gameId);
+            }
 
             result.UpdatedGame = game;
             return result;

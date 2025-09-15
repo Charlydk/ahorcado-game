@@ -37,7 +37,7 @@ builder.Services.AddSignalR(hubOptions =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<GameManager>();
-builder.Services.AddHostedService<GameCleanupService>();
+//builder.Services.AddHostedService<GameCleanupService>(); // lo comento para que pueda dormir el servicio de render
 builder.Services.AddDistributedMemoryCache();
 
 
