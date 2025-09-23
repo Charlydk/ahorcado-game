@@ -1584,4 +1584,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🧭 Mostrar el botón admin en la bienvenida
   botonAdmin.style.display = "inline-block";
+
+  const toggleMusicaBtn = document.getElementById("toggleMusicaBtn");
+
+    toggleMusicaBtn.addEventListener("click", () => {
+      // Si la música está en pausa, la reanudamos
+      if (musicaFondoIntro.paused) {
+        musicaFondoIntro.play();
+        toggleMusicaBtn.textContent = "🔊"; // Cambiamos al ícono de sonido
+      } else {
+        // Si está sonando, la pausamos
+        musicaFondoIntro.pause();
+        toggleMusicaBtn.textContent = "🔇"; // Cambiamos al ícono de silencio
+      }
+    });
+
+
 });
