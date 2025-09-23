@@ -61,21 +61,40 @@ let finalizandoJuego = false; // Indica si el juego está en proceso de finaliza
 let juegoTerminadoManualmente = false; // Indica si el juego fue terminado manualmente por el usuario
 let aliasJugadorActual = ""; // Almacena el alias del jugador actual
 
+function iniciarJuegoYOcultarCarga() {
+  const pantallaCarga = document.getElementById("pantallaCargaInicial");
+  pantallaCarga.classList.add("fade-out");
 
+  pantallaCarga.addEventListener('animationend', () => {
+      pantallaCarga.style.display = 'none';
+      inicializarUI();
+  }, { once: true }); // Usamos { once: true } para que el listener se ejecute solo una vez
+}
+
+// --- Variables de conexion al backend ---
+//const CONFIG = {
+  // URLs del Backend:
+  // Para desarrollo local
+ // BACKEND_API_URL: "http://localhost:8080/api/",
+ // BACKEND_HUB_URL: "http://localhost:8080/gamehub",
+
+  // Para producción
+ // PROD_BACKEND_API_URL: "https://ahorcado-backend.onrender.com/api/",
+ // PROD_BACKEND_HUB_URL: "https://ahorcado-backend.onrender.com/gamehub",
+//};
+
+
+// 🚀 Inicialización y SignalR
+
+import { BACKEND_API_URL, BACKEND_HUB_URL } from './config.js';
 
 // --- Variables de conexion al backend ---
 const CONFIG = {
-  // URLs del Backend:
-  // Para desarrollo local
-  BACKEND_API_URL: "http://localhost:5195/api/",
-  BACKEND_HUB_URL: "http://localhost:5195/gamehub",
-
-  // Para producción
-  PROD_BACKEND_API_URL: "https://ahorcado-backend.onrender.com/api/",
-  PROD_BACKEND_HUB_URL: "https://ahorcado-backend.onrender.com/gamehub",
+  BACKEND_API_URL: BACKEND_API_URL,
+  BACKEND_HUB_URL: BACKEND_HUB_URL,
 };
 
-// 🚀 Inicialización y SignalR
+
 
 // --- Variables y Funciones para Heartbeat ---
 // Variable para almacenar el ID del intervalo del heartbeat
@@ -279,7 +298,7 @@ function capturarAliasGlobal() {
 
 // --- Configuración de SignalR ---
 const connection = new signalR.HubConnectionBuilder()
-  .withUrl(CONFIG.PROD_BACKEND_HUB_URL,
+  .withUrl(CONFIG.BACKEND_HUB_URL,
 
     {
       transport: signalR.HttpTransportType.WebSockets,
@@ -468,7 +487,7 @@ async function iniciarJuego(modo, palabraVersus = "") {
       IntentosPermitidos: intentosIniciales
     };
 
-    const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/iniciar`, {
+    const response = await fetch(`${CONFIG.BACKEND_API_URL}juego/iniciar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -826,7 +845,7 @@ document.getElementById("unirsePartida").addEventListener("click", async () => {
     try {
       mostrarMensajeAlerta(mensajeIdPartida, "🔍 Buscando partida...", "info");
 
-      const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/buscar-por-codigo/${input}`);
+      const response = await fetch(`${CONFIG.BACKEND_API_URL}juego/buscar-por-codigo/${input}`);
       if (!response.ok) throw new Error("No se encontró ninguna partida con ese código.");
 
       const data = await response.json();
@@ -866,7 +885,7 @@ async function unirseAPartidaOnline(gameId) {
     inputIdPartida.readOnly = true;
     mostrarMensajeAlerta(mensajeIdPartida, "Uniéndose a la partida...", 'info');
 
-    const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/entrada-inteligente`, {
+    const response = await fetch(`${CONFIG.BACKEND_API_URL}juego/entrada-inteligente`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -928,7 +947,7 @@ async function manejarEnvioLetra(letra) {
         return;
       }
 
-      const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/adivinarLetraLocal`, {
+      const response = await fetch(`${CONFIG.BACKEND_API_URL}juego/adivinarLetraLocal`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1003,7 +1022,7 @@ async function reiniciarJuego() {
       return;
     }
     
-    const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/reiniciar`, {
+    const response = await fetch(`${CONFIG.BACKEND_API_URL}juego/reiniciar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ GameId: currentGameId }),
@@ -1049,7 +1068,7 @@ modalRanking.addEventListener("shown.bs.modal", cargarRankingEnTabla);
 
 async function cargarRankingEnTabla() {
   try {
-    const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/ranking`);
+    const response = await fetch(`${CONFIG.BACKEND_API_URL}juego/ranking`);
     const data = await response.json();
 
     const tbody = document.getElementById("tablaRankingBody");
@@ -1086,7 +1105,7 @@ async function cargarRankingEnTabla() {
 
 async function mostrarRankingHorizontal() {
   try {
-    const response = await fetch(`${CONFIG.PROD_BACKEND_API_URL}juego/ranking`);
+    const response = await fetch(`${CONFIG.BACKEND_API_URL}juego/ranking`);
     const data = await response.json();
 
     if (data.length === 0) return;
@@ -1460,91 +1479,70 @@ musicaFondoIntro.loop = true;
 musicaFondoIntro.volume = 0.3; // Volumen suave para no tapar los efectos
 
 document.addEventListener("DOMContentLoaded", () => {
-  // Referencias a elementos de la pantalla de carga
+  // Referencias a elementos
   const pantallaCarga = document.getElementById("pantallaCargaInicial");
   const barraProgreso = pantallaCarga.querySelector(".progreso");
   const mensajeCarga = pantallaCarga.querySelector(".mensaje-carga");
-
-  // Modal de música
   const modalMusica = new bootstrap.Modal(document.getElementById("modalMusica"), {
-      backdrop: 'static',
-      keyboard: false
+    backdrop: 'static',
+    keyboard: false
   });
-  modalMusica.show();
-
   const btnMusicaSi = document.getElementById("btnMusicaSi");
   const btnMusicaNo = document.getElementById("btnMusicaNo");
 
-  // Función que maneja la lógica de la conexión y la carga
+  // 1. Esta función ahora se encarga de OCULTAR la carga y MOSTRAR el modal de música
+  function ocultarCargaYMostrarModalMusica() {
+    pantallaCarga.classList.add("fade-out");
+    pantallaCarga.addEventListener('animationend', () => {
+      pantallaCarga.style.display = 'none';
+      modalMusica.show(); // <-- Mostramos el modal DESPUÉS de ocultar la carga
+    }, { once: true });
+  }
+
+  // 2. Esta función se ejecuta tan pronto como la página carga
   const iniciarConexionYAnimacion = () => {
-    // 1. Obtenemos las referencias a los elementos de la UI
-    const pantallaCarga = document.getElementById("pantallaCargaInicial");
-    const barraProgreso = pantallaCarga.querySelector(".progreso");
-    const mensajeCarga = pantallaCarga.querySelector(".mensaje-carga");
-
-    // 2. Mostramos la pantalla de carga y reiniciamos su estado
     pantallaCarga.style.display = "flex";
-    pantallaCarga.classList.remove("fade-out");
-    barraProgreso.classList.remove('bg-danger'); // Quitamos el color de error si existía
-    barraProgreso.style.transition = 'none';
-    barraProgreso.style.width = '0%';
-
-    // 3. Pequeño delay para que el navegador aplique el 0% antes de iniciar la animación
+    barraProgreso.style.width = '0%'; // Reiniciamos la barra
+    
+    // Damos un pequeño respiro para que la transición CSS se aplique
     setTimeout(() => {
-        // Iniciamos la animación "optimista" a 95% durante 25 segundos.
-        // Esto cubre visualmente el posible "cold start" de Render.
-        barraProgreso.style.transition = 'width 25s cubic-bezier(0.2, 1, 0.8, 1)';
-        barraProgreso.style.width = '95%';
-        mensajeCarga.textContent = "Despertando al guardián del castillo... (Render puede tardar un momento)";
+      barraProgreso.style.transition = 'width 25s cubic-bezier(0.2, 1, 0.8, 1)';
+      barraProgreso.style.width = '95%';
+      mensajeCarga.textContent = "Conectando con el servidor...";
     }, 100);
 
-    // 4. Intentamos establecer la conexión REAL con SignalR
+    // Intentamos establecer la conexión
     startSignalRConnection()
-        .then(() => {
-            // --- ¡ÉXITO! La conexión se estableció ---
-            console.log("✅ Conexión real establecida. Finalizando carga.");
-
-            // 5. Forzamos la barra al 100% con una animación rápida y satisfactoria
-            barraProgreso.style.transition = 'width 0.5s ease-out';
-            barraProgreso.style.width = '100%';
-            mensajeCarga.textContent = "¡Conexión establecida! Iniciando juego...";
-
-            // 6. Esperamos un momento para que el usuario vea el mensaje y luego ocultamos la pantalla
-            setTimeout(() => {
-                pantallaCarga.classList.add("fade-out");
-                // Esperamos que la animación de fade-out termine (1s según tu CSS)
-                setTimeout(() => {
-                    pantallaCarga.style.display = "none";
-                    inicializarUI(); // Mostramos la interfaz principal del juego
-                }, 1000); 
-            }, 500); // Pequeña pausa para leer el mensaje de éxito
-        })
-        .catch(err => {
-            // --- ¡ERROR! La conexión falló ---
-            console.error("❌ Error de conexión. La carga se ha detenido.", err);
-            
-            // 7. Detenemos la animación y mostramos un estado de error
-            barraProgreso.style.transition = 'none'; // Detiene cualquier animación en curso
-            barraProgreso.classList.add('bg-danger'); // Hacemos la barra roja para indicar error
-            mensajeCarga.textContent = "No se pudo conectar con el servidor. Por favor, recarga la página.";
-        });
+      .then(() => {
+        barraProgreso.style.width = '100%';
+        mensajeCarga.textContent = "¡Conexión establecida! Iniciando el juego...";
+        setTimeout(ocultarCargaYMostrarModalMusica, 1000); // Llamamos a la función correcta
+      })
+      .catch(err => {
+        console.error("Error al conectar con el servidor:", err);
+        barraProgreso.style.width = '100%';
+        barraProgreso.classList.add('bg-danger');
+        mensajeCarga.textContent = "No se pudo conectar. Por favor, recarga la página.";
+      });
   };
 
-
-  // Al hacer clic en los botones del modal, iniciamos el proceso
+  // 3. Eventos de los botones del modal ahora inician el juego
   btnMusicaSi.addEventListener("click", () => {
-      musicaFondoIntro.currentTime = 0;
-      musicaFondoIntro.volume = 0.3;
-      musicaFondoIntro.loop = true;
-      musicaFondoIntro.play();
-      modalMusica.hide();
-      iniciarConexionYAnimacion();
+    musicaFondoIntro.currentTime = 0;
+    musicaFondoIntro.volume = 0.3;
+    musicaFondoIntro.loop = true;
+    musicaFondoIntro.play();
+    modalMusica.hide();
+    inicializarUI(); // <-- Ahora esto muestra la bienvenida del juego
   });
 
   btnMusicaNo.addEventListener("click", () => {
-      modalMusica.hide();
-      iniciarConexionYAnimacion();
+    modalMusica.hide();
+    inicializarUI(); // <-- Ahora esto muestra la bienvenida del juego
   });
+
+  // 4. Inicia todo el proceso de carga AUTOMÁTICAMENTE
+  iniciarConexionYAnimacion();
 
   // 🛠️ Panel Admin comportamiento
   const botonAdmin = document.getElementById("botonAdmin");

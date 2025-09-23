@@ -1,5 +1,7 @@
 // URL base del backend
-const API_URL_ADMIN = `${CONFIG.PROD_BACKEND_API_URL}palabras/`;
+import { BACKEND_API_URL } from './config.js';
+
+const API_URL_ADMIN = `${BACKEND_API_URL}palabras/`;
 
 // Referencias UI
 const seccionAdminPalabras = document.getElementById("seccionAdminPalabras");
@@ -11,6 +13,7 @@ const inputTexto = document.getElementById("textoAdmin");
 const inputCategoria = document.getElementById("categoriaAdmin");
 const inputDificultad = document.getElementById("dificultadAdmin");
 const inputPalabraId = document.getElementById("palabraIdAdmin");
+
 
 // Mostrar sección Admin
 function irASeccionAdmin() {

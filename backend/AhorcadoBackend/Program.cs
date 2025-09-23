@@ -70,8 +70,8 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", // Este es el nombre de tu política CORS existente
         policy => policy.WithOrigins(
-            "http://127.0.0.1:5195",
-            "http://localhost:5195",
+            "http://127.0.0.1:5500",
+            "http://localhost:5500",
             "https://localhost:7055",
             "https://charlydk.github.io",     // Sin barra final
             "https://charlydk.github.io/",    // Con barra final
@@ -117,11 +117,12 @@ if (app.Environment.IsDevelopment())
 // Habilitar el middleware de sesiones (debe ir antes de UseRouting/MapControllers)
 app.UseSession();
 
+// --- �IMPORTANTE! app.UseRouting() DEBE IR AQU� ---
+app.UseRouting(); // Habilita el enrutamiento para controladores y SignalR
+
 // Usar la pol�tica CORS definida. Aseg�rate de usar el mismo nombre aqu�.
 app.UseCors("AllowSpecificOrigin");
 
-// --- �IMPORTANTE! app.UseRouting() DEBE IR AQU� ---
-app.UseRouting(); // Habilita el enrutamiento para controladores y SignalR
 
 app.UseAuthorization(); // Se aplica a las rutas despu�s de este punto
 
