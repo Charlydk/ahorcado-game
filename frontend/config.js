@@ -9,7 +9,12 @@ const CONFIG = {
     PROD_BACKEND_HUB_URL: "https://ahorcado-backend.onrender.com/gamehub",
   };
   
-  // Si estás probando localmente, usa las URLs de desarrollo.
-  // Si vas a desplegar, cambia esta configuración o usa una variable de entorno.
-  export const BACKEND_API_URL = CONFIG.BACKEND_API_URL;
-  export const BACKEND_HUB_URL = CONFIG.BACKEND_HUB_URL;
+  let esLocal = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
+  // Exportamos las URLs correctas según el entorno
+  export const BACKEND_API_URL = esLocal ? CONFIG.BACKEND_API_URL : CONFIG.PROD_BACKEND_API_URL;
+  export const BACKEND_HUB_URL = esLocal ? CONFIG.BACKEND_HUB_URL : CONFIG.PROD_BACKEND_HUB_URL;
+  
+  // Imprimimos en la consola para poder verificar fácilmente qué URL se está usando
+  console.log(`Backend API URL: ${BACKEND_API_URL}`);
+  console.log(`Backend Hub URL: ${BACKEND_HUB_URL}`);
