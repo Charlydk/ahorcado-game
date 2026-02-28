@@ -1,0 +1,26 @@
+@import "tailwindcss";
+
+@theme {
+  --color-halloween-orange: #ff6600;
+  --color-halloween-dark: #0d0d0d;
+  --color-halloween-blood: #690000;
+  --font-creepster: "Creepster", cursive;
+}
+
+@layer base {
+  body {
+    @apply bg-halloween-dark text-gray-200 min-h-screen font-sans;
+    background-image: url('/img/castillo_sombrío_est.png');
+    background-size: cover;
+    background-attachment: fixed;
+    background-position: center;
+  }
+}
+
+.neon-text {
+  text-shadow: 0 0 5px #ff6600, 0 0 15px #ff6600, 0 0 25px #ff6600;
+}
+
+.creepster {
+  font-family: var(--font-creepster);
+}

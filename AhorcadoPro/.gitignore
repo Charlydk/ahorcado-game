@@ -1,0 +1,27 @@
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Build
+bin/
+obj/
+publish/
+dist/
+.vite/
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# User specific
+*.user
+*.userosscache
+*.sln.docstates
+
+# Environment
+.env
+.env.local
+appsettings.Development.json
+appsettings.json
